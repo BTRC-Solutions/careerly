@@ -9,6 +9,10 @@ Careerly ayuda a una persona que busca trabajo a **generar, con IA, un CV adapta
 de toda su información profesional, y a **llevar el seguimiento de cada postulación**: qué CV exacto se envió,
 en qué estado está el proceso y qué pasó en cada etapa.
 
+Es un **proyecto personal** y una **aplicación de escritorio de un solo usuario**, con los datos guardados
+localmente en la computadora del usuario (*local-first*). Se distribuye como instalador (releases) o se puede
+ejecutar manualmente desde el código fuente.
+
 El valor central es este ciclo:
 
 ```
@@ -29,12 +33,14 @@ Perfil maestro (todo lo que hice) + Job description
 | **CV adaptado** | CV de 1–2 páginas generado en una sesión de adaptación, editable hasta que se finaliza. |
 | **Snapshot (versión de CV)** | Copia **inmutable** de un CV adaptado finalizado: datos, plantilla, idioma y PDF. Es lo que se asocia a una postulación. |
 | **Postulación** | Registro del proceso con una empresa para un puesto: estado, CVs enviados, eventos, contactos y notas. |
+| **Gap recurrente** | Requisito que aparece como gap en varias JDs del usuario. Es la base de las recomendaciones de capacitación. |
+| **Guía de entrevista** | Documento generado para una postulación con la investigación de la empresa, preguntas probables y material de preparación. |
 
 ## 3. Actores
 
-- **Usuario:** persona que busca trabajo. Es el único actor del MVP.
-- **Proveedor de IA:** servicio externo de LLM (ver ARCHITECTURE.md).
-- *(Futuro)* **Administrador:** gestión de cuotas, plantillas y usuarios.
+- **Usuario:** persona que busca trabajo. Es el único actor: la app no tiene cuentas ni login.
+- **Proveedor de IA:** servicio externo de LLM, usado con la API key propia del usuario (ver ARCHITECTURE.md).
+- **Proveedor de búsqueda web** *(post-MVP)*: para el research de empresas.
 
 ## 4. Principios del producto (no negociables)
 
@@ -52,15 +58,21 @@ Perfil maestro (todo lo que hice) + Job description
 
 Prioridad: **MVP** = necesario para la primera versión usable · **Post** = después del MVP.
 
-### 5.1 Cuenta (AUTH)
+### 5.1 Configuración y datos locales (CONF)
 
 | ID | Requerimiento | Prioridad |
 |---|---|---|
-| RF-AUTH-01 | Registro e inicio de sesión con email y contraseña. | MVP |
-| RF-AUTH-02 | Recuperación de contraseña por email. | MVP |
-| RF-AUTH-03 | Inicio de sesión con Google (OAuth). | Post |
-| RF-AUTH-04 | Eliminar la cuenta y **todos** sus datos (perfil, CVs, PDFs, postulaciones, registros de IA). | MVP |
-| RF-AUTH-05 | Exportar todos los datos del usuario en JSON. | Post |
+| RF-CONF-01 | Configurar la API key del proveedor de IA en el primer inicio (y cambiarla después). Se guarda cifrada con el almacén seguro del sistema operativo, nunca en texto plano. | MVP |
+| RF-CONF-02 | Verificar la API key al guardarla (llamada de prueba) e informar si es inválida. | MVP |
+| RF-CONF-03 | Ver la carpeta donde se guardan los datos y abrirla desde la app. | MVP |
+| RF-CONF-04 | **Backup:** exportar todos los datos (base de datos + PDFs) a un único archivo y restaurarlos desde ese archivo. | MVP |
+| RF-CONF-05 | Borrar todos los datos locales, con confirmación explícita. | MVP |
+| RF-CONF-06 | Ver el consumo de IA (tokens y costo estimado) por día, mes y tipo de tarea. | MVP |
+| RF-CONF-07 | Presupuesto mensual de IA opcional, con aviso al acercarse al límite y bloqueo opcional al superarlo. | Post |
+| RF-CONF-08 | Elegir el idioma de la interfaz (ES/EN). | MVP |
+| RF-CONF-09 | Elegir los modelos de IA por tipo de tarea (con valores por defecto). | Post |
+| RF-CONF-10 | En las versiones instaladas, avisar que hay una actualización disponible e instalarla. | Post |
+| RF-CONF-11 | Exportar los datos en JSON legible (portabilidad). | Post |
 
 ### 5.2 Perfil maestro (PROF)
 
@@ -75,7 +87,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-PROF-07 | Cada elemento del perfil registra su **origen** (manual, importado, respuesta a un gap en la sesión X) y fecha de creación/modificación. | MVP |
 | RF-PROF-08 | Ver el perfil maestro completo y exportarlo a PDF ("documento maestro", sin límite de páginas). | Post |
 | RF-PROF-09 | Importar un CV existente (PDF/DOCX) y convertirlo, con IA, en un borrador de perfil maestro que el usuario revisa antes de guardar. | Post (prioridad alta) |
-| RF-PROF-10 | Sugerencias de IA para mejorar la redacción de un logro (más concreto, con métricas). El usuario acepta o descarta. | Post |
+| RF-PROF-10 | Sugerencias de IA para mejorar la redacción de un logro (más concreto, con métricas). El usuario acepta o descarta. | MVP |
 | RF-PROF-11 | El contenido del perfil puede estar en cualquier idioma; no es necesario cargarlo en varios idiomas. | MVP |
 
 ### 5.3 Job descriptions (JD)
@@ -155,7 +167,7 @@ Para cada requisito **faltante** o **parcial** de la JD:
 | RF-APP-08 | Desde una postulación, abrir el snapshot enviado y descargar exactamente el mismo PDF. | MVP |
 | RF-APP-09 | Recordatorios de seguimiento (p. ej. "sin respuesta en 10 días"). | Post |
 | RF-APP-10 | Integración con email para detectar respuestas automáticamente. | Post (a evaluar) |
-| RF-APP-11 | Preparación de entrevistas con IA según la JD y el CV enviado. | Post |
+| RF-APP-11 | Preparación de entrevistas con IA (ver sección 5.9). | Post |
 
 ### 5.7 Dashboard (DASH)
 
@@ -164,7 +176,45 @@ Para cada requisito **faltante** o **parcial** de la JD:
 | RF-DASH-01 | Cantidad de postulaciones por estado. | MVP |
 | RF-DASH-02 | Tasa de respuesta (postulaciones que pasaron de "Postulado") y tiempo medio hasta la primera respuesta. | MVP |
 | RF-DASH-03 | Postulaciones activas que requieren acción (entrevista próxima, sin novedades hace N días). | Post |
-| RF-DASH-04 | Herramientas más pedidas en las JDs del usuario vs. presentes en su perfil. | Post |
+| RF-DASH-04 | Herramientas más pedidas en las JDs del usuario vs. presentes en su perfil (ver sección 5.8). | Post |
+
+### 5.8 Gaps recurrentes y recomendaciones de capacitación (LEARN)
+
+Objetivo: analizar todas las JDs del usuario, detectar qué requisitos le faltan de forma repetida y
+recomendarle en qué capacitarse para mejorar sus chances.
+
+| ID | Requerimiento | Prioridad |
+|---|---|---|
+| RF-LEARN-01 | Agregar los requisitos de **todas** las JDs analizadas del usuario (con o sin sesión de adaptación) y compararlos contra el perfil maestro **actual**. Un requisito que el usuario ya agregó a su perfil deja de contar como gap. | Post |
+| RF-LEARN-02 | Ranking de gaps recurrentes: en cuántas JDs aparece cada uno (cantidad y %), si es obligatorio o deseable, y en qué JDs/postulaciones. | Post |
+| RF-LEARN-03 | Filtros del análisis: período (p. ej. últimos 3 o 6 meses), estado de la postulación, seniority, tipo de rol. Por defecto, últimos 6 meses. | Post |
+| RF-LEARN-04 | Agrupar requisitos equivalentes o relacionados (p. ej. "AWS", "AWS Lambda" y "Amazon ECS" bajo AWS) usando el catálogo de herramientas. | Post |
+| RF-LEARN-05 | Recomendaciones priorizadas de capacitación: por qué se recomienda (frecuencia, si es obligatorio, cercanía con lo que el usuario ya sabe; p. ej. "tenés GCP, AWS te va a costar menos"), qué conviene aprender primero y un esfuerzo estimado orientativo. | Post |
+| RF-LEARN-06 | Para cada recomendación, sugerir tipos de recursos (documentación oficial, certificación relevante, proyecto práctico sugerido) **con enlaces verificados**; sin cursos ni precios inventados. | Post |
+| RF-LEARN-07 | Marcar una recomendación como "en aprendizaje", "descartada" o "aprendida". "Aprendida" lleva al usuario a cargarla en el perfil maestro (curso, certificación o proyecto) con el flujo habitual. | Post |
+| RF-LEARN-08 | Mostrar la evolución: cómo cambia el % de match promedio de las JDs a medida que el usuario incorpora lo recomendado. | Post |
+| RF-LEARN-09 | Mínimo de datos: el análisis se muestra a partir de un número mínimo de JDs (p. ej. 5) para que las conclusiones tengan sentido; antes, se indica cuántas faltan. | Post |
+
+### 5.9 Preparación de entrevistas (PREP)
+
+Objetivo: para una postulación concreta, investigar la empresa y preparar al usuario con todo lo que debería
+saber antes de cada entrevista.
+
+| ID | Requerimiento | Prioridad |
+|---|---|---|
+| RF-PREP-01 | Generar una **guía de entrevista** desde una postulación, usando la JD, el CV enviado (snapshot), el perfil maestro y la investigación de la empresa. Se puede regenerar y versionar. | Post |
+| RF-PREP-02 | **Investigación de la empresa** a partir de fuentes públicas en la web: qué hace, productos, modelo de negocio, clientes/mercado, tamaño, etapa y financiación, noticias recientes, misión y valores, cultura, stack tecnológico y blog de ingeniería, competidores. | Post |
+| RF-PREP-03 | Toda afirmación de la investigación **cita su fuente** (enlace) y su fecha. Lo que no se pudo verificar se indica explícitamente como desconocido; nunca se completa con suposiciones. | Post |
+| RF-PREP-04 | **Preguntas técnicas probables** según los requisitos de la JD y el nivel del puesto, con los puntos clave que una buena respuesta debería cubrir. | Post |
+| RF-PREP-05 | **Preguntas conductuales probables** (liderazgo, conflictos, fracasos, impacto) con respuestas sugeridas en formato STAR **construidas solo con logros reales del perfil maestro**, citando de qué logro sale cada una. | Post |
+| RF-PREP-06 | **Preparación sobre gaps:** para los requisitos que el usuario no cubre, cómo abordarlos honestamente (experiencia cercana, plan de aprendizaje) y un repaso conceptual breve de esos temas. | Post |
+| RF-PREP-07 | **Preguntas para hacerle a la empresa**, personalizadas según la investigación y el rol. | Post |
+| RF-PREP-08 | **"Contá tu historia":** borrador de presentación personal (1–2 minutos) y de respuesta a "¿por qué esta empresa?", alineados al puesto y a la investigación. | Post |
+| RF-PREP-09 | Preparación **por etapa**: el contenido se adapta al tipo de entrevista registrada en la postulación (screening con recruiter, técnica, system design, cultural, con management). | Post |
+| RF-PREP-10 | Checklist previa a la entrevista: fecha y hora, entrevistadores, logística, datos clave del CV enviado (para no contradecirlo) y puntos a remarcar. | Post |
+| RF-PREP-11 | Después de cada entrevista, registrar qué preguntaron y cómo le fue; esa información alimenta la preparación de las siguientes etapas de la misma postulación. | Post |
+| RF-PREP-12 | Práctica de entrevista simulada (chat con la IA haciendo de entrevistador) con devolución sobre las respuestas. | Post (a evaluar) |
+| RF-PREP-13 | Exportar la guía a PDF o verla en formato imprimible. | Post |
 
 ## 6. Reglas de negocio
 
@@ -213,43 +263,67 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 
 - **RN-11** Solo contiene afirmaciones (ver principio 2). No existe ningún campo, tabla ni bandera del tipo
   "no sabe X".
-- **RN-12** Las respuestas "No" a gaps se guardan únicamente en el historial de la sesión de adaptación, para
-  auditoría, y no influyen en sesiones futuras.
+- **RN-12** Las respuestas "No" a gaps se guardan únicamente en el historial de la sesión de adaptación. No
+  influyen en las preguntas de sesiones futuras (se vuelve a preguntar); solo se usan, de forma agregada, para
+  el análisis de gaps recurrentes (sección 5.8).
+
+### 6.4 Gaps recurrentes y preparación de entrevistas
+
+- **RN-14** Un gap recurrente se calcula siempre contra el perfil maestro actual: si el usuario ya lo agregó,
+  deja de ser gap aunque lo haya sido en JDs anteriores.
+- **RN-15** Las recomendaciones de capacitación y las guías de entrevista nunca modifican el perfil maestro.
+  Solo el usuario agrega información al perfil.
+- **RN-16** Las respuestas sugeridas en la guía de entrevista cumplen el principio de veracidad: se basan
+  únicamente en logros del perfil maestro y citan su origen.
+- **RN-17** La investigación de una empresa usa solo información pública de la organización. No se investiga
+  a personas (p. ej. entrevistadores) más allá de los datos que el usuario cargue manualmente en los contactos.
 - **RN-13** Eliminar un elemento del perfil maestro no afecta a los snapshots existentes.
 
 ## 7. Requerimientos no funcionales
 
 | ID | Categoría | Requerimiento |
 |---|---|---|
-| RNF-01 | Privacidad | Los datos de un usuario solo son accesibles por ese usuario. Todo acceso a datos se filtra por usuario. |
-| RNF-02 | Privacidad | No se registra en logs el contenido del perfil, de las JDs ni de los prompts completos en producción. |
-| RNF-03 | Privacidad | Datos cifrados en tránsito (TLS) y en reposo (base de datos y almacenamiento de archivos). |
+| RNF-01 | Privacidad | Todos los datos se guardan localmente. Solo salen de la computadora los fragmentos necesarios hacia el proveedor de IA (y, post-MVP, las consultas de búsqueda web, que nunca incluyen datos personales). |
+| RNF-02 | Privacidad | Los logs locales no incluyen el contenido del perfil, de las JDs ni de los prompts completos (salvo un modo de depuración que el usuario active explícitamente). |
+| RNF-03 | Seguridad | La API key se guarda cifrada con el almacén seguro del sistema operativo. Las comunicaciones con servicios externos usan TLS. El cifrado del disco queda a cargo del sistema operativo. |
 | RNF-04 | Seguridad | El texto de una JD se trata como datos no confiables (riesgo de *prompt injection*). Las salidas de la IA se validan contra un esquema antes de usarse. |
 | RNF-05 | Seguridad | El contenido del usuario nunca se interpola como código Typst; se pasa como datos (JSON). |
-| RNF-06 | Costos | Cuota de generaciones de IA por usuario y por día, configurable. Se registra el uso de tokens y el costo estimado de cada llamada. |
+| RNF-06 | Costos | Se registra el uso de tokens y el costo estimado de cada llamada a la IA (base de RF-CONF-06 y RF-CONF-07). |
 | RNF-07 | Rendimiento | El análisis de la JD responde en menos de 15 s (p95). La generación de un CV muestra progreso en tiempo real y termina en menos de 60 s (p95). |
 | RNF-08 | Rendimiento | Re-renderizar el PDF tras una edición tarda menos de 2 s (p95). |
 | RNF-09 | Calidad del CV | Los PDF tienen texto seleccionable, una sola columna, títulos estándar y fuentes embebidas (compatibles con ATS). |
 | RNF-10 | Reproducibilidad | Un snapshot se puede volver a renderizar idéntico: se guardan los datos, el id y la versión de la plantilla y el PDF. |
 | RNF-11 | Accesibilidad | La aplicación web cumple WCAG 2.1 AA: navegación por teclado, foco visible, contraste y `prefers-reduced-motion`. |
 | RNF-12 | Internacionalización | La interfaz está preparada para varios idiomas (inicialmente ES y EN). Los CVs se generan en el idioma que pida el usuario. |
-| RNF-13 | Disponibilidad | Si el proveedor de IA falla, la app sigue funcionando para todo lo que no requiere IA (perfil, edición, postulaciones). Las tareas de IA se reintentan. |
+| RNF-13 | Disponibilidad | Sin conexión a internet o si el proveedor de IA falla, la app sigue funcionando para todo lo que no requiere IA (perfil, edición, render de PDFs, postulaciones). Las tareas de IA se reintentan y una tarea interrumpida (p. ej. al cerrar la app) se puede retomar. |
 | RNF-14 | Mantenibilidad | La lógica de dominio (adaptación, gaps, ajuste de páginas, estados) es independiente del framework, de la base de datos y del proveedor de IA, y tiene tests unitarios. |
+| RNF-15 | Seguridad | El contenido obtenido de la web para investigar empresas se trata como dato no confiable (*prompt injection*), igual que las JDs. |
+| RNF-16 | Frescura | La investigación de una empresa muestra la fecha en que se hizo y se puede actualizar. Se reutiliza en cache durante un período configurable (p. ej. 7 días) para controlar costos. |
+| RNF-17 | Plataformas | Windows 10/11 (prioritaria), macOS y Linux. |
+| RNF-18 | Distribución | Instaladores publicados como releases (generados por CI) y posibilidad de ejecutar la app desde el código fuente con un único comando. |
+| RNF-19 | Seguridad | El backend local solo escucha en `127.0.0.1` y rechaza peticiones sin el token de la sesión de la app (ninguna otra aplicación ni sitio web puede usar su API). |
+| RNF-20 | Integridad de datos | Antes de aplicar migraciones de base de datos al actualizar la app, se crea un backup automático. Si una migración falla, se restaura. |
+| RNF-21 | Rendimiento | La app abre en menos de 3 s en un equipo de gama media. |
 
 ## 8. Fuera de alcance (por ahora)
 
 - Postularse automáticamente en portales de empleo.
 - Funciones para reclutadores o empresas.
-- Aplicaciones móviles nativas (la web debe ser responsive).
-- Colaboración entre usuarios (compartir o comentar CVs).
+- Cuentas de usuario, login y varios usuarios en la misma instalación.
+- Versión web o servidor en la nube.
+- Sincronización automática entre dispositivos (se cubre con backups manuales, RF-CONF-04).
+- Aplicaciones móviles.
 - Facturación y planes pagos.
 
-## 9. Decisiones abiertas
+## 9. Decisiones
 
-| # | Pregunta | Supuesto actual |
+| # | Pregunta | Decisión |
 |---|---|---|
-| D-01 | ¿Proyecto personal/portfolio o producto con usuarios reales? | Multiusuario desde el inicio, sin facturación. |
-| D-02 | ¿Planes pagos? | No en el MVP; las cuotas de IA (RNF-06) dejan la puerta abierta. |
-| D-03 | ¿Integración con email (RF-APP-10)? | Fuera del MVP. Requiere permisos OAuth sensibles; evaluar más adelante. |
-| D-04 | ¿Umbral de años para el límite por defecto de 1 vs. 2 páginas? | 8 años. |
-| D-05 | ¿El usuario puede subir una foto para el CV? | No (práctica habitual en mercados anglosajones y mejor para ATS). Revisar si se apunta a mercados donde es común. |
+| D-01 | ¿Proyecto personal o producto con usuarios reales? | **Proyecto personal.** App de escritorio de un solo usuario, sin cuentas. |
+| D-02 | ¿Planes pagos? | No. El control de costos es solo informativo para el usuario (RF-CONF-06, RF-CONF-07). |
+| D-03 | ¿Integración con email (RF-APP-10)? | Fuera del alcance por ahora. |
+| D-04 | ¿Umbral de años para el límite por defecto de 1 vs. 2 páginas? | 8 años (configurable por sesión, RF-TAIL-08). |
+| D-05 | ¿El usuario puede subir una foto para el CV? | No. |
+| D-06 | ¿Cómo se obtiene la información pública de las empresas (RF-PREP-02)? | Herramienta de búsqueda web del mismo proveedor de IA, para usar una sola API key. Se revisa si la calidad de las citas no alcanza. |
+| D-07 | ¿Las recomendaciones de capacitación incluyen cursos de plataformas? | No: solo documentación oficial, certificaciones y proyectos sugeridos, con enlaces verificados. |
+| D-08 | ¿Aplicación web o de escritorio? | **Escritorio** (Electron), con datos locales en SQLite. Ver ARCHITECTURE.md. |

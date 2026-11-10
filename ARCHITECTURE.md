@@ -1,92 +1,157 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.1 · Última actualización: 2026-11-10
+> Estado: borrador v0.2 · Última actualización: 2026-11-10
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
 
 Lo que más influye en las decisiones, en orden:
 
-1. **El flujo de adaptación tiene lógica de dominio real:** match, gaps, reglas de veracidad, ajuste a páginas
+1. **App de escritorio personal, de un solo usuario y con datos locales.** Sin cuentas, sin servidor en la
+   nube y sin infraestructura que operar.
+2. **El flujo de adaptación tiene lógica de dominio real:** match, gaps, reglas de veracidad, ajuste a páginas
    y una máquina de estados de sesión. Tiene que poder testearse sin IA, sin base de datos y sin Typst.
-2. **La IA es lenta, cara, falible y reemplazable.** Debe estar aislada detrás de una interfaz, poder
-   ejecutarse en segundo plano y poder reemplazarse por un *fake* en tests.
-3. **Inmutabilidad de lo enviado:** los snapshots se tienen que poder reproducir exactamente.
-4. **Equipo chico (1 persona).** La arquitectura no puede exigir más operación de la necesaria.
-5. **Datos personales sensibles:** aislamiento por usuario y cuidado con logs y proveedores externos.
+3. **La IA es lenta, cara, falible y reemplazable.** Debe estar aislada detrás de una interfaz, ejecutarse en
+   segundo plano y poder reemplazarse por un *fake* en tests.
+4. **Inmutabilidad de lo enviado:** los snapshots se tienen que poder reproducir exactamente.
+5. **Distribución simple:** instaladores para Windows (prioridad), macOS y Linux, y ejecución desde el código.
 
-## 2. Decisión principal
+## 2. Decisiones principales
 
-**Monolito modular** en NestJS, con **arquitectura hexagonal (puertos y adaptadores) solo en los módulos con
-lógica de dominio**, y un **proceso worker** (mismo código, otro punto de entrada) para las tareas largas.
+- **Electron** como contenedor de escritorio (ADR-12).
+- **Monolito modular en NestJS** que corre localmente dentro de la app, con **arquitectura hexagonal solo en
+  los módulos con lógica de dominio** (ADR-01).
+- **SQLite** como base de datos, en un archivo dentro de la carpeta de datos del usuario (ADR-06).
+- **Tareas largas en segundo plano dentro del mismo proceso**, con una cola persistida en SQLite: no hace
+  falta Redis ni un worker aparte (ADR-15).
+- **La interfaz habla con el backend por HTTP local** (`127.0.0.1`, puerto aleatorio, token por sesión), igual
+  que una app cliente-servidor (ADR-13).
 
-| Alternativa | Por qué no (o no todavía) |
+### ¿Por qué Electron y no Tauri?
+
+| | Electron | Tauri |
+|---|---|---|
+| Backend | Node.js: **NestJS corre tal cual** | Rust. NestJS solo como *sidecar* (empaquetar Node aparte) |
+| Tamaño del instalador | ~100 MB | ~10 MB |
+| Madurez para auto-update, empaquetado y E2E | Muy alta (electron-builder, electron-updater, Playwright) | Buena, pero el sidecar de Node complica todo |
+
+Tauri obligaría a reescribir el backend en Rust o a empaquetar Node como sidecar. Para un proyecto personal con
+React + NestJS, el tamaño extra de Electron es un costo aceptable.
+
+### ¿Por qué SQLite?
+
+- Un solo usuario y un solo proceso escribiendo: el caso ideal de SQLite.
+- Es un archivo: los backups son copiar un archivo (RF-CONF-04) y no hay servidor que instalar.
+- Cubre lo que se usaba de PostgreSQL: columnas JSON (funciones JSON1), búsqueda de texto completo (FTS5) y, si
+  hiciera falta, vectores para embeddings (`sqlite-vec`, ADR-08).
+
+### Alternativas descartadas
+
+| Alternativa | Por qué no |
 |---|---|
-| Monolito en capas tradicional | La lógica de adaptación y la de IA terminarían acopladas a Nest, Prisma y el SDK del proveedor. Difícil de testear. |
+| Mantener la versión web multiusuario | No es el objetivo (proyecto personal, D-01); agrega auth, hosting y costos. |
+| Monolito en capas tradicional | La lógica de adaptación y la de IA quedarían acopladas a Nest, al ORM y al SDK del proveedor. |
 | Hexagonal en todos los módulos | Burocracia innecesaria para módulos CRUD (contactos, datos personales). |
-| Microservicios | Costos de red, despliegue, observabilidad y consistencia distribuida sin beneficio a esta escala. |
-| Serverless puro | El render con Typst y las tareas de IA de hasta 60 s encajan mejor en un contenedor y una cola. |
+| IPC de Electron en lugar de HTTP local | Obliga a reemplazar los controllers de Nest y el streaming por SSE; HTTP permite además desarrollar la interfaz en el navegador. |
 
-**Camino de evolución:** los módulos se comunican solo a través de su API pública (servicios de aplicación y
-eventos). Si algún día un módulo necesita escalar por separado (p. ej. el render), se puede extraer sin
-reescribir el dominio.
-
-## 3. Vista de contenedores
+## 3. Procesos de la aplicación
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> WEB[web<br/>Vite + React SPA]
-    WEB -->|REST + SSE| API[api<br/>NestJS]
-    API --> PG[(PostgreSQL)]
-    API --> REDIS[(Redis)]
-    API --> S3[(Object storage<br/>S3 / R2)]
-    REDIS -->|colas BullMQ| WORKER[worker<br/>NestJS, mismo código]
-    WORKER --> PG
-    WORKER --> S3
-    WORKER --> LLM[Proveedor de LLM]
-    WORKER --> TYPST[typst CLI<br/>en el contenedor]
-    API --> TYPST
+    subgraph APP[Careerly - Electron]
+        MAIN[Proceso main<br/>ventana, ciclo de vida,<br/>almacén seguro, updates]
+        UI[Renderer<br/>Vite + React]
+        API[Backend<br/>NestJS en utilityProcess]
+        MAIN -->|lanza| API
+        MAIN -->|preload: URL + token| UI
+        UI -->|HTTP + SSE<br/>127.0.0.1:puerto aleatorio| API
+    end
+    API --> DB[(careerly.db<br/>SQLite)]
+    API --> FILES[(Carpeta de datos<br/>PDFs, backups, logs)]
+    API -->|proceso hijo| TYPST[typst CLI<br/>empaquetado]
+    API -->|HTTPS| LLM[Proveedor de LLM]
+    API -. post-MVP .-> SEARCH[Búsqueda web<br/>del proveedor de LLM]
 ```
 
-| Contenedor | Responsabilidad |
+| Proceso | Responsabilidad |
 |---|---|
-| `web` | SPA. Formularios del perfil, flujo de adaptación, vista previa del PDF y kanban de postulaciones. |
-| `api` | HTTP REST, autenticación, validación, casos de uso síncronos y encolado de tareas largas. Publica progreso por SSE. |
-| `worker` | Consume colas: análisis de JD, match, generación de CVs y render. |
-| PostgreSQL | Datos de dominio. JSONB para contenido flexible (análisis de JD, datos de CV adaptado). |
-| Redis | Colas (BullMQ), pub/sub de progreso para SSE y rate limiting. |
-| Object storage | PDFs de snapshots. Bucket privado; descarga mediante URLs firmadas de vida corta. |
-| typst CLI | Binario dentro de la imagen Docker. El render rápido de vista previa puede ejecutarse en `api`; el resto, en `worker`. |
+| **main** (Electron) | Crea la ventana, garantiza una sola instancia, lanza el backend con `utilityProcess.fork`, guarda la API key con `safeStorage`, gestiona actualizaciones (electron-updater) y abre enlaces externos en el navegador del sistema. |
+| **preload** | Expone al renderer, vía `contextBridge`, solo lo mínimo: URL del backend, token de sesión y unas pocas acciones nativas (abrir la carpeta de datos, elegir archivo de backup). |
+| **renderer** | La SPA de React. Sin acceso a Node (`contextIsolation`, `sandbox`, sin `nodeIntegration`). |
+| **backend** (NestJS) | API HTTP, casos de uso, acceso a SQLite, cola de tareas en segundo plano, llamadas a la IA y render con Typst. |
+
+### Arranque
+
+```
+1. main obtiene la carpeta de datos (app.getPath('userData')) y genera un token aleatorio
+2. main lanza el backend con: carpeta de datos, token y API key (descifrada con safeStorage, solo en memoria)
+3. backend: backup automático si hay migraciones pendientes → aplica migraciones → reanuda tareas pendientes
+   → escucha en 127.0.0.1:0 (puerto libre) → informa el puerto a main
+4. main abre la ventana; el preload entrega URL + token al renderer
+```
+
+Si el usuario cambia la API key, main la vuelve a cifrar y se la envía al backend por mensaje, sin reiniciar.
+
+### Modos de ejecución (RNF-18)
+
+| Modo | Comando | Uso |
+|---|---|---|
+| Release instalada | Instalador desde GitHub Releases | Uso normal, con actualizaciones automáticas. |
+| Desde el código | `pnpm install` + `pnpm start` | Compila todo y abre Electron. Sin instalador ni auto-update. |
+| Desarrollo | `pnpm dev` | Vite con HMR + Nest en modo watch + Electron cargando la URL de Vite. |
+| Desarrollo solo en el navegador | `pnpm dev:web` | Backend con un token fijo de desarrollo y la interfaz en el navegador. Útil para depurar. |
+
+### Carpeta de datos
+
+```
+<userData>/Careerly/
+  careerly.db            # SQLite (modo WAL)
+  files/
+    snapshots/<id>.pdf   # PDFs de CVs finalizados (inmutables)
+    guides/<id>.pdf      # guías de entrevista exportadas (post-MVP)
+  backups/               # backups automáticos previos a migraciones + backups manuales
+  logs/                  # logs rotativos, sin contenido sensible
+  secrets.bin            # API key cifrada con safeStorage (la escribe y lee solo main)
+```
 
 ## 4. Módulos (bounded contexts)
 
 ```
-identity ──────────────── (todos dependen de identity para el userId)
+settings ─────────────── (configuración, consumo de IA, backups)
 profile      ◄── tailoring ──► job-postings
                     │
                     ├──► documents (render Typst, snapshots)
                     └──► ai (adaptadores de LLM)
 applications ──► job-postings, documents (snapshots)
 dashboard    ──► applications (solo lectura)
+
+post-MVP:
+insights       ──► job-postings, profile, tailoring (solo lectura) ──► ai
+interview-prep ──► applications, job-postings, documents, profile (solo lectura) ──► ai
 ```
 
 | Módulo | Estilo | Responsabilidad |
 |---|---|---|
-| `identity` | Capas | Usuarios, autenticación, sesiones, borrado de cuenta. |
+| `settings` | Capas | Preferencias no secretas, consumo y presupuesto de IA, backup/restauración, borrado de datos. |
 | `profile` | Capas + dominio ligero | Perfil maestro: experiencias, logros, proyectos, educación, certificaciones, idiomas, catálogo de herramientas. Registra el origen de cada elemento y permite revertir cambios por sesión. |
 | `job-postings` | Capas | JDs y su análisis estructurado. |
 | `tailoring` | **Hexagonal** | Sesión de adaptación: match, gaps, generación, ajuste a páginas, revisión y finalización. |
-| `documents` | **Hexagonal** | Plantillas, render con Typst, conteo de páginas, snapshots inmutables y almacenamiento de PDFs. |
+| `documents` | **Hexagonal** | Plantillas, render con Typst, conteo de páginas, snapshots inmutables y archivos PDF. |
 | `applications` | **Hexagonal** | Postulaciones, máquina de estados, línea de tiempo, contactos, entrevistas. |
-| `ai` | Infraestructura | Adaptadores de LLM, prompts versionados, salida estructurada, registro de uso y costo, cuotas. |
+| `ai` | Infraestructura | Adaptadores de LLM, prompts versionados, salida estructurada, registro de uso y costo. |
+| `jobs` | Infraestructura | Cola de tareas persistida en SQLite y su ejecutor (ver §10). |
 | `dashboard` | Lectura | Consultas agregadas (sin dominio propio). |
+| `insights` *(post-MVP)* | Dominio ligero | Gaps recurrentes entre JDs y recomendaciones de capacitación (ver §18.1). |
+| `interview-prep` *(post-MVP)* | **Hexagonal** | Research de empresas, guías de entrevista por etapa, debriefs (ver §18.2). |
 
 **Reglas de dependencia (verificadas con ESLint, p. ej. `eslint-plugin-boundaries`):**
 
 - Un módulo no accede a las tablas ni a los repositorios de otro módulo; usa su servicio de aplicación público.
-- `domain/` no importa nada de NestJS, Prisma, el SDK del LLM ni Node APIs de E/S.
+- `domain/` no importa nada de NestJS, Drizzle, el SDK del LLM ni APIs de Node con E/S.
 - `application/` depende solo de `domain/` y de los puertos que define.
 - Solo `infrastructure/` y `http/` conocen frameworks y librerías externas.
+- El backend no importa nada de Electron: recibe todo lo que necesita (carpeta de datos, token, API key) por
+  configuración. Así se puede ejecutar y testear fuera de Electron.
 
 ## 5. Anatomía de un módulo hexagonal
 
@@ -113,7 +178,7 @@ apps/api/src/modules/tailoring/
     finalize-session.use-case.ts
     revert-profile-changes.use-case.ts
   infrastructure/
-    prisma-session.repository.ts
+    drizzle-session.repository.ts
     llm-resume-writer.adapter.ts
     llm-requirement-matcher.adapter.ts
     profile-module.adapter.ts   # implementa ProfileReader/Writer usando el módulo profile
@@ -124,14 +189,15 @@ apps/api/src/modules/tailoring/
   tailoring.module.ts           # wiring de puertos → adaptadores (DI de Nest)
 ```
 
-En los tests, cada puerto tiene un adaptador *fake* en memoria. Los casos de uso se testean completos
-sin red, sin base de datos y sin Typst.
+En los tests, cada puerto tiene un adaptador *fake* en memoria. Los casos de uso se testean completos sin red,
+sin base de datos y sin Typst.
 
 ## 6. Modelo de datos (resumen)
 
+Al haber un solo usuario, **no hay tabla de usuarios ni columnas `userId`**. El perfil maestro es único.
+
 ```mermaid
 erDiagram
-    User ||--|| Profile : tiene
     Profile ||--o{ Position : ""
     Profile ||--o{ Project : ""
     Profile ||--o{ Education : ""
@@ -143,43 +209,49 @@ erDiagram
     Position }o--o{ Tool : usa
     Project }o--o{ Tool : usa
     Tool ||--o{ ToolAlias : ""
-    User ||--o{ JobPosting : ""
     JobPosting ||--o| JobAnalysis : ""
+    JobPosting ||--o{ JobRequirement : ""
     JobPosting ||--o{ TailoringSession : ""
     TailoringSession ||--o{ GapQuestion : ""
     TailoringSession ||--o{ TailoredResume : "uno por idioma"
     TailoredResume ||--o| ResumeVersion : "finalizado como"
-    User ||--o{ Application : ""
     Application }o--|| JobPosting : ""
     Application ||--o{ SentResume : ""
     SentResume }o--|| ResumeVersion : ""
     Application ||--o{ ApplicationEvent : ""
     Application ||--o{ Contact : ""
-    User ||--o{ AiGeneration : ""
 ```
+
+Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Setting`.
 
 ### Entidades clave
 
 | Entidad | Campos importantes | Notas |
 |---|---|---|
+| `Profile` | datos personales, titular, links | Fila única. |
 | `Position` | company, title, startDate, endDate?, location, workMode, context | Experiencia laboral. |
 | `Project` | name, kind (`PERSONAL`, `OPEN_SOURCE`, `COURSE`, `FREELANCE`), url?, dates, description | Misma forma que `Position` a efectos de logros. |
 | `Achievement` | text, metrics?, toolIds[], origin, originSessionId? | Unidad mínima. Puede ser muy detallado: es material de base, no texto final. |
-| `Tool` | canonicalName, category | Catálogo global (compartido entre usuarios). |
+| `Tool` | canonicalName, category, isCustom | Catálogo inicial incluido en la app (*seed*) + herramientas creadas por el usuario. |
 | `ToolAlias` | alias → toolId | Resuelve sinónimos ("Postgres" → PostgreSQL). |
-| `JobAnalysis` | requirements (JSONB), language, seniority, promptVersion | Salida validada de la IA, editable por el usuario. |
-| `TailoringSession` | status, jobPostingId, languages[], pageBudget, templateId, matchResult (JSONB) | Agregado principal del módulo `tailoring`. |
+| `JobAnalysis` | requirements (JSON), language, seniority, promptVersion | Salida validada de la IA, editable por el usuario. |
+| `JobRequirement` | jobPostingId, toolId?, label, kind, importance | Requisitos normalizados para poder agregarlos entre JDs (ADR-09, §18.1). |
+| `TailoringSession` | status, jobPostingId, languages[], pageBudget, templateId, matchResult (JSON) | Agregado principal del módulo `tailoring`. |
 | `GapQuestion` | requirement, kind (`MISSING`, `PARTIAL`), relatedEvidence, answer (`USED_AT_WORK`, `USED_ELSEWHERE`, `NOT_USED`, `SKIPPED`), answerDetail, includeInResume, createdEntityIds[] | El "No" vive **solo acá**, nunca en el perfil (RN-11, RN-12). |
-| `TailoredResume` | sessionId, language, data (JSONB), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
-| `ResumeVersion` | data (JSONB), language, templateId, templateVersion, pdfKey, pageCount, contentHash, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio. |
+| `TailoredResume` | sessionId, language, data (JSON), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
+| `ResumeVersion` | data (JSON), language, templateId, templateVersion, pdfPath, pageCount, contentHash, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio. |
 | `Application` | jobPostingId, status, channel, priority, salaryExpected?, salaryOffered?, appliedAt? | |
 | `SentResume` | applicationId, resumeVersionId, sentAt | Permite varios CVs enviados (p. ej. ES y EN). |
-| `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSONB), occurredAt | Línea de tiempo, *append-only*. |
-| `AiGeneration` | userId, task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Sin contenido del prompt en producción (RNF-02). |
+| `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
+| `AiGeneration` | task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Base del consumo y presupuesto (RF-CONF-06, RF-CONF-07). |
+| `Setting` | key, value (JSON) | Preferencias no secretas. La API key **no** se guarda acá. |
 
 **Origen y reversión en el perfil (RF-PROF-07, RF-TAIL-06):** todo elemento creado desde un gap guarda
-`origin = GAP_ANSWER` y `originSessionId`. "Deshacer" borra esos elementos (o restaura el texto anterior, si
-se modificó uno existente, para lo cual se guarda un registro de cambios mínimo por sesión).
+`origin = GAP_ANSWER` y `originSessionId`. "Deshacer" borra esos elementos (o restaura el texto anterior, si se
+modificó uno existente, para lo cual se guarda un registro de cambios mínimo por sesión).
+
+**Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
+las funciones JSON1 cuando hace falta.
 
 ## 7. Pipeline de adaptación
 
@@ -205,19 +277,21 @@ stateDiagram-v2
 
 ### 7.2 Pasos
 
-| # | Paso | Dónde | Tipo |
-|---|---|---|---|
-| 1 | **Análisis de JD:** extraer requisitos estructurados. | worker | LLM (modelo chico/rápido) + validación Zod |
-| 2 | **Normalización:** mapear herramientas de la JD al catálogo (alias, minúsculas, variantes). | api/worker | Determinístico |
-| 3 | **Match determinístico:** requisitos de herramientas vs. herramientas del perfil. | dominio | Determinístico |
-| 4 | **Match semántico:** requisitos no-herramienta ("liderar equipos") vs. logros. Devuelve evidencia por id. | worker | LLM + validación de que los ids existen |
-| 5 | **Gaps:** generar preguntas para lo faltante o parcial. | dominio | Determinístico (el texto de la pregunta sale de plantillas, no del LLM) |
-| 6 | **Respuestas:** aplicar respuestas afirmativas al perfil (vía puerto `ProfileWriter`). | dominio + profile | Determinístico |
-| 7 | **Puntuación:** relevancia de cada logro/proyecto frente a la JD (0–1). | worker | LLM (o embeddings + reranking más adelante) |
-| 8 | **Redacción:** bullets y resumen en el idioma pedido, con `sourceIds`. | worker | LLM (modelo grande) + salida estructurada |
-| 9 | **Guardia de veracidad:** RN-01, RN-02, RN-03. Bullets inválidos se descartan o se regeneran (máx. 1 reintento). | dominio | Determinístico |
-| 10 | **Ajuste de páginas** (ver §8). | dominio + documents | Determinístico + Typst |
-| 11 | **Revisión y finalización:** snapshot por idioma. | api | Determinístico |
+| # | Paso | Tipo |
+|---|---|---|
+| 1 | **Análisis de JD:** extraer requisitos estructurados. | LLM (modelo chico/rápido) + validación Zod |
+| 2 | **Normalización:** mapear herramientas de la JD al catálogo (alias, minúsculas, variantes). | Determinístico |
+| 3 | **Match determinístico:** requisitos de herramientas vs. herramientas del perfil. | Determinístico |
+| 4 | **Match semántico:** requisitos no-herramienta ("liderar equipos") vs. logros. Devuelve evidencia por id. | LLM + validación de que los ids existen |
+| 5 | **Gaps:** generar preguntas para lo faltante o parcial. | Determinístico (plantillas de preguntas, no LLM) |
+| 6 | **Respuestas:** aplicar respuestas afirmativas al perfil (vía puerto `ProfileWriter`). | Determinístico |
+| 7 | **Puntuación:** relevancia de cada logro/proyecto frente a la JD (0–1). | LLM (o embeddings, ADR-08) |
+| 8 | **Redacción:** bullets y resumen en el idioma pedido, con `sourceIds`. | LLM (modelo grande) + salida estructurada |
+| 9 | **Guardia de veracidad:** RN-01, RN-02, RN-03. Bullets inválidos se descartan o se regeneran (máx. 1 reintento). | Determinístico |
+| 10 | **Ajuste de páginas** (ver §8). | Determinístico + Typst |
+| 11 | **Revisión y finalización:** snapshot por idioma. | Determinístico |
+
+Los pasos con LLM se ejecutan como tareas en segundo plano (§10).
 
 **Por qué dividirlo en pasos y no hacer "un gran prompt":** cada paso es testeable, se puede reintentar por
 separado, permite modelos distintos según la tarea (costo) y deja puntos donde validar en código lo que
@@ -227,9 +301,10 @@ devolvió la IA.
 
 - **Puerto `LlmClient`** en el módulo `ai` con operaciones tipadas: `extractRequirements`, `matchEvidence`,
   `scoreRelevance`, `writeResume`. Cada una recibe y devuelve tipos de dominio; el adaptador arma el prompt.
-- **Proveedor por defecto:** Claude (Anthropic). Modelo grande para la redacción (paso 8) y modelo chico para
-  extracción y puntuación (pasos 1, 4, 7). Los modelos se configuran por variable de entorno, no en código.
-- **Salida estructurada:** uso de *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
+- **Proveedor por defecto:** Claude (Anthropic), con la **API key del usuario**. Modelo grande para la redacción
+  (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7). Los modelos son configurables
+  (RF-CONF-09) con valores por defecto en código.
+- **Salida estructurada:** *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
   reintento con el error; si vuelve a fallar, el paso queda en `FAILED`.
 - **Prompts versionados** como archivos en el repo (`ai/prompts/*.v3.md`). `promptVersion` se guarda en
   `AiGeneration` y en `JobAnalysis`.
@@ -238,7 +313,10 @@ devolvió la IA.
   experiencia en el CV.
 - **Prompt caching:** el perfil maestro es el bloque grande y estable de cada sesión; se ubica primero en el
   prompt para aprovechar el caché del proveedor.
-- **Cuotas:** antes de encolar una tarea de IA, `ai` verifica la cuota diaria del usuario (Redis).
+- **Costos:** cada llamada registra tokens y costo en `AiGeneration`. Si el usuario configuró un presupuesto
+  mensual (RF-CONF-07), se verifica antes de encolar la tarea.
+- **Sin conexión:** si no hay red o la API key no es válida, las acciones de IA se deshabilitan con un mensaje
+  claro y el resto de la app sigue funcionando (RNF-13).
 
 ## 8. Ajuste a 1–2 páginas
 
@@ -263,7 +341,7 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 - Typst compila un CV en milisegundos, por lo que 10–20 iteraciones son aceptables.
 - **Conteo de páginas:** la plantilla expone la cantidad de páginas como metadata
   (`#context metadata(counter(page).final())<page-count>`) y se lee con `typst query`, o se cuenta en el PDF
-  resultante. Se elegirá una de las dos en la Fase 3 del roadmap.
+  resultante. Se elegirá una de las dos en la Fase 3 del roadmap (ADR-07).
 - `page-fitter.ts` es puro: recibe una función `measure(resume) → pageCount` (el puerto), así que se testea
   con un medidor falso.
 
@@ -278,36 +356,49 @@ apps/api/templates/
     template.json         # id, versión, idiomas soportados
 ```
 
-- **Datos, no código:** el adaptador escribe `data.json` en un directorio temporal y la plantilla lo lee.
-  El contenido del usuario nunca se concatena dentro de un `.typ` (RNF-05).
-- **Ejecución aislada:** `typst compile` con `--root` limitado al directorio temporal, `--font-path` a las
-  fuentes empaquetadas, timeout (p. ej. 10 s) y sin acceso a red. Directorio temporal eliminado al terminar.
+- **Binario empaquetado:** el CLI de `typst` se incluye en el instalador por plataforma (`extraResources` de
+  electron-builder), con versión fija y checksum verificado al descargarlo en CI. Alternativa a evaluar: el
+  compilador de Typst como módulo nativo de Node (ADR-14).
+- **Datos, no código:** el adaptador escribe `data.json` en un directorio temporal y la plantilla lo lee. El
+  contenido del usuario nunca se concatena dentro de un `.typ` (RNF-05).
+- **Ejecución aislada:** `typst compile` como proceso hijo (no bloquea el backend), con `--root` limitado al
+  directorio temporal, `--font-path` a las fuentes empaquetadas y timeout (p. ej. 10 s). Directorio temporal
+  eliminado al terminar.
 - **Versionado de plantillas:** cada cambio de plantilla incrementa `templateVersion`. Los snapshots guardan la
-  versión; las versiones viejas se conservan para poder volver a renderizar (RNF-10).
+  versión; las versiones viejas se conservan en la app para poder volver a renderizar (RNF-10).
 - **Plantillas compatibles con ATS:** una columna, títulos estándar traducidos por idioma, sin tablas para el
   diseño, sin texto en imágenes y fuentes embebidas.
-- **Vista previa:** endpoint que renderiza el `TailoredResume` actual y devuelve el PDF (o PNG por página).
-  A futuro, vista previa en el navegador con `typst.ts` (WASM).
-- **Snapshots:** al finalizar se renderiza, se calcula `contentHash` (datos + plantilla + versión), se sube el PDF
-  al bucket y se guarda `ResumeVersion` en una transacción.
+- **Vista previa:** endpoint que renderiza el `TailoredResume` actual y devuelve el PDF; el renderer lo muestra
+  con el visor de PDF de Chromium integrado en Electron.
+- **Snapshots:** al finalizar se renderiza, se calcula `contentHash` (datos + plantilla + versión), se guarda el
+  PDF en `files/snapshots/` y se crea `ResumeVersion` en una transacción. Los archivos de snapshots son de solo
+  lectura para la app.
 
-## 10. Procesamiento asíncrono y progreso
+## 10. Tareas en segundo plano (módulo `jobs`)
 
-- **Colas BullMQ:** `jd-analysis`, `tailoring` (pasos 4–10) y `render-snapshot`. Reintentos con backoff
-  exponencial; *jobs* idempotentes por `sessionId + step`.
-- **Progreso:** el worker publica eventos (`step-started`, `step-done`, `failed`) en Redis pub/sub; la API los
-  reenvía al cliente por **SSE** (`GET /tailoring-sessions/:id/events`). El cliente también puede consultar el
-  estado por polling si se pierde la conexión.
-- **Estado persistido:** el estado de la sesión vive en PostgreSQL, no en la cola. Si el worker se reinicia, la
-  sesión puede retomarse.
+Sin Redis ni worker aparte: las tareas largas corren en el mismo proceso del backend, que de todos modos pasa
+la mayor parte del tiempo esperando respuestas de red (LLM) o procesos hijos (Typst).
 
-## 11. API (resumen)
+- **Cola persistida:** tabla `Job` (id, type, payload, status, attempts, runAt, lastError). Encolar una tarea es
+  un `INSERT` en la misma transacción que el cambio de estado de la sesión.
+- **Ejecutor:** bucle en el backend con concurrencia limitada (p. ej. 2 tareas a la vez), reintentos con
+  *backoff* exponencial y tareas idempotentes por `sessionId + step`.
+- **Reanudación:** al iniciar la app, las tareas que quedaron `RUNNING` (porque se cerró la app) vuelven a
+  `PENDING` y se reintentan (RNF-13).
+- **Progreso:** el ejecutor emite eventos en memoria (`step-started`, `step-done`, `failed`) que el backend
+  reenvía a la interfaz por **SSE** (`GET /tailoring-sessions/:id/events`). Si la interfaz se recarga, consulta
+  el estado persistido de la sesión.
 
-REST, JSON y validación con esquemas Zod compartidos (`packages/contracts`).
+## 11. API local (resumen)
+
+REST sobre `http://127.0.0.1:<puerto>`, JSON y validación con esquemas Zod compartidos (`packages/contracts`).
+Todas las rutas exigen el token de sesión (RNF-19).
 
 ```
-POST   /auth/register | /auth/login | /auth/logout | /auth/forgot-password
-DELETE /me                                         # borrar cuenta y datos
+GET    /settings | PATCH /settings
+GET    /settings/ai-usage?from=&to=
+POST   /settings/ai-key/verify                     # la key la gestiona main; el backend solo prueba la recibida
+POST   /backups | POST /backups/restore | DELETE /data
 
 GET    /profile
 PATCH  /profile/personal-info
@@ -331,7 +422,7 @@ POST   /tailoring-sessions/:id/finalize
 POST   /tailoring-sessions/:id/revert-profile-changes
 
 GET    /resume-versions/:id
-GET    /resume-versions/:id/pdf                    # redirect a URL firmada
+GET    /resume-versions/:id/pdf
 
 CRUD   /applications
 POST   /applications/:id/status                    # transición validada por el dominio
@@ -341,26 +432,29 @@ CRUD   /applications/:id/events, /applications/:id/contacts
 GET    /dashboard/summary
 ```
 
-## 12. Frontend
+## 12. Interfaz (renderer)
 
 - **Vite + React + TypeScript.**
-- **Routing:** React Router (o TanStack Router).
-- **Datos de servidor:** TanStack Query. Sin store global salvo para estado de UI puntual.
+- **Routing:** React Router en modo *hash* (compatible con cargar la app desde archivos locales en producción).
+- **Datos del backend:** TanStack Query. Sin store global salvo para estado de UI puntual.
 - **Formularios:** React Hook Form + resolvers de Zod usando `packages/contracts`.
 - **UI:** librería de componentes accesibles (p. ej. shadcn/ui sobre Radix + Tailwind). Kanban con `dnd-kit`.
 - **i18n de la interfaz:** `react-i18next` (ES y EN).
+- **Puente con Electron:** un único módulo `shared/desktop.ts` lee lo expuesto por el preload; en modo
+  `dev:web` usa valores de desarrollo. El resto de la interfaz no sabe si corre en Electron o en el navegador.
 - **Organización por *feature*:**
 
 ```
 apps/web/src/
   features/
-    auth/  profile/  job-postings/  tailoring/  applications/  dashboard/
+    settings/  profile/  job-postings/  tailoring/  applications/  dashboard/
       api/          # hooks de TanStack Query
       components/
       pages/
-  shared/           # UI base, layout, utilidades
+  shared/           # UI base, layout, cliente HTTP, puente con Electron
 ```
 
+- **Primer inicio:** asistente para configurar la API key (RF-CONF-01) y el idioma de la interfaz.
 - **Flujo de adaptación como *wizard*:** JD → análisis → gaps → opciones (idiomas, páginas, plantilla) →
   generación con progreso → revisión con vista previa en paralelo → finalizar → crear o vincular postulación.
 
@@ -369,62 +463,176 @@ apps/web/src/
 ```
 careerly/
   apps/
-    web/                 # Vite + React
-    api/                 # NestJS (main.ts = HTTP, worker.ts = colas)
+    desktop/             # Electron: main + preload, configuración de electron-builder
+    web/                 # Vite + React (renderer)
+    api/                 # NestJS (backend local)
   packages/
     contracts/           # esquemas Zod + tipos compartidos (DTOs, enums de estado)
     eslint-config/
     tsconfig/
-  docker-compose.yml     # postgres, redis, minio (S3 local)
+  scripts/
+    fetch-typst.ts       # descarga el binario de typst por plataforma (versión + checksum)
   REQUIREMENTS.md  ARCHITECTURE.md  ROADMAP.md
 ```
 
 - **pnpm workspaces** (+ Turborepo si los tiempos de build lo justifican).
-- **ORM:** Prisma (migraciones maduras y buen DX) o Drizzle (más cercano a SQL). Decisión en la Fase 0.
+- **Base de datos:** SQLite con `better-sqlite3` + **Drizzle ORM**; migraciones generadas con `drizzle-kit`,
+  incluidas en la app y aplicadas al iniciar (ADR-06). `better-sqlite3` es un módulo nativo: electron-builder
+  lo recompila para la versión de Electron.
+- **Empaquetado del backend:** el código de Nest se compila a un bundle de JS (esbuild/tsup) que main ejecuta
+  con `utilityProcess.fork`.
 - **Calidad:** ESLint + Prettier, `tsc --noEmit` y tests en CI (GitHub Actions) en cada PR.
 
 ## 14. Seguridad y privacidad
 
-- **Autenticación:** sesiones con cookie `httpOnly`, `Secure` y `SameSite=Lax`, almacenadas en Redis.
-  Contraseñas con argon2id. Rate limiting en login y en endpoints de IA.
-- **Aislamiento por usuario:** todo repositorio exige `userId`; tests de integración que verifican que un usuario
-  no accede a datos de otro. Evaluar *Row Level Security* de PostgreSQL como segunda barrera.
-- **Archivos:** bucket privado; PDFs solo vía URLs firmadas de pocos minutos.
-- **Logs:** sin contenido del perfil, JDs ni prompts; solo ids, tamaños, tiempos y errores.
-- **Proveedor de IA:** usar las opciones del proveedor que no retienen ni entrenan con los datos, y
-  documentarlo en la política de privacidad.
-- **Borrado de cuenta:** borrado en cascada en PostgreSQL + borrado de objetos en el bucket + registros de
-  `AiGeneration` anonimizados.
+- **API local protegida (RNF-19):** escucha solo en `127.0.0.1`; token aleatorio por ejecución, enviado en cada
+  petición (`Authorization: Bearer`); verificación de los encabezados `Host` y `Origin` para evitar ataques
+  desde sitios web (CSRF, *DNS rebinding*); CORS restringido al origen de la app.
+- **Endurecimiento de Electron:** `contextIsolation`, `sandbox`, sin `nodeIntegration`, *Content Security
+  Policy* estricta, sin carga de contenido remoto en la ventana, navegación bloqueada fuera de la app y enlaces
+  externos abiertos en el navegador del sistema (solo `http`/`https`).
+- **API key:** cifrada con `safeStorage` (usa el almacén del sistema operativo: DPAPI en Windows, Keychain en
+  macOS, libsecret en Linux). Solo main la descifra y se la pasa al backend en memoria; nunca se escribe en la
+  base, en logs ni en backups.
+- **Contenido generado:** las salidas de la IA nunca se renderizan como HTML sin sanitizar.
+- **Logs:** locales, rotativos, sin contenido del perfil, JDs ni prompts (RNF-02).
+- **Backups:** el archivo exportado contiene datos personales; la app lo advierte al exportar. (Cifrado opcional
+  con contraseña: post-MVP.)
+- **Proveedor de IA:** documentar qué datos se envían y la política de retención del proveedor en una pantalla
+  de "Privacidad" dentro de la app.
 
 ## 15. Estrategia de testing
 
 | Nivel | Qué se prueba | Herramientas |
 |---|---|---|
-| Dominio | Máquinas de estado, match, gaps, guardia de veracidad, `page-fitter` | Vitest/Jest, sin I/O |
-| Casos de uso | Flujos completos con adaptadores *fake* (LLM, renderer, repos) | Vitest/Jest |
-| Integración | Repositorios Prisma, render Typst real, colas | Testcontainers (Postgres, Redis) |
+| Dominio | Máquinas de estado, match, gaps, guardia de veracidad, `page-fitter` | Vitest, sin I/O |
+| Casos de uso | Flujos completos con adaptadores *fake* (LLM, renderer, repos) | Vitest |
+| Integración | Repositorios Drizzle sobre SQLite temporal, migraciones, render Typst real, cola de tareas | Vitest + archivo SQLite temporal |
 | Evaluación de IA | Conjunto fijo de perfiles + JDs: requisitos extraídos, cero bullets inventados, CVs dentro del límite de páginas | Script de evals propio, corrido manualmente al cambiar prompts o modelos |
-| E2E | Flujo completo: perfil → JD → gaps → CV → postulación | Playwright, con el LLM *fake* |
+| E2E | Flujo completo en la app de escritorio: perfil → JD → gaps → CV → postulación | Playwright para Electron, con el LLM *fake* |
 
-## 16. Despliegue y operación
+## 16. Distribución y actualizaciones
 
-- **Imágenes Docker:** una para `api` y `worker` (incluye el binario de `typst` y las fuentes) y una estática
-  para `web`.
-- **Hosting sugerido:** `web` en Vercel o Cloudflare Pages; `api` + `worker` en Railway, Fly.io o Render;
-  PostgreSQL y Redis gestionados; Cloudflare R2 o S3 para PDFs.
-- **Configuración:** variables de entorno validadas al iniciar (Zod). Secretos fuera del repo.
-- **Observabilidad:** logs estructurados (pino), errores (Sentry), métricas de colas y del uso/costo de IA
-  (a partir de `AiGeneration`).
+- **Empaquetado:** electron-builder. Windows: instalador NSIS (+ versión portable opcional). macOS: `.dmg`.
+  Linux: AppImage y `.deb`.
+- **Releases:** GitHub Actions con una matriz de sistemas operativos; al crear un tag `vX.Y.Z` se compila, se
+  descarga el binario de `typst` de cada plataforma y se publica en GitHub Releases.
+- **Actualizaciones:** electron-updater contra GitHub Releases (RF-CONF-10). Antes de migrar la base en una
+  versión nueva se crea un backup automático (RNF-20).
+- **Firma de código:** opcional para un proyecto personal. Sin firma, Windows muestra un aviso de SmartScreen y
+  macOS requiere abrir la app con clic derecho → Abrir la primera vez. La notarización de macOS requiere una
+  cuenta de Apple Developer (paga).
+- **Versionado:** SemVer + changelog generado desde los commits.
 
 ## 17. Registro de decisiones
 
 | # | Decisión | Estado |
 |---|---|---|
-| ADR-01 | Monolito modular + hexagonal selectiva + worker | Aceptada |
-| ADR-02 | NestJS sobre Express como servidor HTTP | Aceptada |
+| ADR-01 | Monolito modular + hexagonal selectiva, ejecutado localmente | Aceptada |
+| ADR-02 | NestJS sobre Express como servidor HTTP local | Aceptada |
 | ADR-03 | Typst para el render de CVs, con datos en JSON | Aceptada |
 | ADR-04 | Perfil maestro solo con afirmaciones; negaciones únicamente en el historial de sesión | Aceptada |
 | ADR-05 | Ajuste de páginas determinístico (render + recorte por score), no delegado al LLM | Aceptada |
-| ADR-06 | Prisma vs. Drizzle | Pendiente (Fase 0) |
+| ADR-06 | SQLite con `better-sqlite3` + Drizzle ORM (reemplaza PostgreSQL) | Aceptada |
 | ADR-07 | Conteo de páginas: `typst query` vs. lectura del PDF | Pendiente (Fase 3) |
-| ADR-08 | Puntuación de relevancia: LLM vs. embeddings (`pgvector`) | Pendiente (post-MVP) |
+| ADR-08 | Puntuación de relevancia: LLM vs. embeddings (`sqlite-vec`) | Pendiente (post-MVP) |
+| ADR-09 | Requisitos de JD normalizados en tabla (`JobRequirement`) además del JSON | Aceptada (Fase 4) |
+| ADR-10 | Búsqueda web para el research de empresas con la herramienta del proveedor de LLM (D-06) | Aceptada (post-MVP) |
+| ADR-11 | Cache del research de empresas | Resuelta: local, en SQLite |
+| ADR-12 | Electron como contenedor de escritorio (no Tauri) | Aceptada |
+| ADR-13 | Comunicación interfaz–backend por HTTP local con token (no IPC) | Aceptada |
+| ADR-14 | Typst: CLI empaquetado vs. compilador como módulo nativo de Node | Pendiente (Fase 3) |
+| ADR-15 | Cola de tareas en SQLite dentro del proceso del backend (sin Redis ni worker) | Aceptada |
+
+## 18. Extensiones post-MVP
+
+### 18.1 Gaps recurrentes y recomendaciones (módulo `insights`)
+
+**Datos.** Para poder agregar requisitos entre muchas JDs, el análisis de cada JD se guarda también
+normalizado (ADR-09):
+
+| Entidad | Campos importantes | Notas |
+|---|---|---|
+| `JobRequirement` | jobPostingId, toolId?, label, kind (`TOOL`, `SKILL`, `LANGUAGE`, `OTHER`), importance (`REQUIRED`, `NICE_TO_HAVE`) | Se crea al analizar la JD (Fase 4). Las correcciones del usuario al análisis se reflejan acá. |
+| `SkillRecommendation` | toolId? / label, frequency, requiredRatio, priority, rationale, resources (JSON con url + verifiedAt), status (`SUGGESTED`, `LEARNING`, `DISMISSED`, `LEARNED`), computedAt | Resultado del análisis; el estado lo maneja el usuario. |
+
+**Cálculo (determinístico, en SQL + dominio):**
+
+```
+1. Tomar los JobRequirement del período elegido (filtros RF-LEARN-03)
+2. Agrupar por toolId (o por categoría/familia del catálogo, RF-LEARN-04); los no-herramienta, por label normalizado
+3. Restar lo que hoy está en el perfil maestro (RN-14) → gaps recurrentes
+4. Ranking: frecuencia × peso (REQUIRED > NICE_TO_HAVE) × recencia
+5. Si hay menos de N JDs (RF-LEARN-09) → no se muestran conclusiones
+```
+
+**Recomendaciones (LLM):** solo para el top de gaps. El LLM recibe el ranking y las herramientas del perfil, y
+devuelve con salida estructurada: prioridad, explicación ("cercanía" con lo que ya sabe), esfuerzo orientativo
+y *tipos* de recursos. Los enlaces se validan antes de mostrarse (petición HTTP + lista de dominios oficiales
+permitidos); un enlace que no valida se descarta (RF-LEARN-06).
+
+**Cuándo se recalcula:** como tarea en segundo plano, con *debounce*, cuando se analiza una JD nueva o cambia
+el perfil; y a pedido del usuario. El ranking es barato (SQL); las recomendaciones del LLM se regeneran solo si
+el top de gaps cambió.
+
+**Evolución (RF-LEARN-08):** se guarda una serie temporal del match promedio por semana a partir de los
+resultados de match existentes.
+
+### 18.2 Preparación de entrevistas (módulo `interview-prep`)
+
+**Puertos:**
+
+| Puerto | Responsabilidad | Adaptador inicial |
+|---|---|---|
+| `CompanyResearcher` | Buscar y resumir información pública de una empresa, con citas. | Herramienta de búsqueda web del proveedor de LLM (ADR-10). |
+| `InterviewGuideWriter` | Redactar la guía (preguntas, STAR, gaps, preguntas a la empresa, pitch) con salida estructurada. | LLM vía módulo `ai`. |
+| `ApplicationReader`, `ProfileReader` | Leer postulación, JD, snapshot enviado, eventos y perfil maestro. | Adaptadores hacia los otros módulos. |
+
+**Datos:**
+
+| Entidad | Campos importantes | Notas |
+|---|---|---|
+| `CompanyResearch` | companyKey (dominio web normalizado), sections (JSON), sources[] (url, título, fecha de acceso), researchedAt | Cada afirmación referencia una fuente (RF-PREP-03). Cache local de 7 días (RNF-16). |
+| `InterviewGuide` | applicationId, stage (`SCREENING`, `TECHNICAL`, `SYSTEM_DESIGN`, `CULTURAL`, `MANAGEMENT`), version, content (JSON), companyResearchId, snapshotId, promptVersion, createdAt | Versionada; regenerar crea una versión nueva. |
+| `InterviewDebrief` | Evento `INTERVIEW` de la línea de tiempo con payload ampliado: preguntas recibidas, autoevaluación, notas | Alimenta la guía de la etapa siguiente (RF-PREP-11). |
+
+**Pipeline:**
+
+```
+1. Research de la empresa (si no hay uno vigente en cache)
+     búsqueda web → extracción por sección → cada dato con su fuente → "desconocido" si no hay fuente
+2. Contexto: JD + JobRequirements + snapshot enviado + perfil maestro + debriefs previos + etapa
+3. Redacción de la guía por bloques (técnicas, conductuales STAR, gaps, preguntas a la empresa, pitch, checklist)
+4. Guardia de veracidad:
+     - respuestas STAR: cada una referencia logros existentes (RN-16), igual que RN-01 en los CVs
+     - research: se descarta toda afirmación sin fuente
+     - checklist: los datos del CV salen del snapshot enviado, no del perfil actual
+5. Guardar InterviewGuide (versión nueva) → disponible en la postulación y exportable a PDF con Typst (RF-PREP-13)
+```
+
+**Seguridad y privacidad:**
+
+- El contenido web es no confiable (RNF-15): se pasa delimitado como dato, el LLM no tiene herramientas con
+  efectos más allá de la búsqueda y las salidas se validan con esquema.
+- La búsqueda se limita a la organización (nombre + dominio). Las consultas nunca incluyen datos personales del
+  usuario ni nombres de entrevistadores (RN-17).
+
+**Entrevista simulada (RF-PREP-12, a evaluar):** chat con streaming por SSE en el que el LLM hace de
+entrevistador con la guía como contexto; al final, devolución estructurada por respuesta. Es el flujo más
+costoso en tokens, así que se muestra el costo estimado antes de empezar.
+
+**API (post-MVP):**
+
+```
+GET    /insights/recurring-gaps?from=&to=&status=&seniority=
+GET    /insights/recommendations
+PATCH  /insights/recommendations/:id               # estado: LEARNING | DISMISSED | LEARNED
+POST   /insights/recompute
+
+POST   /applications/:id/interview-guides          # { stage } → encola la generación
+GET    /applications/:id/interview-guides
+GET    /interview-guides/:id
+GET    /interview-guides/:id/pdf
+POST   /companies/:key/research/refresh
+POST   /applications/:id/events                    # debrief: type INTERVIEW con preguntas recibidas
+```
