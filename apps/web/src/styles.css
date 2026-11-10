@@ -1,13 +1,29 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 
-/* Design tokens from STYLES.md. Use these tokens in components, never raw hex values. */
+/*
+ * Design tokens from STYLES.md ("Careerly — adapting this reference to a desktop app").
+ * Use these tokens in components, never raw hex values.
+ */
 @theme {
   --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Type roles (size, line height, tracking, weight). */
+  --text-page-title: 1.75rem;
+  --text-page-title--line-height: 1.1;
+  --text-page-title--letter-spacing: -0.01em;
+  --text-page-title--font-weight: 500;
+  --text-section-title: 1rem;
+  --text-section-title--line-height: 1.4;
+  --text-section-title--font-weight: 500;
 
   --color-indigo-navy: #111a4a;
   --color-midnight-ink: #011821;
   --color-slate-ink: #3b3e47;
+  /* Secondary text that passes WCAG AA at 14px (Steel is only 4.0:1 on white). */
+  --color-steel-text: #686b74;
   --color-steel: #7c7f88;
   --color-fog: #a9acb6;
   --color-mist: #cbcccf;
@@ -19,11 +35,18 @@
   --color-seafoam-600: #44b48b;
   --color-seafoam-700: #167e6c;
 
+  /* 8px everywhere (cards, inputs, buttons, nav items); the pill radius is only for tags. */
   --radius-control: 8px;
-  --radius-card: 12px;
+  --radius-card: 8px;
 
-  --shadow-subtle: rgba(17, 26, 74, 0.1) 0px 1px 3px 0px, rgba(17, 26, 74, 0.05) 0px 1px 0px 0px;
-  --shadow-card: rgba(17, 26, 74, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+  /* "Primary Button" elevation. */
+  --shadow-button:
+    rgba(17, 26, 74, 0.1) 0px 1px 3px 0px, rgba(17, 26, 74, 0.05) 0px 1px 0px 0px,
+    rgba(255, 255, 255, 0.5) 0px 1px 0px 0px inset, rgba(255, 255, 255, 0.5) 0px 1px 4px 0px inset;
+  /* "Bordered Card" elevation: hairline + whisper of shadow. */
+  --shadow-card:
+    rgba(18, 22, 30, 0.024) 0px 1px 4px 0px, rgba(18, 22, 30, 0.05) 0px 1px 0px 0px,
+    rgba(18, 22, 30, 0.024) 0px 0px 0px 1px;
 }
 
 @layer base {

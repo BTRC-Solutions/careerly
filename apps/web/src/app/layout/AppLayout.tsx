@@ -1,14 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
+import { UiLanguageSync } from '../../features/settings/components/UiLanguageSync';
 import { cn } from '../../shared/lib/cn';
 
-const NAV_ITEMS = [{ to: '/', labelKey: 'nav.home' }] as const;
+const NAV_ITEMS = [
+  { to: '/', labelKey: 'nav.home' },
+  { to: '/settings', labelKey: 'nav.settings' },
+] as const;
 
 export function AppLayout() {
   const { t } = useTranslation();
 
   return (
     <div className="flex h-full">
+      <UiLanguageSync />
       <aside className="flex w-60 shrink-0 flex-col border-r border-silver-lining bg-pure-white px-4 py-6">
         <p className="px-3 text-xl font-semibold tracking-tight text-indigo-navy">Careerly</p>
         <nav aria-label={t('nav.label')} className="mt-8">
@@ -23,7 +28,7 @@ export function AppLayout() {
                       'block rounded-control px-3 py-2 text-sm font-medium transition-colors',
                       isActive
                         ? 'bg-cloud-canvas text-indigo-navy'
-                        : 'text-steel hover:bg-cloud-canvas hover:text-slate-ink',
+                        : 'text-steel-text hover:bg-cloud-canvas hover:text-slate-ink',
                     )
                   }
                 >

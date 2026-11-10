@@ -1,7 +1,8 @@
 {
   "nav": {
     "label": "Main navigation",
-    "home": "Home"
+    "home": "Home",
+    "settings": "Settings"
   },
   "home": {
     "title": "Welcome to Careerly",
@@ -14,6 +15,28 @@
       "version": "Version",
       "migrations": "Database migrations applied",
       "retry": "Retry"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "App preferences and where your data is stored.",
+    "loading": "Loading settings…",
+    "loadError": "Settings could not be loaded: {{message}}",
+    "retry": "Retry",
+    "language": {
+      "title": "Interface language",
+      "description": "Applies instantly, without restarting. It does not change the language of the CVs you generate.",
+      "system": "Same as the system ({{language}})",
+      "saveError": "The language could not be saved: {{message}}"
+    },
+    "data": {
+      "title": "Data folder",
+      "description": "Your profile, CVs and applications are stored only on this computer, in this folder.",
+      "open": "Open folder",
+      "copy": "Copy path",
+      "copied": "Path copied.",
+      "copyFailed": "The path could not be copied.",
+      "openFailed": "The folder could not be opened."
     }
   }
 }
