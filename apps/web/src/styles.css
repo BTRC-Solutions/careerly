@@ -47,6 +47,8 @@
   --shadow-card:
     rgba(18, 22, 30, 0.024) 0px 1px 4px 0px, rgba(18, 22, 30, 0.05) 0px 1px 0px 0px,
     rgba(18, 22, 30, 0.024) 0px 0px 0px 1px;
+  /* Dialogs and popovers (STYLES.md `shadow-md`, navy-tinted). */
+  --shadow-md: rgba(17, 26, 74, 0.08) 0px 8px 24px 0px, rgba(17, 26, 74, 0.1) 0px 2px 6px 0px;
 }
 
 @layer base {

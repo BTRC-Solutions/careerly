@@ -2,7 +2,8 @@
   "nav": {
     "label": "Main navigation",
     "home": "Home",
-    "settings": "Settings"
+    "settings": "Settings",
+    "profile": "Master profile"
   },
   "home": {
     "title": "Welcome to Careerly",
@@ -37,6 +38,202 @@
       "copied": "Path copied.",
       "copyFailed": "The path could not be copied.",
       "openFailed": "The folder could not be opened."
+    }
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Changes saved.",
+    "saveError": "Could not save: {{message}}",
+    "create": "Create",
+    "delete": "Delete",
+    "retry": "Retry",
+    "searching": "Searching…",
+    "notSpecified": "Not specified",
+    "editItem": "Edit “{{name}}”",
+    "deleteItem": "Delete “{{name}}”",
+    "deleteDescription": "It is removed from the master profile. This cannot be undone."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "tooLong": "The text is too long.",
+    "invalidFormat": "The format is not valid.",
+    "invalidValue": "The value is not valid.",
+    "invalidUrl": "Enter a URL starting with http:// or https://.",
+    "endBeforeStart": "The end date cannot be before the start date."
+  },
+  "profile": {
+    "title": "Master profile",
+    "subtitle": "All your experience, in as much detail as possible. Your CVs are built from it.",
+    "loading": "Loading the profile…",
+    "loadError": "The profile could not be loaded: {{message}}",
+    "tabs": {
+      "label": "Profile sections",
+      "personal": "Personal info",
+      "experience": "Experience",
+      "projects": "Projects",
+      "education": "Education",
+      "languages": "Languages"
+    },
+    "tools": {
+      "label": "Tools",
+      "selected": "Selected tools",
+      "remove": "Remove {{name}}",
+      "placeholder": "Search by name or synonym (e.g. k8s, postgres)…",
+      "create": "Create “{{name}}”"
+    },
+    "personal": {
+      "title": "Personal info",
+      "fullName": "Full name",
+      "headline": "Professional headline",
+      "headlineHint": "For example: “Senior Backend Engineer”.",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "summary": "Summary",
+      "summaryHint": "Source material for the summary of each CV; it does not need to be the final text.",
+      "links": "Links",
+      "linkKind": "Link type",
+      "linkUrl": "URL",
+      "linkLabel": "Link text",
+      "linkLabelPlaceholder": "Text (optional)",
+      "removeLink": "Remove link",
+      "addLink": "Add link"
+    },
+    "enums": {
+      "linkKind": {
+        "LINKEDIN": "LinkedIn",
+        "GITHUB": "GitHub",
+        "PORTFOLIO": "Portfolio",
+        "WEBSITE": "Website",
+        "OTHER": "Other"
+      },
+      "workMode": {
+        "ONSITE": "On-site",
+        "REMOTE": "Remote",
+        "HYBRID": "Hybrid"
+      },
+      "projectKind": {
+        "PERSONAL": "Personal",
+        "OPEN_SOURCE": "Open source",
+        "COURSE": "Course",
+        "FREELANCE": "Freelance"
+      },
+      "educationKind": {
+        "DEGREE": "Degree",
+        "COURSE": "Course",
+        "BOOTCAMP": "Bootcamp",
+        "OTHER": "Other"
+      },
+      "languageLevel": {
+        "NATIVE": "Native",
+        "C2": "C2 · Proficient",
+        "C1": "C1 · Advanced",
+        "B2": "B2 · Upper intermediate",
+        "B1": "B1 · Intermediate",
+        "A2": "A2 · Elementary",
+        "A1": "A1 · Beginner"
+      }
+    },
+    "dates": {
+      "start": "Start",
+      "end": "End",
+      "present": "Present",
+      "inProgress": "in progress"
+    },
+    "position": {
+      "title": "Job title",
+      "company": "Company",
+      "location": "Location",
+      "workMode": "Work mode",
+      "current": "I currently work here",
+      "context": "Context",
+      "contextHint": "Product, team, industry, scale. It helps the AI understand each achievement.",
+      "toolsHint": "The ones you used in this job overall. Each achievement can have its own."
+    },
+    "project": {
+      "name": "Name",
+      "kind": "Type",
+      "role": "Your role",
+      "url": "URL",
+      "description": "Description"
+    },
+    "positions": {
+      "title": "Work experience",
+      "add": "Add experience",
+      "empty": "You have not added any experience yet.",
+      "back": "Back to experience",
+      "notFound": "This experience does not exist or was deleted.",
+      "details": "Job details",
+      "deleteTitle": "Delete experience",
+      "deleteDescription_one": "“{{name}}” is deleted with its achievement. This cannot be undone.",
+      "deleteDescription_other": "“{{name}}” is deleted with its {{count}} achievements. This cannot be undone."
+    },
+    "projects": {
+      "title": "Projects",
+      "add": "Add project",
+      "empty": "You have not added any projects yet.",
+      "back": "Back to projects",
+      "notFound": "This project does not exist or was deleted.",
+      "details": "Project details",
+      "deleteTitle": "Delete project",
+      "deleteDescription_one": "“{{name}}” is deleted with its achievement. This cannot be undone.",
+      "deleteDescription_other": "“{{name}}” is deleted with its {{count}} achievements. This cannot be undone."
+    },
+    "achievements": {
+      "title_one": "Achievements ({{count}})",
+      "title_other": "Achievements ({{count}})",
+      "count_zero": "No achievements",
+      "count_one": "1 achievement",
+      "count_other": "{{count}} achievements",
+      "description": "Add everything you did, with detail and metrics. Order is priority: the first ones weigh more.",
+      "empty": "No achievements yet. Add the first one below.",
+      "reorderError": "The order could not be saved: {{message}}",
+      "moveUp": "Move achievement {{position}} up",
+      "moveDown": "Move achievement {{position}} down",
+      "edit": "Edit achievement {{position}}",
+      "delete": "Delete achievement {{position}}",
+      "deleteTitle": "Delete this achievement?",
+      "text": "What you did",
+      "textHint": "Describe it in detail; it is source material, not final CV text.",
+      "metrics": "Metrics",
+      "metricsHint": "Optional. For example: “-40% p95 latency”.",
+      "add": "New achievement",
+      "addButton": "Add achievement",
+      "shortcut": "Ctrl + Enter to add"
+    },
+    "education": {
+      "title": "Education and courses",
+      "add": "Add education",
+      "empty": "You have not added education or courses yet.",
+      "titleField": "Degree or course name",
+      "institution": "Institution",
+      "kind": "Type",
+      "field": "Field",
+      "endHint": "Leave it empty if in progress.",
+      "description": "Description"
+    },
+    "certifications": {
+      "title": "Certifications",
+      "add": "Add certification",
+      "empty": "You have not added certifications yet.",
+      "name": "Name",
+      "issuer": "Issuer",
+      "issueDate": "Issue date",
+      "expirationDate": "Expiration",
+      "credentialId": "Credential ID",
+      "url": "Verification URL"
+    },
+    "languages": {
+      "title": "Languages",
+      "add": "Add language",
+      "empty": "You have not added languages yet.",
+      "language": "Language",
+      "level": "Level",
+      "notes": "Notes",
+      "notesHint": "Optional. For example: “TOEFL 110”."
     }
   }
 }

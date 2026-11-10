@@ -1,5 +1,5 @@
 import { ApiErrorResponseSchema } from '@careerly/contracts';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { getApiConnection } from '../desktop';
 
 export class ApiError extends Error {
@@ -59,4 +59,27 @@ export function apiPatch<T extends z.ZodType>(
   body: unknown,
 ): Promise<z.infer<T>> {
   return apiRequest('PATCH', path, schema, body);
+}
+
+/** POST to the local API and validate the JSON response. */
+export function apiPost<T extends z.ZodType>(
+  path: string,
+  schema: T,
+  body: unknown,
+): Promise<z.infer<T>> {
+  return apiRequest('POST', path, schema, body);
+}
+
+/** PUT to the local API and validate the JSON response. */
+export function apiPut<T extends z.ZodType>(
+  path: string,
+  schema: T,
+  body: unknown,
+): Promise<z.infer<T>> {
+  return apiRequest('PUT', path, schema, body);
+}
+
+/** DELETE on the local API (expects `204 No Content`). */
+export async function apiDelete(path: string): Promise<void> {
+  await apiRequest('DELETE', path, z.unknown());
 }
