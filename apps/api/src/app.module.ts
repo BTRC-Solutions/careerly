@@ -1,5 +1,6 @@
 import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
+import { SettingsModule } from './modules/settings/settings.module.js';
 import { APP_CONFIG, type AppConfig } from './platform/config/app-config.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { HealthController } from './platform/health/health.controller.js';
@@ -23,7 +24,7 @@ export class AppModule {
   static register(config: AppConfig): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.register(config), DatabaseModule],
+      imports: [ConfigModule.register(config), DatabaseModule, SettingsModule],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }],
     };
