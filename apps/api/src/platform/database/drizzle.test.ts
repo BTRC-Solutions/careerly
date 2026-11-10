@@ -43,4 +43,18 @@ describe('createDrizzle (integration, node:sqlite through the proxy driver)', ()
     const missing = await db.select().from(settings).where(eq(settings.key, 'zzz')).get();
     expect(missing).toBeUndefined();
   });
+
+  it('db.batch() commits every statement together or none at all', async () => {
+    const db = createDrizzle(connection);
+    const row = (key: string) => ({ key, value: '"x"', updatedAt: '2026-11-10T00:00:00.000Z' });
+
+    await db.batch([db.insert(settings).values(row('a')), db.insert(settings).values(row('b'))]);
+    expect(await db.select().from(settings)).toHaveLength(2);
+
+    // The second insert violates the primary key, so the first one must be rolled back too.
+    await expect(
+      db.batch([db.insert(settings).values(row('c')), db.insert(settings).values(row('a'))]),
+    ).rejects.toThrow();
+    expect((await db.select().from(settings)).map((r) => r.key).sort()).toEqual(['a', 'b']);
+  });
 });

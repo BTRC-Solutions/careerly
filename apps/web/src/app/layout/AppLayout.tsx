@@ -4,8 +4,9 @@ import { UiLanguageSync } from '../../features/settings/components/UiLanguageSyn
 import { cn } from '../../shared/lib/cn';
 
 const NAV_ITEMS = [
-  { to: '/', labelKey: 'nav.home' },
-  { to: '/settings', labelKey: 'nav.settings' },
+  { to: '/', labelKey: 'nav.home', end: true },
+  { to: '/profile', labelKey: 'nav.profile', end: false },
+  { to: '/settings', labelKey: 'nav.settings', end: true },
 ] as const;
 
 export function AppLayout() {
@@ -22,7 +23,7 @@ export function AppLayout() {
               <li key={item.to}>
                 <NavLink
                   to={item.to}
-                  end
+                  end={item.end}
                   className={({ isActive }) =>
                     cn(
                       'block rounded-control px-3 py-2 text-sm font-medium transition-colors',

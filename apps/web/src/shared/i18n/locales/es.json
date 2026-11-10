@@ -2,7 +2,8 @@
   "nav": {
     "label": "Navegación principal",
     "home": "Inicio",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "profile": "Perfil maestro"
   },
   "home": {
     "title": "Bienvenido a Careerly",
@@ -37,6 +38,202 @@
       "copied": "Ruta copiada.",
       "copyFailed": "No se pudo copiar la ruta.",
       "openFailed": "No se pudo abrir la carpeta."
+    }
+  },
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Cambios guardados.",
+    "saveError": "No se pudo guardar: {{message}}",
+    "create": "Crear",
+    "delete": "Eliminar",
+    "retry": "Reintentar",
+    "searching": "Buscando…",
+    "notSpecified": "Sin especificar",
+    "editItem": "Editar «{{name}}»",
+    "deleteItem": "Eliminar «{{name}}»",
+    "deleteDescription": "Se elimina del perfil maestro. No se puede deshacer."
+  },
+  "validation": {
+    "required": "Este campo es obligatorio.",
+    "tooLong": "El texto es demasiado largo.",
+    "invalidFormat": "El formato no es válido.",
+    "invalidValue": "El valor no es válido.",
+    "invalidUrl": "Ingresá una URL que empiece con http:// o https://.",
+    "endBeforeStart": "La fecha de fin no puede ser anterior a la de inicio."
+  },
+  "profile": {
+    "title": "Perfil maestro",
+    "subtitle": "Toda tu experiencia, con el mayor detalle posible. Es el material del que salen tus CVs.",
+    "loading": "Cargando el perfil…",
+    "loadError": "No se pudo cargar el perfil: {{message}}",
+    "tabs": {
+      "label": "Secciones del perfil",
+      "personal": "Datos personales",
+      "experience": "Experiencia",
+      "projects": "Proyectos",
+      "education": "Formación",
+      "languages": "Idiomas"
+    },
+    "tools": {
+      "label": "Herramientas",
+      "selected": "Herramientas elegidas",
+      "remove": "Quitar {{name}}",
+      "placeholder": "Buscá por nombre o sinónimo (p. ej. k8s, postgres)…",
+      "create": "Crear «{{name}}»"
+    },
+    "personal": {
+      "title": "Datos personales",
+      "fullName": "Nombre completo",
+      "headline": "Titular profesional",
+      "headlineHint": "Por ejemplo: «Senior Backend Engineer».",
+      "email": "Email",
+      "phone": "Teléfono",
+      "location": "Ubicación",
+      "summary": "Resumen",
+      "summaryHint": "Material de base para el resumen de cada CV; no hace falta que sea el texto final.",
+      "links": "Links",
+      "linkKind": "Tipo de link",
+      "linkUrl": "URL",
+      "linkLabel": "Texto del link",
+      "linkLabelPlaceholder": "Texto (opcional)",
+      "removeLink": "Quitar link",
+      "addLink": "Agregar link"
+    },
+    "enums": {
+      "linkKind": {
+        "LINKEDIN": "LinkedIn",
+        "GITHUB": "GitHub",
+        "PORTFOLIO": "Portfolio",
+        "WEBSITE": "Sitio web",
+        "OTHER": "Otro"
+      },
+      "workMode": {
+        "ONSITE": "Presencial",
+        "REMOTE": "Remoto",
+        "HYBRID": "Híbrido"
+      },
+      "projectKind": {
+        "PERSONAL": "Personal",
+        "OPEN_SOURCE": "Open source",
+        "COURSE": "Curso",
+        "FREELANCE": "Freelance"
+      },
+      "educationKind": {
+        "DEGREE": "Carrera",
+        "COURSE": "Curso",
+        "BOOTCAMP": "Bootcamp",
+        "OTHER": "Otro"
+      },
+      "languageLevel": {
+        "NATIVE": "Nativo",
+        "C2": "C2 · Maestría",
+        "C1": "C1 · Avanzado",
+        "B2": "B2 · Intermedio alto",
+        "B1": "B1 · Intermedio",
+        "A2": "A2 · Básico",
+        "A1": "A1 · Principiante"
+      }
+    },
+    "dates": {
+      "start": "Inicio",
+      "end": "Fin",
+      "present": "actualidad",
+      "inProgress": "en curso"
+    },
+    "position": {
+      "title": "Puesto",
+      "company": "Empresa",
+      "location": "Ubicación",
+      "workMode": "Modalidad",
+      "current": "Trabajo acá actualmente",
+      "context": "Contexto",
+      "contextHint": "Producto, equipo, industria, escala. Ayuda a la IA a entender cada logro.",
+      "toolsHint": "Las que usaste en general en este puesto. Cada logro puede tener las suyas."
+    },
+    "project": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "role": "Tu rol",
+      "url": "URL",
+      "description": "Descripción"
+    },
+    "positions": {
+      "title": "Experiencia laboral",
+      "add": "Agregar experiencia",
+      "empty": "Todavía no cargaste ninguna experiencia.",
+      "back": "Volver a experiencia",
+      "notFound": "Esta experiencia no existe o fue eliminada.",
+      "details": "Datos del puesto",
+      "deleteTitle": "Eliminar experiencia",
+      "deleteDescription_one": "Se elimina «{{name}}» con su logro. No se puede deshacer.",
+      "deleteDescription_other": "Se elimina «{{name}}» con sus {{count}} logros. No se puede deshacer."
+    },
+    "projects": {
+      "title": "Proyectos",
+      "add": "Agregar proyecto",
+      "empty": "Todavía no cargaste ningún proyecto.",
+      "back": "Volver a proyectos",
+      "notFound": "Este proyecto no existe o fue eliminado.",
+      "details": "Datos del proyecto",
+      "deleteTitle": "Eliminar proyecto",
+      "deleteDescription_one": "Se elimina «{{name}}» con su logro. No se puede deshacer.",
+      "deleteDescription_other": "Se elimina «{{name}}» con sus {{count}} logros. No se puede deshacer."
+    },
+    "achievements": {
+      "title_one": "Logros ({{count}})",
+      "title_other": "Logros ({{count}})",
+      "count_zero": "Sin logros",
+      "count_one": "1 logro",
+      "count_other": "{{count}} logros",
+      "description": "Cargá todo lo que hiciste, con detalle y métricas. El orden es el de prioridad: los primeros pesan más.",
+      "empty": "Todavía no hay logros. Agregá el primero abajo.",
+      "reorderError": "No se pudo guardar el orden: {{message}}",
+      "moveUp": "Subir el logro {{position}}",
+      "moveDown": "Bajar el logro {{position}}",
+      "edit": "Editar el logro {{position}}",
+      "delete": "Eliminar el logro {{position}}",
+      "deleteTitle": "¿Eliminar este logro?",
+      "text": "Qué hiciste",
+      "textHint": "Contalo con detalle; es material de base, no el texto final del CV.",
+      "metrics": "Métricas",
+      "metricsHint": "Opcional. Por ejemplo: «-40 % de latencia p95».",
+      "add": "Nuevo logro",
+      "addButton": "Agregar logro",
+      "shortcut": "Ctrl + Enter para agregar"
+    },
+    "education": {
+      "title": "Educación y cursos",
+      "add": "Agregar formación",
+      "empty": "Todavía no cargaste educación ni cursos.",
+      "titleField": "Título o nombre del curso",
+      "institution": "Institución",
+      "kind": "Tipo",
+      "field": "Área",
+      "endHint": "Dejalo vacío si está en curso.",
+      "description": "Descripción"
+    },
+    "certifications": {
+      "title": "Certificaciones",
+      "add": "Agregar certificación",
+      "empty": "Todavía no cargaste certificaciones.",
+      "name": "Nombre",
+      "issuer": "Emisor",
+      "issueDate": "Fecha de emisión",
+      "expirationDate": "Vencimiento",
+      "credentialId": "ID de la credencial",
+      "url": "URL de verificación"
+    },
+    "languages": {
+      "title": "Idiomas",
+      "add": "Agregar idioma",
+      "empty": "Todavía no cargaste idiomas.",
+      "language": "Idioma",
+      "level": "Nivel",
+      "notes": "Notas",
+      "notesHint": "Opcional. Por ejemplo: «TOEFL 110»."
     }
   }
 }
