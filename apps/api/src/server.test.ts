@@ -5,7 +5,7 @@ import { pino } from 'pino';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from './platform/config/app-config.js';
 import { startServer, type RunningServer } from './server.js';
-import { createTempDir, MIGRATIONS_DIR } from './test-support/temp-dir.js';
+import { createTempDir, MIGRATION_TAGS, MIGRATIONS_DIR } from './test-support/temp-dir.js';
 
 const TOKEN = 'integration-test-token';
 
@@ -40,7 +40,7 @@ describe('local API (integration)', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('access-control-allow-origin')).toBe('app://careerly');
     const body = HealthResponseSchema.parse(await response.json());
-    expect(body.database.appliedMigrations).toBe(1);
+    expect(body.database.appliedMigrations).toBe(MIGRATION_TAGS.length);
   });
 
   it('rejects requests without the token', async () => {

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createTempDir, MIGRATIONS_DIR } from '../../test-support/temp-dir.js';
+import { createTempDir, MIGRATION_TAGS, MIGRATIONS_DIR } from '../../test-support/temp-dir.js';
 import { MigrationError, migrateDatabase } from './migrator.js';
 import { openDatabase } from './sqlite.js';
 
@@ -21,14 +21,18 @@ describe('migrateDatabase (integration, real SQLite file)', () => {
 
   it('applies all migrations to a new database without a backup', () => {
     const result = migrateDatabase(options);
-    expect(result.applied).toEqual(['0000_init']);
+    expect(result.applied).toEqual(MIGRATION_TAGS);
     expect(result.backupFile).toBeUndefined();
   });
 
   it('does nothing when the database is up to date', () => {
     migrateDatabase(options);
     const second = migrateDatabase(options);
-    expect(second).toEqual({ applied: [], totalApplied: 1, backupFile: undefined });
+    expect(second).toEqual({
+      applied: [],
+      totalApplied: MIGRATION_TAGS.length,
+      backupFile: undefined,
+    });
   });
 
   it('restores the backup when a migration fails (RNF-20)', () => {
@@ -46,14 +50,14 @@ describe('migrateDatabase (integration, real SQLite file)', () => {
     const brokenDir = path.join(temp.dir, 'migrations');
     fs.cpSync(MIGRATIONS_DIR, brokenDir, { recursive: true });
     fs.writeFileSync(
-      path.join(brokenDir, '0001_broken.sql'),
+      path.join(brokenDir, '9999_broken.sql'),
       'CREATE TABLE `partial` (`id` integer);\n--> statement-breakpoint\nTHIS IS NOT SQL;',
     );
     const journalPath = path.join(brokenDir, 'meta', '_journal.json');
     const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8')) as {
       entries: { idx: number; tag: string }[];
     };
-    journal.entries.push({ idx: 1, tag: '0001_broken' });
+    journal.entries.push({ idx: journal.entries.length, tag: '9999_broken' });
     fs.writeFileSync(journalPath, JSON.stringify(journal));
 
     let error: unknown;
@@ -65,7 +69,7 @@ describe('migrateDatabase (integration, real SQLite file)', () => {
 
     expect(error).toBeInstanceOf(MigrationError);
     const migrationError = error as MigrationError;
-    expect(migrationError.tag).toBe('0001_broken');
+    expect(migrationError.tag).toBe('9999_broken');
     expect(migrationError.backupFile && fs.existsSync(migrationError.backupFile)).toBe(true);
 
     // The database is exactly as before: data kept, no half-applied table, migration not recorded.
@@ -79,7 +83,7 @@ describe('migrateDatabase (integration, real SQLite file)', () => {
         .get(),
     ).toBeUndefined();
     expect(after.prepare('SELECT COUNT(*) AS count FROM __careerly_migrations').get()).toEqual({
-      count: 1,
+      count: MIGRATION_TAGS.length,
     });
     after.close();
   });
