@@ -7,6 +7,17 @@
 export interface DesktopBridge {
   apiBaseUrl: string;
   apiToken: string;
+  /** Opens the local data folder in the system file manager (RF-CONF-03). */
+  openDataFolder?: () => Promise<void>;
+}
+
+/** Native actions available only inside Electron. Empty in `npm run dev:web`. */
+export interface DesktopActions {
+  openDataFolder?: () => Promise<void>;
+}
+
+export function getDesktopActions(): DesktopActions {
+  return { openDataFolder: window.careerly?.openDataFolder };
 }
 
 export interface ApiConnection {

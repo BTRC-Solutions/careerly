@@ -1,17 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import { PageHeader } from '../../../shared/ui/PageHeader';
 import { ServiceStatusCard } from '../components/ServiceStatusCard';
 
 export function HomePage() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-indigo-navy">
-          {t('home.title')}
-        </h1>
-        <p className="mt-2 text-steel">{t('home.subtitle')}</p>
-      </header>
+    <div className="flex max-w-[45rem] flex-col gap-8">
+      <PageHeader title={t('home.title')} description={t('home.subtitle')} />
       <ServiceStatusCard />
     </div>
   );

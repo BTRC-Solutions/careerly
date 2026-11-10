@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { APP_ORIGIN, registerAppScheme, serveUi } from './app-protocol.js';
 import { startBackend, type RunningBackend } from './backend.js';
 import { applySecurityPolicies } from './security.js';
@@ -61,7 +61,31 @@ async function start() {
         : { apiBaseUrl: '', apiToken: '' };
   });
 
+  // The renderer never chooses the path: main asks the API for its data folder and opens only that.
+  ipcMain.handle('careerly:open-data-folder', async (event) => {
+    const senderOrigin = event.senderFrame ? new URL(event.senderFrame.url).origin : undefined;
+    if (senderOrigin !== uiOrigin) {
+      throw new Error('Not allowed.');
+    }
+    const error = await shell.openPath(await fetchDataDir(connection));
+    if (error) {
+      throw new Error(error);
+    }
+  });
+
   createWindow(connection.uiUrl);
+}
+
+/** The data folder the API is using (in development it is `.data/`, not `userData`). */
+async function fetchDataDir(connection: Connection): Promise<string> {
+  const response = await fetch(`${connection.apiBaseUrl}/settings`, {
+    headers: { Authorization: `Bearer ${connection.apiToken}` },
+  });
+  const body = (await response.json()) as { dataDir?: unknown };
+  if (!response.ok || typeof body.dataDir !== 'string' || !path.isAbsolute(body.dataDir)) {
+    throw new Error('The API did not report a valid data folder.');
+  }
+  return body.dataDir;
 }
 
 /** `npm start` / installed app: start the API ourselves and serve the built UI. */

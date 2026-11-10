@@ -14,4 +14,6 @@ const connection = ipcRenderer.sendSync('careerly:get-api-connection') as ApiCon
 contextBridge.exposeInMainWorld('careerly', {
   apiBaseUrl: connection.apiBaseUrl,
   apiToken: connection.apiToken,
+  /** Opens the data folder in the system file manager. Main decides which folder. */
+  openDataFolder: (): Promise<void> => ipcRenderer.invoke('careerly:open-data-folder'),
 });

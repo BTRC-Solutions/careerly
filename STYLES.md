@@ -7,6 +7,58 @@ Source measurements are normalized; roles and recommendations are interpreted. F
 
 Column uses a deep-navy institutional language on a near-white canvas: the page reads as a trustworthy banking product surface first, a developer playground second. Brand color is not a single hue but a coordinated pair — indigo navy #111a4a for serious structure, seafoam green #44b48b for data and code — with one warm orange (#ec652b) reserved for high-signal accent surfaces like the Brex card. Typography is dominated by SuisseIntl, a geometric grotesque used across the full weight range from 300 (links) through 600 (display), which gives the system a refined, editorial register most fintechs lack. Cards float on generous white surfaces with subtle multi-layer shadows; most UI chrome is flat, with depth appearing only where a card needs to feel like a physical object (transaction widgets, product mockups). Code and financial data live in monospace, tinted seafoam — a visual signal that this is a bank built by engineers, for engineers.
 
+## Careerly — adapting this reference to a desktop app
+
+Everything below this section describes Column's **marketing website**. Careerly uses it for its **aesthetic**
+(palette, typography, 8px radii, hairline borders, restraint with color), not for its layout or density.
+When this section and the rest of the document disagree, this section wins. Tokens live in
+`apps/web/src/styles.css`.
+
+### Layout
+
+- **App shell:** fixed left sidebar (240px, white, hairline right border) + scrolling content area on the
+  Cloud Canvas. No top marketing nav, hero, halftone map, logo bars or 1200px centered page.
+- **Content width:** up to 720px for forms and settings; up to 1120px for tables, kanban and the CV review
+  screen (which needs the PDF preview side by side).
+- **Density:** comfortable for a desktop tool, tighter than the site — 32px between page sections/cards,
+  24px card padding, 16px between related controls, 8px element gap. The 72px section gap does not apply.
+- **Window:** minimum 1024×640; screens must work at that size.
+
+### Typography
+
+Inter replaces SuisseIntl (no license needed); JetBrains Mono replaces SuisseIntlMono/SFMono.
+
+| Role | Size / line height / tracking | Weight | Class |
+|---|---|---|---|
+| Page title | 28px / 1.1 / -0.01em | 500 | `text-page-title` |
+| Section / card title | 16px / 1.4 / normal | 500 | `text-section-title` |
+| Body (app default) | 14px / 1.43 / normal | 400 | `text-sm` |
+| Technical (paths, ids, versions) | 13px mono / 1.5 | 400 | `font-mono text-[13px]` |
+
+Weight 600 only for the wordmark. Never body text below 14px except mono technical labels.
+
+### Color semantics
+
+- **Text:** Indigo Navy for titles, Slate Ink for body, **Steel Text `#686b74`** for secondary text.
+  Steel (`#7c7f88`) is only 4.0:1 on white and fails WCAG AA for 14px text (RNF-11), so it is kept for icons,
+  disabled states and text of 18px or more.
+- **Signal Orange is never used for text** (3.2:1 on white). It marks errors and attention as a dot or icon
+  next to Slate Ink text (`InlineError`), and fills at most one surface per screen.
+- **Seafoam 600** marks success/healthy states as a dot; seafoam text stays reserved for data and code.
+- No new hues. Destructive actions use the secondary style plus an explicit confirmation dialog.
+
+### Components
+
+- **Buttons:** 36px tall (8px × 16px padding), 14px weight 500, 8px radius. Primary = Indigo Navy filled with
+  the "Primary Button" elevation; secondary = transparent with a 1px Indigo Navy border. Never two primary
+  buttons side by side.
+- **Cards:** white, 8px radius, 24px padding, "Bordered Card" elevation (hairline + whisper). The Product Card
+  and Transaction Widget shadows are not used in the app; dialogs and popovers use `shadow-md`.
+- **Inputs and option rows:** 8px radius, Silver Lining 1px border, Indigo Navy border when selected/focused.
+- **Navigation items:** 8px radius; active item = Cloud Canvas background + Indigo Navy text.
+- **Focus:** 2px Indigo Navy outline with 2px offset on every interactive element.
+- **Tags/badges:** the only place for the 9999px pill radius.
+
 ## Tokens — Colors
 
 | Name | Value | Token | Role |

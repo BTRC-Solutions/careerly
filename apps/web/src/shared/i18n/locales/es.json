@@ -1,7 +1,8 @@
 {
   "nav": {
     "label": "Navegación principal",
-    "home": "Inicio"
+    "home": "Inicio",
+    "settings": "Configuración"
   },
   "home": {
     "title": "Bienvenido a Careerly",
@@ -14,6 +15,28 @@
       "version": "Versión",
       "migrations": "Migraciones de base de datos aplicadas",
       "retry": "Reintentar"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Preferencias de la app y dónde se guardan tus datos.",
+    "loading": "Cargando la configuración…",
+    "loadError": "No se pudo cargar la configuración: {{message}}",
+    "retry": "Reintentar",
+    "language": {
+      "title": "Idioma de la interfaz",
+      "description": "Se aplica al instante, sin reiniciar. No cambia el idioma de los CVs que generes.",
+      "system": "Igual que el sistema ({{language}})",
+      "saveError": "No se pudo guardar el idioma: {{message}}"
+    },
+    "data": {
+      "title": "Carpeta de datos",
+      "description": "Tu perfil, tus CVs y tus postulaciones se guardan solo en esta computadora, en esta carpeta.",
+      "open": "Abrir carpeta",
+      "copy": "Copiar ruta",
+      "copied": "Ruta copiada.",
+      "copyFailed": "No se pudo copiar la ruta.",
+      "openFailed": "No se pudo abrir la carpeta."
     }
   }
 }
