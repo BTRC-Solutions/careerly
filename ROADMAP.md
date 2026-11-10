@@ -19,13 +19,13 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 0.1 | Monorepo con pnpm workspaces: `apps/desktop`, `apps/web`, `apps/api`, `packages/contracts`, configs compartidas de TS y ESLint. | `pnpm install`, `pnpm build` y `pnpm lint` funcionan desde la raíz. | ⬜ |
-| 0.2 | Esqueleto de NestJS: config validada con Zod (carpeta de datos, token, puerto), logger a archivo (pino), manejo global de errores, guard de token + verificación de `Host`/`Origin`. `[RNF-19]` | `GET /health` responde solo con el token correcto. | ⬜ |
-| 0.3 | SQLite con `better-sqlite3` + Drizzle: primera migración, modo WAL, migraciones aplicadas al iniciar con backup automático previo. `[RNF-20]` | Test: una migración que falla restaura el backup. | ⬜ |
-| 0.4 | Esqueleto de Vite + React: router (modo hash), TanStack Query, librería de UI, i18n (ES/EN), layout base, módulo puente con Electron. | La interfaz muestra el resultado de `/health`. | ⬜ |
-| 0.5 | Shell de Electron: main lanza el backend con `utilityProcess.fork`, puerto libre, token aleatorio, preload con `contextBridge`, una sola instancia, endurecimiento (`contextIsolation`, `sandbox`, CSP, enlaces externos al navegador). Comandos `pnpm dev`, `pnpm dev:web` y `pnpm start`. `[RNF-18]` | La app de escritorio abre y muestra `/health`; `pnpm dev:web` funciona en el navegador. | ⬜ |
-| 0.6 | Reglas de límites entre módulos (ESLint) y setup de tests (unitarios + integración con SQLite temporal). | Un test de ejemplo de cada tipo corre en CI. | ⬜ |
-| 0.7 | CI en GitHub Actions: lint, typecheck, tests y build en cada PR. | PR de prueba con checks en verde. | ⬜ |
+| 0.1 | Monorepo con npm workspaces: `apps/desktop`, `apps/web`, `apps/api`, `packages/contracts`, configs compartidas de TS, ESLint y Prettier. | `npm install`, `npm run build` y `npm run lint` funcionan desde la raíz. | ✅ |
+| 0.2 | Esqueleto de NestJS: config validada con Zod (carpeta de datos, token, puerto), logger a archivo (pino), manejo global de errores, middleware de token + verificación de `Host`/`Origin`. `[RNF-19]` | `GET /health` responde solo con el token correcto. | ✅ |
+| 0.3 | SQLite con `node:sqlite` + Drizzle: primera migración, modo WAL, migraciones aplicadas al iniciar con backup automático previo. `[RNF-20]` | Test: una migración que falla restaura el backup. | ✅ |
+| 0.4 | Esqueleto de Vite + React: router (modo hash), TanStack Query, tokens de STYLES.md en Tailwind + componentes base propios, i18n (ES/EN), layout base, módulo puente con Electron. | La interfaz muestra el resultado de `/health`. | ✅ |
+| 0.5 | Shell de Electron: main lanza el backend con `utilityProcess.fork`, puerto libre, token aleatorio, preload con `contextBridge`, una sola instancia, endurecimiento (`contextIsolation`, `sandbox`, CSP, enlaces externos al navegador). Comandos `npm run dev`, `npm run dev:web` y `npm start`. `[RNF-18]` | La app de escritorio abre y muestra `/health`; `npm run dev:web` funciona en el navegador. | ✅ |
+| 0.6 | Reglas de límites entre módulos (ESLint) y setup de tests (unitarios + integración con SQLite temporal). | Un test de ejemplo de cada tipo corre en CI. | 🟨 (pasa localmente; falta la corrida en CI) |
+| 0.7 | CI en GitHub Actions: formato, lint, typecheck, tests y build en cada PR (Windows + Ubuntu). | PR de prueba con checks en verde. | 🟨 (workflow listo; falta el PR de prueba) |
 
 ## Fase 1 — Configuración y datos locales
 
@@ -34,7 +34,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 1.1 | Asistente de primer inicio: API key guardada con `safeStorage` por main, enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | ⬜ |
 | 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ⬜ |
 | 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | ⬜ |
-| 1.4 | **Primer instalador** de Windows con electron-builder (con `better-sqlite3` recompilado para Electron). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ⬜ |
+| 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ⬜ |
 
 ## Fase 2 — Perfil maestro
 
@@ -120,7 +120,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 8.3 | E2E con Playwright para Electron del flujo completo (LLM *fake*). | Corre en CI. | ⬜ |
 | 8.4 | Pantalla de "Privacidad" (qué datos salen hacia el proveedor de IA) y revisión de logs sin contenido sensible. `[RNF-01, RNF-02]` | Un flujo completo no deja datos del perfil en los logs. | ⬜ |
 | 8.5 | Releases: workflow de GitHub Actions con matriz Windows/macOS/Linux que publica en GitHub Releases al crear un tag. `[RNF-17, RNF-18]` | El tag `v0.1.0` produce instaladores que funcionan en las tres plataformas. | ⬜ |
-| 8.6 | README con instrucciones para instalar desde releases y para ejecutar desde el código (`pnpm start`). | Una instalación limpia siguiendo el README funciona. | ⬜ |
+| 8.6 | README con instrucciones para instalar desde releases y para ejecutar desde el código (`npm start`). | Una instalación limpia siguiendo el README funciona. | ⬜ |
 
 **🎯 Hito: MVP (v0.1.0)** — la app de escritorio permite cargar el perfil maestro, generar CVs adaptados de
 1–2 páginas respondiendo gaps, finalizarlos y seguir las postulaciones, con todos los datos locales.

@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+/* Design tokens from STYLES.md. Use these tokens in components, never raw hex values. */
+@theme {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+
+  --color-indigo-navy: #111a4a;
+  --color-midnight-ink: #011821;
+  --color-slate-ink: #3b3e47;
+  --color-steel: #7c7f88;
+  --color-fog: #a9acb6;
+  --color-mist: #cbcccf;
+  --color-silver-lining: #e3e4e8;
+  --color-cloud-canvas: #f6f6f8;
+  --color-pure-white: #ffffff;
+  --color-charcoal: #232730;
+  --color-signal-orange: #ec652b;
+  --color-seafoam-600: #44b48b;
+  --color-seafoam-700: #167e6c;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  --shadow-subtle: rgba(17, 26, 74, 0.1) 0px 1px 3px 0px, rgba(17, 26, 74, 0.05) 0px 1px 0px 0px;
+  --shadow-card: rgba(17, 26, 74, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-cloud-canvas font-sans text-slate-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-navy;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
