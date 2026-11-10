@@ -1,0 +1,19 @@
+{
+  "nav": {
+    "label": "Navegación principal",
+    "home": "Inicio"
+  },
+  "home": {
+    "title": "Bienvenido a Careerly",
+    "subtitle": "Adaptá tu CV a cada búsqueda y seguí cada postulación.",
+    "status": {
+      "title": "Servicio local",
+      "checking": "Verificando…",
+      "ok": "Funcionando",
+      "error": "No disponible",
+      "version": "Versión",
+      "migrations": "Migraciones de base de datos aplicadas",
+      "retry": "Reintentar"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "careerly",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Desktop app to tailor CVs with AI and track job applications.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "npm run build -w @careerly/contracts && npm run build -w @careerly/api -w @careerly/web -w @careerly/desktop",
+    "typecheck": "npm run build -w @careerly/contracts && npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run build -w @careerly/contracts && vitest run",
+    "test:watch": "vitest",
+    "predev": "npm run build -w @careerly/contracts -w @careerly/api -w @careerly/desktop",
+    "dev": "concurrently -k -n contracts,api,web,desktop -c gray,blue,magenta,green \"npm run dev -w @careerly/contracts\" \"npm run dev -w @careerly/api\" \"npm run dev -w @careerly/web\" \"npm run dev -w @careerly/desktop\"",
+    "predev:web": "npm run build -w @careerly/contracts -w @careerly/api",
+    "dev:web": "concurrently -k -n contracts,api,web -c gray,blue,magenta \"npm run dev -w @careerly/contracts\" \"npm run dev -w @careerly/api\" \"npm run dev -w @careerly/web\"",
+    "start": "npm run build && npm run start -w @careerly/desktop"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@swc/core": "^1.16.22",
+    "@types/node": "^26.6.6",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.14.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.4.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "@swc/core@1.16.22": true
+  }
+}

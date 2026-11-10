@@ -97,9 +97,12 @@ Si el usuario cambia la API key, main la vuelve a cifrar y se la envía al backe
 | Modo | Comando | Uso |
 |---|---|---|
 | Release instalada | Instalador desde GitHub Releases | Uso normal, con actualizaciones automáticas. |
-| Desde el código | `pnpm install` + `pnpm start` | Compila todo y abre Electron. Sin instalador ni auto-update. |
-| Desarrollo | `pnpm dev` | Vite con HMR + Nest en modo watch + Electron cargando la URL de Vite. |
-| Desarrollo solo en el navegador | `pnpm dev:web` | Backend con un token fijo de desarrollo y la interfaz en el navegador. Útil para depurar. |
+| Desde el código | `npm install` + `npm start` | Compila todo y abre Electron, que lanza la API en un `utilityProcess`. Sin instalador ni auto-update. |
+| Desarrollo | `npm run dev` | Vite con HMR + API en modo watch (proceso de Node aparte, puerto 4317) + Electron cargando la URL de Vite y conectándose a esa API. |
+| Desarrollo solo en el navegador | `npm run dev:web` | API en modo watch + interfaz en el navegador (`localhost:5173`). Útil para depurar. |
+
+En los modos de desarrollo la API usa un token fijo, no secreto, definido en los archivos
+`.env.development`, y guarda los datos en `.data/` (ignorado por git).
 
 ### Carpeta de datos
 
@@ -475,12 +478,21 @@ careerly/
   REQUIREMENTS.md  ARCHITECTURE.md  ROADMAP.md
 ```
 
-- **pnpm workspaces** (+ Turborepo si los tiempos de build lo justifican).
-- **Base de datos:** SQLite con `better-sqlite3` + **Drizzle ORM**; migraciones generadas con `drizzle-kit`,
-  incluidas en la app y aplicadas al iniciar (ADR-06). `better-sqlite3` es un módulo nativo: electron-builder
-  lo recompila para la versión de Electron.
-- **Empaquetado del backend:** el código de Nest se compila a un bundle de JS (esbuild/tsup) que main ejecuta
-  con `utilityProcess.fork`.
+- **npm workspaces** (+ Turborepo si los tiempos de build lo justifican). Todo el monorepo es ESM.
+- **TypeScript 5.9** (typescript-eslint todavía no soporta TypeScript 7).
+- **Base de datos:** SQLite con el módulo integrado **`node:sqlite`** + **Drizzle ORM** a través de su driver
+  `sqlite-proxy` (Drizzle no tiene un driver para `node:sqlite`); migraciones generadas con `drizzle-kit`,
+  incluidas en la app y aplicadas al iniciar por un migrador propio que hace el backup previo (ADR-06). Al no
+  haber módulo nativo, no hay nada que recompilar para Electron. Las transacciones usan `inTransaction()`, porque
+  el driver proxy no soporta `db.transaction()`.
+- **Empaquetado del backend:** se compila con `tsc` (emite la metadata de decoradores que necesita la inyección
+  de dependencias de Nest) y main lo ejecuta con `utilityProcess.fork`. Cómo se incluye en el instalador se
+  define en la Fase 1.4.
+- **Tests:** Vitest con proyectos por paquete; la API usa SWC (`unplugin-swc`) para emitir la metadata de
+  decoradores.
+- **Límites entre módulos:** `eslint-plugin-boundaries` (con `eslint-import-resolver-typescript`) para las capas
+  y módulos de la API, y `no-restricted-imports` para prohibir frameworks e I/O en `domain/`, Electron en la API
+  y Node/Electron en la interfaz.
 - **Calidad:** ESLint + Prettier, `tsc --noEmit` y tests en CI (GitHub Actions) en cada PR.
 
 ## 14. Seguridad y privacidad
@@ -533,7 +545,7 @@ careerly/
 | ADR-03 | Typst para el render de CVs, con datos en JSON | Aceptada |
 | ADR-04 | Perfil maestro solo con afirmaciones; negaciones únicamente en el historial de sesión | Aceptada |
 | ADR-05 | Ajuste de páginas determinístico (render + recorte por score), no delegado al LLM | Aceptada |
-| ADR-06 | SQLite con `better-sqlite3` + Drizzle ORM (reemplaza PostgreSQL) | Aceptada |
+| ADR-06 | SQLite con `node:sqlite` (integrado en Node, sin módulo nativo) + Drizzle ORM vía `sqlite-proxy` (reemplaza PostgreSQL y `better-sqlite3`) | Aceptada (Fase 0) |
 | ADR-07 | Conteo de páginas: `typst query` vs. lectura del PDF | Pendiente (Fase 3) |
 | ADR-08 | Puntuación de relevancia: LLM vs. embeddings (`sqlite-vec`) | Pendiente (post-MVP) |
 | ADR-09 | Requisitos de JD normalizados en tabla (`JobRequirement`) además del JSON | Aceptada (Fase 4) |

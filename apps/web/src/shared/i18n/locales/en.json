@@ -1,0 +1,19 @@
+{
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home"
+  },
+  "home": {
+    "title": "Welcome to Careerly",
+    "subtitle": "Tailor your CV to every job description and keep track of every application.",
+    "status": {
+      "title": "Local service",
+      "checking": "Checking…",
+      "ok": "Running",
+      "error": "Not available",
+      "version": "Version",
+      "migrations": "Database migrations applied",
+      "retry": "Retry"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@careerly/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local NestJS backend for Careerly. Runs inside Electron (utilityProcess) or standalone in development.",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "concurrently -k -n tsc,node -c gray,blue \"tsc -p tsconfig.build.json --watch --preserveWatchOutput\" \"node --env-file=.env.development --watch-path=dist dist/main.js\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.4.2",
+    "@nestjs/core": "^12.4.2",
+    "@nestjs/platform-express": "^12.4.2",
+    "drizzle-orm": "^0.45.4",
+    "pino": "^10.4.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.11"
+  }
+}
