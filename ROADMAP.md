@@ -69,12 +69,14 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 3.1 | Plantilla `classic` en Typst que lee los datos desde JSON, con títulos en ES y EN, compatible con ATS. `[RNF-09]` | Un JSON de ejemplo genera un PDF correcto en ambos idiomas. | ⬜ |
+| 3.1 | Contrato de plantillas (`TemplateData`: datos en JSON + textos fijos por idioma que agrega la app) y plantilla `classic` en Typst, compatible con ATS. `[RNF-09, ADR-24]` | Un JSON de ejemplo genera un PDF correcto en ambos idiomas. | 🟨 en proceso |
 | 3.2 | Decidir CLI empaquetado vs. módulo nativo (ADR-14). Script `fetch-typst` (versión fija + checksum) e inclusión del binario en el instalador. | El instalador de Windows renderiza PDFs sin tener Typst instalado. | ⬜ |
 | 3.3 | Puerto `ResumeRenderer` + adaptador Typst (proceso hijo, directorio temporal, `--root`, fuentes empaquetadas, timeout). `[RNF-05]` | Test de integración renderiza un PDF real. | ⬜ |
 | 3.4 | Conteo de páginas (decidir ADR-07). | Test: un CV largo devuelve 2 páginas, uno corto devuelve 1. | ⬜ |
 | 3.5 | `page-fitter` puro: reglas iniciales por sección + recorte por score + relleno. Tests con medidor falso. `[RN-04, RN-06, RN-07]` | Tests unitarios cubren: entra justo, sobra, falta y mínimo por puesto. | ⬜ |
 | 3.6 | Prueba manual: con el perfil real y scores asignados a mano, generar CVs de 1 y 2 páginas. | El resultado es un CV presentable. **Validar la plantilla antes de seguir.** | ⬜ |
+| 3.7 | Plantillas propias (backend): subir un `.typ`, validarlo renderizando los ejemplos de ES y EN, guardarlo versionado en `files/templates/`, listar, renombrar y borrar (las usadas por un snapshot se conservan). `[RF-TAIL-09, ADR-24, RNF-10]` | Test de integración: una plantilla válida queda disponible; una que no compila o tarda más del timeout se rechaza con el error de Typst. | ⬜ |
+| 3.8 | Plantillas propias (UI): pantalla de plantillas con `classic` y las propias, subida con vista previa del ejemplo y descarga de `classic` + ejemplos como punto de partida. `[RF-TAIL-09]` | Subir una plantilla desde la app y ver su vista previa en ambos idiomas. | ⬜ |
 
 ## Fase 4 — Job descriptions + módulo de IA · `v0.4.0`
 
@@ -158,7 +160,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 3 | Carta de presentación desde la sesión de adaptación. | RF-TAIL-16 |
 | 4 | Recordatorios de seguimiento y "requiere acción" en el dashboard. | RF-APP-09, RF-DASH-03 |
 | 5 | Presupuesto mensual de IA. (La elección de modelos pasó al MVP: paso 4.10.) | RF-CONF-07 |
-| 6 | Más plantillas de CV. | RF-TAIL-09 |
+| 6 | Más plantillas de CV incluidas en la app (además de `classic` y las propias). | RF-TAIL-09 |
 | 7 | Importar JD desde URL / extensión de navegador. | RF-JD-04, RF-JD-05 |
 | 8 | Ver el perfil maestro completo y exportarlo a PDF. | RF-PROF-08 |
 | 9 | Exportación de datos en JSON y backups cifrados con contraseña. | RF-CONF-11 |

@@ -377,13 +377,19 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 ## 9. Render con Typst (módulo `documents`)
 
 ```
-apps/api/templates/
+apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates/README.md
   classic/
-    template.typ          # lee los datos con json(sys.inputs.data) o un archivo data.json
-    i18n.json             # títulos de sección por idioma
-    fonts/                # fuentes embebidas (licencia libre)
-    template.json         # id, versión, idiomas soportados
+    template.typ          # lee los datos con json(sys.inputs.at("data", default: "data.json"))
+    template.json         # id, nombre, versión
+  examples/               # TemplateData de ejemplo por idioma; prueban cualquier plantilla
+  fonts/                  # fuentes disponibles para todas las plantillas (licencia OFL)
 ```
+
+- **Plantillas incluidas y propias (ADR-24):** `classic` viene con la app y es la plantilla por defecto. El
+  usuario puede subir su propia plantilla `.typ`, que sigue el mismo contrato: recibe un único JSON
+  (`TemplateData`: el `ResumeDocument` más `labels`, los textos fijos en el idioma del CV) y no necesita
+  traducciones propias. Al subirla se valida renderizando los ejemplos de cada idioma; se guarda en el directorio
+  de datos (`files/templates/<id>/<versión>/`) con versión propia, como las incluidas.
 
 - **Binario empaquetado:** el CLI de `typst` se incluye en el instalador por plataforma (`extraResources` de
   electron-builder), con versión fija y checksum verificado al descargarlo en CI. Alternativa a evaluar: el
@@ -396,7 +402,8 @@ apps/api/templates/
 - **Versionado de plantillas:** cada cambio de plantilla incrementa `templateVersion`. Los snapshots guardan la
   versión; las versiones viejas se conservan en la app para poder volver a renderizar (RNF-10).
 - **Plantillas compatibles con ATS:** una columna, títulos estándar traducidos por idioma, sin tablas para el
-  diseño, sin texto en imágenes y fuentes embebidas.
+  diseño, sin texto en imágenes y fuentes embebidas. Es una guía para las plantillas propias: la app no puede
+  verificarlo del todo y lo indica al subirlas.
 - **Vista previa:** endpoint que renderiza el `TailoredResume` actual y devuelve el PDF; el renderer lo muestra
   con el visor de PDF de Chromium integrado en Electron.
 - **Snapshots:** al finalizar se renderiza, se calcula `contentHash` (datos + plantilla + versión), se guarda el
@@ -658,6 +665,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
 | ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
+| ADR-24 | Plantillas propias: el usuario sube un `.typ` con el mismo contrato que las incluidas (un JSON `TemplateData` con los textos fijos traducidos por la app). Se ejecuta con el mismo aislamiento de Typst (sin red, lectura solo dentro de `--root`, fuentes del sistema ignoradas, timeout) y se valida renderizando los ejemplos | Aceptada (Fase 3) |
 
 ## 18. Extensiones post-MVP
 

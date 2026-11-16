@@ -1,0 +1,149 @@
+{
+  "language": "es",
+  "paper": "a4",
+  "basics": {
+    "name": "Ana Pérez",
+    "headline": "Desarrolladora backend sénior · Node.js y TypeScript",
+    "location": "Córdoba, Argentina",
+    "email": "ana.perez@example.com",
+    "phone": "+54 351 555-0100",
+    "links": [
+      {
+        "url": "https://www.linkedin.com/in/ana-perez-example/",
+        "label": null
+      },
+      {
+        "url": "https://github.com/ana-perez-example",
+        "label": "github.com/ana-perez-example"
+      }
+    ]
+  },
+  "summary": "Desarrolladora backend con 8 años de experiencia diseñando APIs y sistemas de pagos. Me interesa la calidad del código, la observabilidad y acompañar a equipos chicos a crecer sin perder velocidad.",
+  "experience": [
+    {
+      "company": "Pagos del Sur S.A.",
+      "title": "Desarrolladora backend sénior",
+      "location": "Remoto",
+      "startDate": "2022-03",
+      "endDate": null,
+      "bullets": [
+        "Rediseñé el servicio de conciliación en NestJS y PostgreSQL; el cierre diario pasó de 4 h a 25 min.",
+        "Lideré la migración de 14 servicios de JavaScript a TypeScript estricto, sin incidentes en producción.",
+        "Implementé trazas distribuidas con OpenTelemetry y bajé el tiempo medio de diagnóstico en un 60 %.",
+        "Mentoreé a 3 desarrolladores junior; dos pasaron a semi sénior en menos de un año.",
+        "Definí el proceso de revisión de código y las guías de estilo del equipo (C#, *.ts y SQL)."
+      ]
+    },
+    {
+      "company": "Tienda Nube Example",
+      "title": "Desarrolladora backend",
+      "location": "Buenos Aires, Argentina",
+      "startDate": "2019-06",
+      "endDate": "2022-02",
+      "bullets": [
+        "Desarrollé la API de envíos usada por más de 20.000 comercios, con 99,95 % de disponibilidad.",
+        "Reduje un 35 % el costo mensual de infraestructura en AWS ajustando colas y cachés en Redis.",
+        "Escribí la suite de tests de integración que hoy corre en cada PR (Jest + Testcontainers)."
+      ]
+    },
+    {
+      "company": "Consultora Andina",
+      "title": "Desarrolladora full stack",
+      "location": "Córdoba, Argentina",
+      "startDate": "2017-02",
+      "endDate": "2019-05",
+      "bullets": [
+        "Construí sistemas de turnos y facturación para clientes de salud con Express, React y MySQL.",
+        "Automaticé despliegues con GitHub Actions, de 2 días a menos de una hora por versión."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "feriados-ar",
+      "role": "Autora y mantenedora",
+      "url": "https://github.com/ana-perez-example/feriados-ar",
+      "startDate": "2021-01",
+      "endDate": null,
+      "bullets": [
+        "Librería open source de feriados argentinos con 15.000 descargas semanales en npm.",
+        "Precios en $ y fórmulas como a_b * c o #tag se muestran tal cual: el texto nunca se evalúa."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "label": "Lenguajes",
+      "items": ["TypeScript", "JavaScript", "SQL", "C#"]
+    },
+    {
+      "label": "Backend",
+      "items": ["Node.js", "NestJS", "Express", "PostgreSQL", "Redis", "Kafka"]
+    },
+    {
+      "label": "Infraestructura",
+      "items": ["AWS", "Docker", "GitHub Actions", "OpenTelemetry"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universidad Nacional de Córdoba",
+      "title": "Ingeniería en Sistemas de Información",
+      "field": null,
+      "startDate": "2011-03",
+      "endDate": "2017-12"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Developer – Associate",
+      "issuer": "Amazon Web Services",
+      "issueDate": "2023-09"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Español",
+      "level": "NATIVE"
+    },
+    {
+      "language": "Inglés",
+      "level": "C1"
+    }
+  ],
+  "labels": {
+    "sections": {
+      "summary": "Perfil profesional",
+      "experience": "Experiencia laboral",
+      "projects": "Proyectos",
+      "skills": "Habilidades técnicas",
+      "education": "Educación",
+      "certifications": "Certificaciones",
+      "languages": "Idiomas"
+    },
+    "present": "actualidad",
+    "months": [
+      "ene.",
+      "feb.",
+      "mar.",
+      "abr.",
+      "may.",
+      "jun.",
+      "jul.",
+      "ago.",
+      "sep.",
+      "oct.",
+      "nov.",
+      "dic."
+    ],
+    "levels": {
+      "NATIVE": "nativo",
+      "C2": "C2",
+      "C1": "C1",
+      "B2": "B2",
+      "B1": "B1",
+      "A2": "A2",
+      "A1": "A1"
+    }
+  }
+}
