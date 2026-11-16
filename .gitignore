@@ -27,3 +27,6 @@ Thumbs.db
 
 # Test output
 coverage/
+
+# Downloaded tools (scripts/fetch-typst.mjs)
+vendor/

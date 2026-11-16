@@ -3,6 +3,7 @@ dist
 release
 .data
 coverage
+vendor
 package-lock.json
 apps/api/drizzle/meta
 *.md

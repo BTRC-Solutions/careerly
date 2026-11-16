@@ -33,12 +33,12 @@ templates/
 
 ## Probar una plantilla
 
-Con el CLI de Typst instalado, desde `apps/api/templates/`:
+Con el CLI de Typst (`npm run typst:fetch` baja la versión fija a `vendor/typst/`), desde `apps/api/templates/`:
 
 ```bash
 typst compile classic/template.typ cv-es.pdf --root . --input data=/examples/example.es.json --font-path fonts --ignore-system-fonts
 ```
 
 En Git Bash, anteponé `MSYS_NO_PATHCONV=1` para que `/examples/...` no se convierta en una ruta de Windows.
-`npm test` renderiza todas las plantillas incluidas con cada ejemplo si encuentra Typst (en el PATH o en
-`TYPST_BIN`).
+`npm test` renderiza todas las plantillas incluidas con cada ejemplo si encuentra Typst (`TYPST_BIN`, el de
+`vendor/typst/` o el del PATH); CI siempre lo baja.
