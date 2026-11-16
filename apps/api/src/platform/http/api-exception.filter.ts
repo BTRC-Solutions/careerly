@@ -6,7 +6,11 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import type { ApiErrorCode, ApiErrorResponse } from '@careerly/contracts';
+import {
+  ApiErrorCode as ApiErrorCodeSchema,
+  type ApiErrorCode,
+  type ApiErrorResponse,
+} from '@careerly/contracts';
 
 interface JsonResponse {
   status(code: number): { json(body: unknown): void };
@@ -17,7 +21,20 @@ const CODE_BY_STATUS: Partial<Record<number, ApiErrorCode>> = {
   [HttpStatus.UNAUTHORIZED]: 'UNAUTHORIZED',
   [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
   [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
+  [HttpStatus.CONFLICT]: 'CONFLICT',
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'VALIDATION_FAILED',
 };
+
+/**
+ * An `HttpException` can name its code explicitly with `{ code, message }` as its response
+ * (e.g. `AI_RATE_LIMITED`), when the HTTP status alone is not specific enough.
+ */
+function explicitCode(exception: HttpException): ApiErrorCode | undefined {
+  const response = exception.getResponse();
+  if (typeof response !== 'object' || response === null || !('code' in response)) return undefined;
+  const parsed = ApiErrorCodeSchema.safeParse(response.code);
+  return parsed.success ? parsed.data : undefined;
+}
 
 /** Turns every error into the shared `{ error: { code, message } }` shape. */
 @Catch()
@@ -30,7 +47,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body: ApiErrorResponse = {
-        error: { code: CODE_BY_STATUS[status] ?? 'INTERNAL_ERROR', message: exception.message },
+        error: {
+          code: explicitCode(exception) ?? CODE_BY_STATUS[status] ?? 'INTERNAL_ERROR',
+          message: exception.message,
+        },
       };
       response.status(status).json(body);
       return;
