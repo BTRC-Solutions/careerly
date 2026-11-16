@@ -79,6 +79,33 @@
       "storedUnreachable": "{{provider}} could not be reached. Try again later.",
       "storedMissing": "The local service has not received the key yet. Try again in a few seconds.",
       "actionError": "The action could not be completed: {{message}}"
+    },
+    "about": {
+      "title": "About Careerly",
+      "version": "Version"
+    },
+    "privacy": {
+      "title": "Privacy and usage statistics",
+      "description": "What is shared, what never leaves your computer and what has been prepared for sending.",
+      "loadError": "Could not load the privacy settings: {{message}}",
+      "pending": "You have not chosen whether to share usage statistics yet: nothing is recorded or sent.",
+      "choose": "Choose now",
+      "metricsTitle": "Statistics you share",
+      "metricsHint": "Changes apply from the next send.",
+      "saveError": "Could not save the change: {{message}}",
+      "installId": "Anonymous ID of this installation",
+      "regenerate": "Regenerate ID",
+      "regenerateTitle": "Regenerate the anonymous ID?",
+      "regenerateDescription": "The next reports will use a new ID and cannot be linked to the previous ones.",
+      "previewTitle": "See the report of today, exactly as it would be sent",
+      "previewEmpty": "There is nothing to send with the statistics you have enabled.",
+      "historyTitle": "Prepared reports",
+      "historyEmpty": "No report has been prepared yet. They are prepared after each day with use.",
+      "reportStatus": {
+        "PENDING": "Waiting to be sent",
+        "SENT": "Sent",
+        "FAILED": "Sending failed"
+      }
     }
   },
   "common": {
@@ -277,5 +304,82 @@
       "notes": "Notes",
       "notesHint": "Optional. For example: “TOEFL 110”."
     }
+  },
+  "onboarding": {
+    "brand": "Careerly",
+    "progress": "Step {{current}} of {{total}}",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Start using Careerly",
+    "loadError": "Could not connect to the local service: {{message}}",
+    "saveError": "Could not save: {{message}}",
+    "steps": {
+      "language": {
+        "title": "Welcome to Careerly",
+        "description": "First, choose the interface language. You can change it anytime in Settings."
+      },
+      "ai": {
+        "title": "Connect your AI provider",
+        "description": "Careerly uses your own API key to analyze job posts and tailor your resume. It is verified before saving and stored encrypted on this computer.",
+        "later": "You can do this later in Settings."
+      },
+      "telemetry": {
+        "title": "Help us improve Careerly",
+        "description": "Choose which usage statistics to share. Nothing is sent until you answer."
+      }
+    }
+  },
+  "telemetry": {
+    "consent": {
+      "intro": "With your permission, Careerly sends an anonymous usage summary once a day. Uncheck anything you do not want to share.",
+      "newMetrics": "This version adds new statistics. What you already chose does not change: we only ask about these.",
+      "metricsTitle": "What is shared",
+      "accept": "Accept",
+      "rejectAll": "Reject all",
+      "error": "Could not save your choice: {{message}}"
+    },
+    "metrics": {
+      "activeUsage": {
+        "name": "Active use",
+        "description": "Whether you used the app that day (yes or no)."
+      },
+      "applications": {
+        "name": "Number of applications",
+        "description": "How many applications you created that day."
+      },
+      "sources": {
+        "name": "Job boards",
+        "description": "Which job board each posting came from (e.g. linkedin.com). Never the full URL."
+      },
+      "positionCategories": {
+        "name": "Category and seniority",
+        "description": "Role type and level of each posting (e.g. senior backend)."
+      },
+      "positionTitles": {
+        "name": "Position titles",
+        "description": "The title of the posting, cut to 80 characters."
+      },
+      "funnel": {
+        "name": "Status funnel",
+        "description": "How many applications moved to each status (interview, offer…)."
+      },
+      "workModeAndCountry": {
+        "name": "Work mode and country",
+        "description": "Remote, hybrid or on-site, and the country of the posting."
+      },
+      "features": {
+        "name": "Feature usage",
+        "description": "How many resumes you generated and in which languages, how many gaps you answered and the AI tokens used."
+      }
+    },
+    "neverSent": {
+      "title": "Never sent",
+      "resume": "Your resume or your master profile.",
+      "personal": "Your name, email, phone or any other personal data.",
+      "companies": "Company names, contacts, notes or salaries.",
+      "jobPostings": "The text or the full URL of job postings.",
+      "ai": "Prompts, AI responses or your API key."
+    },
+    "retention": "Reports are daily, carry an anonymous ID you can regenerate, and are kept with no time limit."
   }
 }

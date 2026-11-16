@@ -572,8 +572,10 @@ careerly/
   - La API corre en un `utilityProcess` con el Node de Electron, así que `node:sqlite` no necesita módulos
     nativos. Desinstalar no borra la carpeta de datos (borrarla es una acción explícita, RF-CONF-05).
   - `CAREERLY_USER_DATA_DIR` permite apuntar la carpeta de datos a otro lado para pruebas de humo.
-- **Releases:** GitHub Actions con una matriz de sistemas operativos; al crear un tag `vX.Y.Z` se compila, se
-  descarga el binario de `typst` de cada plataforma y se publica en GitHub Releases.
+- **Releases:** el workflow de release-please, cuando crea la release `vX.Y.Z`, construye el instalador y lo
+  adjunta a la GitHub Release (job `windows-installer`; también se puede correr a mano para un tag existente).
+  Va en el mismo workflow porque los tags creados con `GITHUB_TOKEN` no disparan otros workflows. Hoy solo
+  Windows; macOS y Linux, y la descarga del binario de `typst` por plataforma, se suman en el 8.9.
 - **Actualizaciones:** electron-updater contra GitHub Releases (RF-CONF-10). Antes de migrar la base en una
   versión nueva se crea un backup automático (RNF-20).
 - **Firma de código:** opcional para un proyecto personal. Sin firma, Windows muestra un aviso de SmartScreen y

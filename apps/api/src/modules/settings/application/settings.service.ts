@@ -9,11 +9,13 @@ import { SettingsRepository, type StoredSetting } from './settings.repository.js
 /** Storage key of each preference in the `settings` table. */
 const STORAGE_KEYS = {
   uiLanguage: 'ui.language',
+  onboardingCompletedAt: 'ui.onboardingCompletedAt',
 } as const satisfies Record<keyof Preferences, string>;
 
 /** Value used when a preference was never set (or its stored value is no longer valid). */
 const DEFAULTS: Preferences = {
   uiLanguage: null,
+  onboardingCompletedAt: null,
 };
 
 const PREFERENCE_NAMES = Object.keys(STORAGE_KEYS) as (keyof Preferences)[];
@@ -35,7 +37,8 @@ export class SettingsService {
 
       const parsed = PreferencesSchema.shape[name].safeParse(stored.get(key));
       if (parsed.success) {
-        preferences[name] = parsed.data;
+        // Validated with this preference's own schema, so the value matches its type.
+        Object.assign(preferences, { [name]: parsed.data });
       } else {
         // E.g. a value written by a newer version. Fall back to the default; never log the value.
         this.logger.warn(`Ignoring invalid stored value for setting "${key}".`);

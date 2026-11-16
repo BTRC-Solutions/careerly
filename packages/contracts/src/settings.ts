@@ -11,6 +11,8 @@ export type UiLanguage = z.infer<typeof UiLanguageSchema>;
  */
 export const PreferencesSchema = z.object({
   uiLanguage: UiLanguageSchema.nullable(),
+  /** When the first-run wizard was finished (RF-CONF-01); `null` shows it on the next start. */
+  onboardingCompletedAt: z.iso.datetime().nullable(),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 
@@ -19,6 +21,8 @@ export const SettingsResponseSchema = z.object({
   preferences: PreferencesSchema,
   /** Absolute path of the local data folder (RF-CONF-03). Read-only. */
   dataDir: z.string(),
+  /** Version of the installed app (RF-CONF-13), e.g. `0.1.0`; `0.0.0-dev` when run in development. */
+  appVersion: z.string(),
   /**
    * Whether the backend holds an AI API key and for which provider (RF-CONF-01, ADR-23).
    * The key itself is never returned.

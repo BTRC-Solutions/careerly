@@ -94,7 +94,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-PROF-06 | Las herramientas se eligen de un **catálogo normalizado con sinónimos** (p. ej. "Postgres" = "PostgreSQL", "K8s" = "Kubernetes"), con la posibilidad de crear nuevas. | MVP |
 | RF-PROF-07 | Cada elemento del perfil registra su **origen** (manual, importado, respuesta a un gap en la sesión X) y fecha de creación/modificación. | MVP |
 | RF-PROF-08 | Ver el perfil maestro completo y exportarlo a PDF ("documento maestro", sin límite de páginas). | Post |
-| RF-PROF-09 | Importar un CV existente (PDF/DOCX) y convertirlo, con IA, en un borrador de perfil maestro que el usuario revisa antes de guardar. | Post (prioridad alta) |
+| RF-PROF-09 | Importar un CV existente (PDF/DOCX) y convertirlo, con IA, en un borrador de perfil maestro que el usuario revisa antes de guardar. | MVP |
 | RF-PROF-10 | Sugerencias de IA para mejorar la redacción de un logro (más concreto, con métricas). El usuario acepta o descarta. | MVP |
 | RF-PROF-11 | El contenido del perfil puede estar en cualquier idioma; no es necesario cargarlo en varios idiomas. | MVP |
 
