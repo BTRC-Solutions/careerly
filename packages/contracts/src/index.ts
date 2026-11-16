@@ -6,3 +6,4 @@ export * from './tools.js';
 export * from './profile.js';
 export * from './ai.js';
 export * from './telemetry.js';
+export * from './cv-import.js';

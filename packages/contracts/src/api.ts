@@ -6,7 +6,18 @@ export const ApiErrorCode = z.enum([
   'FORBIDDEN',
   'NOT_FOUND',
   'VALIDATION_FAILED',
+  'CONFLICT',
   'INTERNAL_ERROR',
+  /** No AI key configured (or the provider has no adapter yet): set one up in Settings. */
+  'AI_NOT_CONFIGURED',
+  /** The AI provider rejected the key. */
+  'AI_KEY_REJECTED',
+  /** The AI provider's rate limit or quota was reached; try again later. */
+  'AI_RATE_LIMITED',
+  /** Offline, timeout or provider outage. */
+  'AI_UNAVAILABLE',
+  /** The AI answered something unusable (invalid structure or blocked content). */
+  'AI_FAILED',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 
