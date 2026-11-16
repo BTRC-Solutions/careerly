@@ -24,7 +24,7 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 | Colores, tipografía, componentes de UI | [STYLES.md](STYLES.md) (tokens ya volcados en `apps/web/src/styles.css`) |
 | Comandos para correr, testear y generar migraciones | [README.md](README.md) |
 | Cómo se versiona y qué revisar antes de largar una versión | [VERSIONING.md](VERSIONING.md) |
-| Tablero de tareas | Trello, vía el conector de claude.ai (ver [Flujo de trabajo](#flujo-de-trabajo)) |
+| Tablero de tareas | [Trello](https://trello.com/b/ifdBf9SV/careerly) (workspace "RCBT solutions"), vía el conector de claude.ai (ver [Flujo de trabajo](#flujo-de-trabajo)) |
 
 ## Estado actual
 
@@ -107,5 +107,8 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 1. Se trabaja **un paso del roadmap por vez, en orden**, sin adelantar pasos.
 2. Cada paso cierra con su criterio de terminado cumplido + lint, typecheck, tests y build en verde + commit/PR.
 3. Al cerrar un paso: actualizar su estado en ROADMAP.md y mover la tarjeta en Trello.
-4. Las tarjetas de Trello se nombran con el ID del paso (p. ej. `1.1 — Asistente de primer inicio`) y
-   enlazan los `RF-*`/`RNF-*` correspondientes.
+4. Las tarjetas de Trello se nombran `[F<paso>] título` (p. ej. `[F1.1] Asistente de primer inicio`; un rango
+   como `[F2.2–2.5]` si cubre varios pasos). La descripción empieza con `Roadmap <paso> · <RF-*/RNF-*/ADR-*>`,
+   sigue con el detalle y termina con `**Terminado cuando:** …`. Las listas son por área (Backend, Frontend,
+   IA y prompts, Desktop/Typst/releases, QA y docs, Post-MVP) más "En proceso" y "Hecho"; un paso con parte de
+   backend y de frontend lleva una tarjeta en cada lista.
