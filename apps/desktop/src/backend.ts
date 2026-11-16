@@ -8,6 +8,8 @@ export interface BackendOptions {
   entry: string;
   /** Folder with the SQL migrations (`apps/api/drizzle` from source, `resources/api/drizzle` installed). */
   migrationsDir: string;
+  /** Packaged Typst CLI (`resources/typst/`); from source the API finds its own. */
+  typstBinary: string | undefined;
   dataDir: string;
   token: string;
   /** Lets main call the backend's `/internal/*` routes (e.g. to send the AI API key). */
@@ -40,6 +42,7 @@ export function startBackend(options: BackendOptions): Promise<RunningBackend> {
       CAREERLY_CONTROL_TOKEN: options.controlToken,
       CAREERLY_API_PORT: '0',
       CAREERLY_MIGRATIONS_DIR: options.migrationsDir,
+      ...(options.typstBinary ? { CAREERLY_TYPST_BIN: options.typstBinary } : {}),
       CAREERLY_ALLOWED_ORIGINS: options.allowedOrigins.join(','),
       CAREERLY_APP_VERSION: options.appVersion,
       CAREERLY_LOG_TO_STDOUT: options.forwardOutput ? 'true' : 'false',

@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { type Logger, pino } from 'pino';
 import { type AppConfig, loadConfig } from '../platform/config/app-config.js';
 import { startServer, type RunningServer } from '../server.js';
-import { MIGRATIONS_DIR } from './temp-dir.js';
+import { MIGRATIONS_DIR, TEMPLATES_DIR, TEST_TYPST_BINARY } from './temp-dir.js';
 
 export const TEST_TOKEN = 'integration-test-token';
 
@@ -10,7 +10,11 @@ export const TEST_TOKEN = 'integration-test-token';
 export function testConfig(dataDir: string, env: NodeJS.ProcessEnv = {}): AppConfig {
   return loadConfig(
     { CAREERLY_DATA_DIR: dataDir, CAREERLY_API_TOKEN: TEST_TOKEN, ...env },
-    { defaultMigrationsDir: MIGRATIONS_DIR },
+    {
+      defaultMigrationsDir: MIGRATIONS_DIR,
+      defaultTemplatesDir: TEMPLATES_DIR,
+      defaultTypstBinary: TEST_TYPST_BINARY,
+    },
   );
 }
 

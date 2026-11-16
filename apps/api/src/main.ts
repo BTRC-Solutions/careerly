@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './platform/config/app-config.js';
+import { findVendoredTypst } from './platform/config/typst-binary.js';
 import { createLogger } from './platform/logging/logger.js';
 import { startServer } from './server.js';
 
@@ -22,6 +23,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 async function main() {
   const config = loadConfig(process.env, {
     defaultMigrationsDir: path.join(here, '..', 'drizzle'),
+    defaultTemplatesDir: path.join(here, '..', 'templates'),
+    // From source (apps/api/dist/main.js); the installed app passes CAREERLY_TYPST_BIN.
+    defaultTypstBinary: findVendoredTypst(path.join(here, '..', '..', '..')),
   });
   const logger = createLogger(config);
 
