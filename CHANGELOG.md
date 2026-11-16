@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.0](https://github.com/BTRC-Solutions/careerly/compare/v0.0.1...v0.1.0) (2026-11-16)
+
+
+### Features
+
+* **settings:** backup, restore and delete all data from Settings ([99aa54e](https://github.com/BTRC-Solutions/careerly/commit/99aa54e157a7b7b7a69ca82a9725672c80cac3b8))
+* **settings:** backups, restore and delete all data in Settings (F1.3) ([416f429](https://github.com/BTRC-Solutions/careerly/commit/416f429b9b3b7dadfa3c14af10820794bd51e254))
+
+
+### Miscellaneous Chores
+
+* close phase 1 ([94c0cfc](https://github.com/BTRC-Solutions/careerly/commit/94c0cfc8f0d8118c57d2a22cdd414cb4e9b5eb46))
+
 ## 0.0.1 (2026-11-16)
 
 
