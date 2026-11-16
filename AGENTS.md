@@ -28,9 +28,10 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 
 ## Estado actual
 
-- **Fase 0** cerrada. **Fase 1** en curso: 1.2 hecho; 1.1 con desktop hecho (PR #14) y la verificación del
-  backend en revisión; 1.3 con el backend hecho (falta la pantalla); 1.5 con el backend en revisión; faltan
-  1.4 y 1.6. **Fase 2**: 2.1–2.5 hechos (se adelantaron); faltan 2.6 y 2.7.
+- **Fase 0** cerrada. **Fase 1** en curso: 1.2 hecho; 1.1 con almacén, verificación y tarjeta en
+  Configuración hechos (falta el asistente); 1.3 y 1.5 con el backend hecho (faltan las pantallas); 1.4 con el
+  instalador generado (falta probarlo en una máquina limpia); 1.6 en curso. **Fase 2**: 2.1–2.5 hechos; faltan
+  2.6, 2.7 (importar un CV, pasó al MVP) y 2.8. El paso **4.1 se adelanta** y va antes de 2.7.
 - Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
   Fase 1 larga `v0.1.0`.
 - La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
