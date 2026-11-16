@@ -76,7 +76,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-CONF-06 | Ver el consumo de IA (tokens y costo estimado) por día, mes y tipo de tarea. | MVP |
 | RF-CONF-07 | Presupuesto mensual de IA opcional, con aviso al acercarse al límite y bloqueo opcional al superarlo. | Post |
 | RF-CONF-08 | Elegir el idioma de la interfaz (ES/EN). | MVP |
-| RF-CONF-09 | Elegir los modelos de IA por tipo de tarea (con valores por defecto). | Post |
+| RF-CONF-09 | Elegir los modelos de IA (con valores por defecto) entre los que la key puede usar según la API del proveedor, con precio y recomendación cuando se conocen. | MVP |
 | RF-CONF-10 | En las versiones instaladas, avisar que hay una actualización disponible e instalarla. | Post |
 | RF-CONF-11 | Exportar los datos en JSON legible (portabilidad). | Post |
 | RF-CONF-12 | Elegir el canal de actualizaciones: estable o beta. | Post |
