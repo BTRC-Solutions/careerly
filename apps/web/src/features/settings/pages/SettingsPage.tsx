@@ -7,6 +7,7 @@ import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
 import { useSettings } from '../api/useSettings';
 import { AboutCard } from '../components/AboutCard';
 import { AiKeyCard } from '../components/AiKeyCard';
+import { BackupsCard } from '../components/BackupsCard';
 import { DataFolderCard } from '../components/DataFolderCard';
 import { LanguageSettingsCard } from '../components/LanguageSettingsCard';
 
@@ -38,6 +39,7 @@ export function SettingsPage() {
           <LanguageSettingsCard value={settings.data.preferences.uiLanguage} />
           <AiKeyCard backendStatus={settings.data.aiKey} />
           <DataFolderCard dataDir={settings.data.dataDir} />
+          <BackupsCard />
           <PrivacyCard />
           <AboutCard appVersion={settings.data.appVersion} />
         </>

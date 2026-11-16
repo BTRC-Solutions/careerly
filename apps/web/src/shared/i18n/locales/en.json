@@ -106,6 +106,31 @@
         "SENT": "Sent",
         "FAILED": "Sending failed"
       }
+    },
+    "backups": {
+      "title": "Backups and data",
+      "description": "Export all your data (profile, applications, generated resumes) to a single file and restore it on this or another computer.",
+      "export": "Export backup",
+      "exporting": "Exporting…",
+      "restoreFromFile": "Restore from file…",
+      "personalDataWarning": "The file contains your personal data: keep it somewhere safe. Your API key is never included.",
+      "saved": "Backup saved to {{path}}",
+      "created": "Backup created at {{path}}",
+      "restored": "Restored the backup from {{date}} (version {{version}}).",
+      "actionError": "Could not complete the action: {{message}}",
+      "listTitle": "Backups in the data folder",
+      "listEmpty": "You have not exported any backup yet.",
+      "details": "Version {{version}} · {{size}} MB · {{files}} files",
+      "restore": "Restore",
+      "chooseFile": "Choose file",
+      "restoreTitle": "Restore this backup?",
+      "restoreDescription": "All your current data is replaced by the backup. A copy of the current state is saved in the data folder first.",
+      "deleteTitle": "Delete all data",
+      "deleteDescription": "Deletes your profile, applications, generated resumes, backups and API keys from this computer.",
+      "delete": "Delete all data…",
+      "deleteConfirmTitle": "Delete all your data?",
+      "deleteConfirmDescription": "Your master profile, applications, generated resumes, every backup and your API keys are deleted. This cannot be undone. Export a backup first if you want to keep anything.",
+      "deleteConfirm": "Yes, delete everything"
     }
   },
   "common": {

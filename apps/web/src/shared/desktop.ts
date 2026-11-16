@@ -3,7 +3,7 @@
  * The rest of the UI must not know whether it runs inside Electron or in a regular browser.
  */
 
-import type { AiKeysStatus, AiProvider } from '@careerly/contracts';
+import type { AiKeysStatus, AiProvider, RestoreBackupResponse } from '@careerly/contracts';
 
 /**
  * AI API keys kept by Electron's main process (RF-CONF-01, ADR-23). Write-only: the interface can
@@ -16,6 +16,19 @@ export interface DesktopAiKeys {
   setActive(provider: AiProvider): Promise<AiKeysStatus>;
 }
 
+/**
+ * Backups and data deletion with native dialogs (RF-CONF-04, RF-CONF-05). Main picks the files with
+ * the user; the interface never passes a path.
+ */
+export interface DesktopData {
+  exportBackup(): Promise<{ status: 'saved'; path: string } | { status: 'cancelled' }>;
+  restoreBackup(): Promise<
+    { status: 'restored'; restored: RestoreBackupResponse['restored'] } | { status: 'cancelled' }
+  >;
+  /** Deletes the database, files, backups and the saved AI keys. */
+  deleteAll(): Promise<void>;
+}
+
 /** What the preload script exposes on `window.careerly` (see apps/desktop/src/preload.cts). */
 export interface DesktopBridge {
   apiBaseUrl: string;
@@ -23,16 +36,22 @@ export interface DesktopBridge {
   /** Opens the local data folder in the system file manager (RF-CONF-03). */
   openDataFolder?: () => Promise<void>;
   aiKeys?: DesktopAiKeys;
+  data?: DesktopData;
 }
 
 /** Native actions available only inside Electron. Empty in `npm run dev:web`. */
 export interface DesktopActions {
   openDataFolder?: () => Promise<void>;
   aiKeys?: DesktopAiKeys;
+  data?: DesktopData;
 }
 
 export function getDesktopActions(): DesktopActions {
-  return { openDataFolder: window.careerly?.openDataFolder, aiKeys: window.careerly?.aiKeys };
+  return {
+    openDataFolder: window.careerly?.openDataFolder,
+    aiKeys: window.careerly?.aiKeys,
+    data: window.careerly?.data,
+  };
 }
 
 export interface ApiConnection {
