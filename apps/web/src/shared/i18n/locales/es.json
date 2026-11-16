@@ -106,6 +106,31 @@
         "SENT": "Enviado",
         "FAILED": "Falló el envío"
       }
+    },
+    "backups": {
+      "title": "Copias de seguridad y datos",
+      "description": "Exportá todos tus datos (perfil, postulaciones, CVs generados) a un único archivo y restauralos en esta u otra computadora.",
+      "export": "Exportar copia de seguridad",
+      "exporting": "Exportando…",
+      "restoreFromFile": "Restaurar desde archivo…",
+      "personalDataWarning": "El archivo contiene tus datos personales: guardalo en un lugar seguro. Tu API key nunca se incluye.",
+      "saved": "Copia guardada en {{path}}",
+      "created": "Copia creada en {{path}}",
+      "restored": "Se restauró la copia del {{date}} (versión {{version}}).",
+      "actionError": "No se pudo completar la acción: {{message}}",
+      "listTitle": "Copias guardadas en la carpeta de datos",
+      "listEmpty": "Todavía no exportaste ninguna copia.",
+      "details": "Versión {{version}} · {{size}} MB · {{files}} archivos",
+      "restore": "Restaurar",
+      "chooseFile": "Elegir archivo",
+      "restoreTitle": "¿Restaurar esta copia de seguridad?",
+      "restoreDescription": "Todos tus datos actuales se reemplazan por los de la copia. Antes se guarda automáticamente una copia del estado actual en la carpeta de datos.",
+      "deleteTitle": "Borrar todos los datos",
+      "deleteDescription": "Borra tu perfil, postulaciones, CVs generados, copias de seguridad y API keys de esta computadora.",
+      "delete": "Borrar todos los datos…",
+      "deleteConfirmTitle": "¿Borrar todos tus datos?",
+      "deleteConfirmDescription": "Se borran tu perfil maestro, postulaciones, CVs generados, todas las copias de seguridad y tus API keys. No se puede deshacer. Si querés conservar algo, exportá una copia antes.",
+      "deleteConfirm": "Sí, borrar todo"
     }
   },
   "common": {

@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { copyFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AiProviderSchema } from '@careerly/contracts';
@@ -7,6 +8,7 @@ import { AiCredentialsSync } from './ai-credentials-sync.js';
 import { AiKeyStore } from './ai-key-store.js';
 import { APP_ORIGIN, registerAppScheme, serveUi } from './app-protocol.js';
 import { startBackend, type RunningBackend } from './backend.js';
+import { DataActions } from './data-actions.js';
 import { safeStorageEncryptor } from './safe-storage.js';
 import { applySecurityPolicies } from './security.js';
 
@@ -85,7 +87,8 @@ async function start() {
     }
   });
 
-  registerAiKeyHandlers(connection, assertFromUi);
+  const aiKeys = registerAiKeyHandlers(connection, assertFromUi);
+  registerDataHandlers(connection, assertFromUi, aiKeys.clearAll);
   createWindow(connection.uiUrl);
 }
 
@@ -147,6 +150,68 @@ function registerAiKeyHandlers(
     const status = store.setActive(AiProviderSchema.parse(provider));
     await applyToBackend();
     return status;
+  });
+
+  return {
+    /** Removes every saved key (used when deleting all data, RF-CONF-05). */
+    clearAll: async () => {
+      for (const provider of AiProviderSchema.options) store.remove(provider);
+      await applyToBackend();
+    },
+  };
+}
+
+/**
+ * Backups and data deletion with native dialogs (RF-CONF-04, RF-CONF-05). The renderer only triggers
+ * them: main picks the files with the user and talks to the API, so no path comes from the renderer.
+ */
+function registerDataHandlers(
+  connection: Connection,
+  assertFromUi: (event: IpcMainInvokeEvent) => void,
+  clearAiKeys: () => Promise<void>,
+) {
+  const parentOf = (event: IpcMainInvokeEvent) => BrowserWindow.fromWebContents(event.sender);
+  const actionsFor = (event: IpcMainInvokeEvent) =>
+    new DataActions({
+      apiBaseUrl: connection.apiBaseUrl,
+      apiToken: connection.apiToken,
+      chooseSavePath: async (defaultFileName) => {
+        const options = {
+          defaultPath: path.join(app.getPath('documents'), defaultFileName),
+          filters: [{ name: 'Careerly backup', extensions: ['careerly-backup'] }],
+        };
+        const window = parentOf(event);
+        const result = window
+          ? await dialog.showSaveDialog(window, options)
+          : await dialog.showSaveDialog(options);
+        return result.canceled ? undefined : result.filePath;
+      },
+      chooseBackupFile: async () => {
+        const options = {
+          properties: ['openFile' as const],
+          filters: [{ name: 'Careerly backup', extensions: ['careerly-backup'] }],
+        };
+        const window = parentOf(event);
+        const result = window
+          ? await dialog.showOpenDialog(window, options)
+          : await dialog.showOpenDialog(options);
+        return result.canceled ? undefined : result.filePaths[0];
+      },
+      copyFile,
+      clearAiKeys,
+    });
+
+  ipcMain.handle('careerly:data:export-backup', (event) => {
+    assertFromUi(event);
+    return actionsFor(event).exportBackup();
+  });
+  ipcMain.handle('careerly:data:restore-backup', (event) => {
+    assertFromUi(event);
+    return actionsFor(event).restoreFromFile();
+  });
+  ipcMain.handle('careerly:data:delete-all', (event) => {
+    assertFromUi(event);
+    return actionsFor(event).deleteAllData();
   });
 }
 

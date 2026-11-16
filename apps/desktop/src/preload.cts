@@ -18,6 +18,12 @@ interface AiKeysStatus {
   secureStorageAvailable: boolean;
 }
 
+interface RestoredBackup {
+  createdAt: string;
+  appVersion: string;
+  fileCount: number;
+}
+
 const connection = ipcRenderer.sendSync('careerly:get-api-connection') as ApiConnection;
 
 contextBridge.exposeInMainWorld('careerly', {
@@ -37,5 +43,17 @@ contextBridge.exposeInMainWorld('careerly', {
       ipcRenderer.invoke('careerly:ai-keys:remove', provider),
     setActive: (provider: AiProvider): Promise<AiKeysStatus> =>
       ipcRenderer.invoke('careerly:ai-keys:set-active', provider),
+  },
+  /**
+   * Backups and data deletion (RF-CONF-04, RF-CONF-05) with native dialogs. Main chooses the files
+   * with the user; the interface never passes a path.
+   */
+  data: {
+    exportBackup: (): Promise<{ status: 'saved'; path: string } | { status: 'cancelled' }> =>
+      ipcRenderer.invoke('careerly:data:export-backup'),
+    restoreBackup: (): Promise<
+      { status: 'restored'; restored: RestoredBackup } | { status: 'cancelled' }
+    > => ipcRenderer.invoke('careerly:data:restore-backup'),
+    deleteAll: (): Promise<void> => ipcRenderer.invoke('careerly:data:delete-all'),
   },
 });
