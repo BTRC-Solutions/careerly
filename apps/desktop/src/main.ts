@@ -236,6 +236,7 @@ async function packagedConnection(): Promise<Connection> {
   backend = await startBackend({
     entry: paths.apiEntry,
     migrationsDir: paths.migrationsDir,
+    typstBinary: paths.typstBinary,
     dataDir: app.getPath('userData'),
     token: apiToken,
     controlToken,
@@ -249,8 +250,9 @@ async function packagedConnection(): Promise<Connection> {
 }
 
 /**
- * Where the API, its migrations and the UI are. The installer puts them in `resources/` next to app.asar
- * (see `scripts/package-app.mjs`); from source they are the build outputs of the other apps.
+ * Where the API, its migrations, Typst and the UI are. The installer puts them in `resources/` next to
+ * app.asar (see `scripts/package-app.mjs`); from source they are the build outputs of the other apps, and the
+ * API finds Typst by itself (the vendored one or the PATH's).
  */
 function runtimePaths() {
   if (app.isPackaged) {
@@ -258,6 +260,11 @@ function runtimePaths() {
     return {
       apiEntry: path.join(resources, 'api', 'main.mjs'),
       migrationsDir: path.join(resources, 'api', 'drizzle'),
+      typstBinary: path.join(
+        resources,
+        'typst',
+        process.platform === 'win32' ? 'typst.exe' : 'typst',
+      ),
       uiRoot: path.join(resources, 'web'),
     };
   }
@@ -265,6 +272,7 @@ function runtimePaths() {
   return {
     apiEntry: path.join(appsDir, 'api', 'dist', 'main.js'),
     migrationsDir: path.join(appsDir, 'api', 'drizzle'),
+    typstBinary: undefined,
     uiRoot: path.join(appsDir, 'web', 'dist'),
   };
 }

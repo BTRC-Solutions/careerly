@@ -30,6 +30,11 @@ const EnvSchema = z.object({
   CAREERLY_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   CAREERLY_LOG_TO_STDOUT: booleanString,
   CAREERLY_MIGRATIONS_DIR: z.string().min(1).optional(),
+  /** Built-in CV templates (`apps/api/templates` from source, `resources/api/templates` installed). */
+  CAREERLY_TEMPLATES_DIR: z.string().min(1).optional(),
+  /** Typst CLI (ADR-14): the packaged one when installed; from source, the vendored one or the PATH's. */
+  CAREERLY_TYPST_BIN: z.string().min(1).optional(),
+  CAREERLY_RENDER_TIMEOUT_MS: z.coerce.number().int().min(100).max(120_000).default(10_000),
   /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-23). */
   CAREERLY_CONTROL_TOKEN: z
     .string()
@@ -61,6 +66,14 @@ export interface AppConfig {
   backupsDir: string;
   logsDir: string;
   migrationsDir: string;
+  /** Built-in CV templates, one folder per template (ARCHITECTURE.md §9). */
+  templatesDir: string;
+  /** Typst CLI to render CVs with. */
+  typstBinary: string;
+  /** A render taking longer is killed (a template could loop). */
+  renderTimeoutMs: number;
+  /** Typst package cache, so templates never write to system folders. Not backed up. */
+  typstPackagesDir: string;
   /** Per-launch secret that every request must send as `Authorization: Bearer <token>`. */
   apiToken: string;
   /**
@@ -96,7 +109,13 @@ export class ConfigError extends Error {
  */
 export function loadConfig(
   env: NodeJS.ProcessEnv,
-  options: { defaultMigrationsDir: string; cwd?: string },
+  options: {
+    defaultMigrationsDir: string;
+    defaultTemplatesDir: string;
+    /** Used when `CAREERLY_TYPST_BIN` is not set; otherwise `typst` from the PATH. */
+    defaultTypstBinary?: string;
+    cwd?: string;
+  },
 ): AppConfig {
   const result = EnvSchema.safeParse(env);
   if (!result.success) {
@@ -119,6 +138,10 @@ export function loadConfig(
       cwd,
       parsed.CAREERLY_MIGRATIONS_DIR ?? options.defaultMigrationsDir,
     ),
+    templatesDir: path.resolve(cwd, parsed.CAREERLY_TEMPLATES_DIR ?? options.defaultTemplatesDir),
+    typstBinary: parsed.CAREERLY_TYPST_BIN ?? options.defaultTypstBinary ?? 'typst',
+    renderTimeoutMs: parsed.CAREERLY_RENDER_TIMEOUT_MS,
+    typstPackagesDir: path.join(dataDir, 'cache', 'typst-packages'),
     apiToken: parsed.CAREERLY_API_TOKEN,
     controlToken: parsed.CAREERLY_CONTROL_TOKEN,
     host: '127.0.0.1',

@@ -101,7 +101,7 @@ describe('GeminiLlmProvider (integration with a fake Gemini)', () => {
           CAREERLY_API_TOKEN: 'integration-test-token',
           CAREERLY_GEMINI_BASE_URL: fake.url,
         },
-        { defaultMigrationsDir: '.' },
+        { defaultMigrationsDir: '.', defaultTemplatesDir: '.' },
       ),
     );
   });

@@ -5,7 +5,12 @@ import { pino } from 'pino';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from './platform/config/app-config.js';
 import { startServer, type RunningServer } from './server.js';
-import { createTempDir, MIGRATION_TAGS, MIGRATIONS_DIR } from './test-support/temp-dir.js';
+import {
+  createTempDir,
+  MIGRATION_TAGS,
+  MIGRATIONS_DIR,
+  TEMPLATES_DIR,
+} from './test-support/temp-dir.js';
 
 const TOKEN = 'integration-test-token';
 
@@ -22,7 +27,7 @@ describe('local API (integration)', () => {
         CAREERLY_API_TOKEN: TOKEN,
         CAREERLY_ALLOWED_ORIGINS: 'app://careerly',
       },
-      { defaultMigrationsDir: MIGRATIONS_DIR },
+      { defaultMigrationsDir: MIGRATIONS_DIR, defaultTemplatesDir: TEMPLATES_DIR },
     );
     server = await startServer(config, pino({ level: 'silent' }));
     baseUrl = `http://127.0.0.1:${server.port}`;

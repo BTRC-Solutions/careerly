@@ -399,9 +399,17 @@ apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates
   y las plantillas del instalador, sin nada del sistema.
 - **Datos, no código:** el adaptador escribe `data.json` en un directorio temporal y la plantilla lo lee. El
   contenido del usuario nunca se concatena dentro de un `.typ` (RNF-05).
-- **Ejecución aislada:** `typst compile` como proceso hijo (no bloquea el backend), con `--root` limitado al
-  directorio temporal, `--font-path` a las fuentes empaquetadas y timeout (p. ej. 10 s). Directorio temporal
-  eliminado al terminar.
+- **Ejecución aislada:** `typst compile` como proceso hijo (no bloquea el backend). Cada render copia la
+  plantilla y escribe `data.json` en un directorio temporal, que es el `--root`, así que la plantilla no puede
+  leer otros archivos. Usa solo las fuentes empaquetadas (`--ignore-system-fonts`), tiene un timeout de 10 s
+  (`CAREERLY_RENDER_TIMEOUT_MS`) y el directorio temporal se elimina al terminar. Los paquetes de Typst
+  (`@preview/...`) van a `cache/typst-packages/` dentro del directorio de datos, nunca a carpetas del sistema.
+  Si se permiten en las plantillas propias se decide en la 3.7.
+- **Puerto `ResumeRenderer` y catálogo de plantillas:** `ResumeRenderService.render(document, templateId)`
+  agrega los `labels` del idioma, busca la plantilla (por defecto `classic`) y devuelve el PDF con el id y la
+  versión de la plantilla. Los errores son `TemplateNotFoundError` y `RenderError`, que puede ser
+  `RENDERER_UNAVAILABLE`, `COMPILE_ERROR` (con el diagnóstico de Typst para quien escribió la plantilla, nunca a
+  los logs) o `TIMEOUT`.
 - **Versionado de plantillas:** cada cambio de plantilla incrementa `templateVersion`. Los snapshots guardan la
   versión; las versiones viejas se conservan en la app para poder volver a renderizar (RNF-10).
 - **Plantillas compatibles con ATS:** una columna, títulos estándar traducidos por idioma, sin tablas para el
