@@ -26,8 +26,12 @@ let backend: RunningBackend | undefined;
 let quitting = false;
 
 // Keep all data under <appData>/Careerly, both when installed and when run from source.
+// CAREERLY_USER_DATA_DIR points it elsewhere, for smoke tests of the installed app.
 app.setName('Careerly');
-app.setPath('userData', path.join(app.getPath('appData'), 'Careerly'));
+app.setPath(
+  'userData',
+  process.env.CAREERLY_USER_DATA_DIR ?? path.join(app.getPath('appData'), 'Careerly'),
+);
 registerAppScheme();
 
 if (!app.requestSingleInstanceLock()) {
@@ -162,11 +166,11 @@ async function fetchDataDir(connection: Connection): Promise<string> {
 async function packagedConnection(): Promise<Connection> {
   const apiToken = randomBytes(32).toString('base64url');
   const controlToken = randomBytes(32).toString('base64url');
-  // TODO(roadmap 1.4): resolve the API and UI from `process.resourcesPath` in the installer build.
-  const appsDir = path.resolve(here, '..', '..');
+  const paths = runtimePaths();
 
   backend = await startBackend({
-    entry: path.join(appsDir, 'api', 'dist', 'main.js'),
+    entry: paths.apiEntry,
+    migrationsDir: paths.migrationsDir,
     dataDir: app.getPath('userData'),
     token: apiToken,
     controlToken,
@@ -174,9 +178,30 @@ async function packagedConnection(): Promise<Connection> {
     allowedOrigins: [APP_ORIGIN],
     forwardOutput: !app.isPackaged,
   });
-  serveUi(path.join(appsDir, 'web', 'dist'), backend.url);
+  serveUi(paths.uiRoot, backend.url);
 
   return { uiUrl: `${APP_ORIGIN}/index.html`, apiBaseUrl: backend.url, apiToken, controlToken };
+}
+
+/**
+ * Where the API, its migrations and the UI are. The installer puts them in `resources/` next to app.asar
+ * (see `scripts/package-app.mjs`); from source they are the build outputs of the other apps.
+ */
+function runtimePaths() {
+  if (app.isPackaged) {
+    const resources = process.resourcesPath;
+    return {
+      apiEntry: path.join(resources, 'api', 'main.mjs'),
+      migrationsDir: path.join(resources, 'api', 'drizzle'),
+      uiRoot: path.join(resources, 'web'),
+    };
+  }
+  const appsDir = path.resolve(here, '..', '..');
+  return {
+    apiEntry: path.join(appsDir, 'api', 'dist', 'main.js'),
+    migrationsDir: path.join(appsDir, 'api', 'drizzle'),
+    uiRoot: path.join(appsDir, 'web', 'dist'),
+  };
 }
 
 /** `npm run dev`: Vite serves the UI with HMR and the API runs separately in watch mode. */

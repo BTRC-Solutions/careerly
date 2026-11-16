@@ -10,9 +10,12 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "concurrently -k -n tsc,electron -c gray,green \"tsc -p tsconfig.build.json --watch --preserveWatchOutput\" \"electron . --dev\"",
     "start": "electron .",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "node scripts/package-app.mjs"
   },
   "devDependencies": {
-    "electron": "^45.2.3"
+    "electron": "^45.2.3",
+    "electron-builder": "26.18.1",
+    "esbuild": "0.28.2"
   }
 }
