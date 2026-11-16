@@ -2,7 +2,7 @@ import type { AiProvider, VerifyAiKeyRequest, VerifyAiKeyResponse } from '@caree
 import { Injectable, Logger } from '@nestjs/common';
 import { AiKeySource, AiKeyVerifier, type ProviderKey } from './ai-key.ports.js';
 
-/** Verifies AI API keys (RF-CONF-02, ADR-19). Keys are never stored or logged here (RNF-03). */
+/** Verifies AI API keys (RF-CONF-02, ADR-23). Keys are never stored or logged here (RNF-03). */
 @Injectable()
 export class AiKeyService {
   private readonly logger = new Logger(AiKeyService.name);

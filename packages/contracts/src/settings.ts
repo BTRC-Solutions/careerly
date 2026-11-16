@@ -20,7 +20,7 @@ export const SettingsResponseSchema = z.object({
   /** Absolute path of the local data folder (RF-CONF-03). Read-only. */
   dataDir: z.string(),
   /**
-   * Whether the backend holds an AI API key and for which provider (RF-CONF-01, ADR-19).
+   * Whether the backend holds an AI API key and for which provider (RF-CONF-01, ADR-23).
    * The key itself is never returned.
    */
   aiKey: z.object({ configured: z.boolean(), provider: AiProviderSchema.nullable() }),

@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AiModule } from './modules/ai/index.js';
 import { ProfileModule } from './modules/profile/index.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
+import { TelemetryModule } from './modules/telemetry/index.js';
 import { APP_CONFIG, type AppConfig } from './platform/config/app-config.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { HealthController } from './platform/health/health.controller.js';
@@ -32,6 +33,7 @@ export class AppModule {
         SettingsModule,
         ProfileModule,
         AiModule,
+        TelemetryModule,
       ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }],

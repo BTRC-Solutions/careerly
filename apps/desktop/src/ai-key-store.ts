@@ -48,7 +48,7 @@ export interface ActiveCredentials {
 }
 
 /**
- * API keys per AI provider plus the active one (ADR-19, RF-CONF-01, RNF-03).
+ * API keys per AI provider plus the active one (ADR-23, RF-CONF-01, RNF-03).
  * Stored as a single encrypted file; nothing is ever written in plain text.
  * If the OS offers no secure storage, saving is refused instead of storing the key unprotected.
  */

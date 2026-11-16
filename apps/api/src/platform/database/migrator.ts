@@ -105,14 +105,26 @@ export function migrateDatabase(options: MigrationOptions): MigrationResult {
 
 /** Number of migrations already applied (0 for a database that was never migrated). */
 export function countAppliedMigrations(db: DatabaseSync): number {
+  return appliedMigrationTags(db).length;
+}
+
+/** Tags of the migrations applied to `db` (empty for a database that was never migrated). */
+export function appliedMigrationTags(db: DatabaseSync): string[] {
   const exists = db
     .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`)
     .get(MIGRATIONS_TABLE);
   if (!exists) {
-    return 0;
+    return [];
   }
-  const row = db.prepare(`SELECT COUNT(*) AS count FROM ${MIGRATIONS_TABLE}`).get();
-  return Number(row?.count ?? 0);
+  return db
+    .prepare(`SELECT tag FROM ${MIGRATIONS_TABLE}`)
+    .all()
+    .map((row) => String(row.tag));
+}
+
+/** Tags of the migrations shipped with this version of the app, in order. */
+export function knownMigrationTags(migrationsDir: string): string[] {
+  return readJournal(migrationsDir).map((entry) => entry.tag);
 }
 
 function readJournal(migrationsDir: string) {

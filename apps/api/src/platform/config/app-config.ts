@@ -19,12 +19,12 @@ const EnvSchema = z.object({
   CAREERLY_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   CAREERLY_LOG_TO_STDOUT: booleanString,
   CAREERLY_MIGRATIONS_DIR: z.string().min(1).optional(),
-  /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-19). */
+  /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-23). */
   CAREERLY_CONTROL_TOKEN: z
     .string()
     .min(16, 'CAREERLY_CONTROL_TOKEN must have at least 16 characters')
     .optional(),
-  /** Base URL of each AI provider (ADR-19). Only overridden by tests, which use a local fake. */
+  /** Base URL of each AI provider (ADR-23). Only overridden by tests, which use a local fake. */
   CAREERLY_GEMINI_BASE_URL: z.url().default('https://generativelanguage.googleapis.com'),
   CAREERLY_ANTHROPIC_BASE_URL: z.url().default('https://api.anthropic.com'),
 });
@@ -33,6 +33,8 @@ export interface AppConfig {
   /** Root folder for all local data (database, files, backups, logs). */
   dataDir: string;
   databaseFile: string;
+  /** Generated files (CV and guide PDFs), included in backups. */
+  filesDir: string;
   backupsDir: string;
   logsDir: string;
   migrationsDir: string;
@@ -52,7 +54,7 @@ export interface AppConfig {
   appVersion: string;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   logToStdout: boolean;
-  /** Base URL of each AI provider's API (ADR-19). Only overridden by tests (a local fake provider). */
+  /** Base URL of each AI provider's API (ADR-23). Only overridden by tests (a local fake provider). */
   aiBaseUrls: Record<AiProvider, string>;
 }
 
@@ -85,6 +87,7 @@ export function loadConfig(
   return {
     dataDir,
     databaseFile: path.join(dataDir, 'careerly.db'),
+    filesDir: path.join(dataDir, 'files'),
     backupsDir: path.join(dataDir, 'backups'),
     logsDir: path.join(dataDir, 'logs'),
     migrationsDir: path.resolve(

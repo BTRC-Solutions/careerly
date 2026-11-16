@@ -10,7 +10,7 @@ export interface ProviderKey {
 }
 
 /**
- * Port: makes a cheap, authenticated test call to the key's provider (RF-CONF-02, ADR-19).
+ * Port: makes a cheap, authenticated test call to the key's provider (RF-CONF-02, ADR-23).
  * Declared as an abstract class so it can be used as a Nest DI token.
  */
 export abstract class AiKeyVerifier {
