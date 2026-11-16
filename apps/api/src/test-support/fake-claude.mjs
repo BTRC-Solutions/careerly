@@ -1,4 +1,4 @@
-// A fake `claude` command for the tests (ADR-24). Usage: node fake-claude.mjs <scenario.json> <args…>
+// A fake `claude` command for the tests (ADR-25). Usage: node fake-claude.mjs <scenario.json> <args…>
 // The scenario file says how to answer; every `-p` call is appended to `<scenario>.calls.jsonl`.
 import fs from 'node:fs';
 import process from 'node:process';

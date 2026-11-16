@@ -47,7 +47,7 @@ interface ClaudeCodeResult {
 
 /**
  * Claude through the Claude Code installed and signed in on this computer, with the user's Claude
- * subscription instead of an API key (RF-CONF-14, ADR-24; optional, personal use).
+ * subscription instead of an API key (RF-CONF-14, ADR-25; optional, personal use).
  *
  * Claude Code is an agent, and the CV or job post it reads is untrusted content, so each call runs
  * locked down: a fresh temporary folder as its working directory, no tools except reading the PDFs

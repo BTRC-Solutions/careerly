@@ -7,7 +7,7 @@ import { Tag } from '../../../shared/ui/Tag';
 import { useClaudeCode, useSetClaudeCode } from '../api/useClaudeCode';
 
 /**
- * Claude with the user's subscription through Claude Code (RF-CONF-14, ADR-24). Optional and
+ * Claude with the user's subscription through Claude Code (RF-CONF-14, ADR-25). Optional and
  * experimental: it uses the plan's limits and is for personal use only.
  */
 export function ClaudeCodeCard() {

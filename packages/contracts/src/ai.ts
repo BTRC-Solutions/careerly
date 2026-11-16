@@ -7,7 +7,7 @@ export type AiProvider = z.infer<typeof AiProviderSchema>;
 /**
  * What generates the answers: a provider with an API key, or `claude-code`, the Claude Code
  * installed and logged in on this computer, with the user's Claude subscription instead of a key
- * (RF-CONF-14, ADR-24; optional, personal use).
+ * (RF-CONF-14, ADR-25; optional, personal use).
  */
 export const LlmProviderIdSchema = z.enum([...AiProviderSchema.options, 'claude-code']);
 export type LlmProviderId = z.infer<typeof LlmProviderIdSchema>;
@@ -134,7 +134,7 @@ export const UpdateAiModelRequestSchema = z
 export type UpdateAiModelRequest = z.infer<typeof UpdateAiModelRequestSchema>;
 
 // ---------------------------------------------------------------------------
-// Claude Code with the user's subscription (RF-CONF-14, ADR-24)
+// Claude Code with the user's subscription (RF-CONF-14, ADR-25)
 // ---------------------------------------------------------------------------
 
 /**

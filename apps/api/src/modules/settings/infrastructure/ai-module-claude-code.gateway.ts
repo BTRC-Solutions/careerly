@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ActiveAiCredentials, ClaudeCodeProbe } from '../../ai/index.js';
 import { type ClaudeCodeCheck, ClaudeCodeGateway } from '../application/claude-code.service.js';
 
-/** Claude Code through the `ai` module's public API (ADR-24). */
+/** Claude Code through the `ai` module's public API (ADR-25). */
 @Injectable()
 export class AiModuleClaudeCodeGateway extends ClaudeCodeGateway {
   constructor(

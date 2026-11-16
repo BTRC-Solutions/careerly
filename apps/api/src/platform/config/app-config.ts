@@ -62,7 +62,7 @@ const EnvSchema = z.object({
   CAREERLY_ANTHROPIC_MODELS_SMALL: modelList.prefault('claude-haiku-5-5'),
   CAREERLY_ANTHROPIC_MODELS_LARGE: modelList.prefault('claude-opus-5-5,claude-sonnet-5-5'),
   /**
-   * Command that runs Claude Code (ADR-24), as a JSON array (e.g. `["node","fake-claude.mjs"]`).
+   * Command that runs Claude Code (ADR-25), as a JSON array (e.g. `["node","fake-claude.mjs"]`).
    * Only set by tests; otherwise `claude` is looked up in PATH and in ~/.local/bin.
    */
   CAREERLY_CLAUDE_CODE_COMMAND: z
@@ -117,7 +117,7 @@ export interface AppConfig {
   geminiModels: { small: string[]; large: string[] };
   /** Claude models for each tier, in order of preference. */
   anthropicModels: { small: string[]; large: string[] };
-  /** Command that runs Claude Code; `null` to look for `claude` (ADR-24). */
+  /** Command that runs Claude Code; `null` to look for `claude` (ADR-25). */
   claudeCodeCommand: string[] | null;
 }
 
