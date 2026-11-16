@@ -109,7 +109,9 @@ export default tseslint.config(
             {
               from: { element: { type: 'module' } },
               allow: [
-                ...sameModule('domain', 'application', 'infrastructure', 'http', 'module'),
+                ...sameModule('domain', 'application', 'infrastructure', 'http'),
+                // Wiring: a Nest module imports other modules through their public API (module root).
+                { to: { element: { type: 'module' } } },
                 { to: { element: { type: 'platform' } } },
               ],
             },

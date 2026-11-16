@@ -1,0 +1,46 @@
+import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { SettingsModule } from '../settings/index.js';
+import {
+  TELEMETRY_COLLECTORS,
+  TelemetryActivityRepository,
+  TelemetryEnvironment,
+  TelemetryPreferencesStore,
+  TelemetryReportRepository,
+} from './application/telemetry.ports.js';
+import { TelemetryService } from './application/telemetry.service.js';
+import { TelemetryActivityInterceptor } from './http/telemetry-activity.interceptor.js';
+import { TelemetryController } from './http/telemetry.controller.js';
+import { ActiveUsageCollector } from './infrastructure/active-usage.collector.js';
+import {
+  DrizzleTelemetryActivityRepository,
+  DrizzleTelemetryReportRepository,
+} from './infrastructure/drizzle-telemetry.repositories.js';
+import { SettingsTelemetryPreferencesStore } from './infrastructure/settings-telemetry-preferences.store.js';
+import { SystemTelemetryEnvironment } from './infrastructure/system-telemetry-environment.js';
+import { TelemetryScheduler } from './infrastructure/telemetry-scheduler.js';
+
+/**
+ * Usage telemetry with per-metric consent (ARCHITECTURE §19.2). Never the CV, the profile or personal
+ * data. Step 1.5: consent, anonymous id, "active usage" and local reports; sending comes in step 8.8.
+ */
+@Module({
+  imports: [SettingsModule],
+  controllers: [TelemetryController],
+  providers: [
+    TelemetryService,
+    TelemetryScheduler,
+    ActiveUsageCollector,
+    { provide: TelemetryPreferencesStore, useClass: SettingsTelemetryPreferencesStore },
+    { provide: TelemetryReportRepository, useClass: DrizzleTelemetryReportRepository },
+    { provide: TelemetryActivityRepository, useClass: DrizzleTelemetryActivityRepository },
+    { provide: TelemetryEnvironment, useClass: SystemTelemetryEnvironment },
+    {
+      provide: TELEMETRY_COLLECTORS,
+      useFactory: (activeUsage: ActiveUsageCollector) => [activeUsage],
+      inject: [ActiveUsageCollector],
+    },
+    { provide: APP_INTERCEPTOR, useClass: TelemetryActivityInterceptor },
+  ],
+})
+export class TelemetryModule {}

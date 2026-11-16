@@ -3,7 +3,7 @@ import { type AiKeyCheck, AiKeyVerifier, type ProviderKey } from '../application
 import { AnthropicKeyVerifier } from './anthropic-key-verifier.js';
 import { GeminiKeyVerifier } from './gemini-key-verifier.js';
 
-/** Sends each key to its own provider's check (ADR-19). */
+/** Sends each key to its own provider's check (ADR-23). */
 @Injectable()
 export class ProviderKeyVerifier extends AiKeyVerifier {
   constructor(

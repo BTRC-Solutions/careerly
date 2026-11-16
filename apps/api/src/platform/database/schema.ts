@@ -198,3 +198,28 @@ export const languageSkills = sqliteTable('language_skills', {
   notes: text('notes'),
   ...provenance(),
 });
+
+// ---------------------------------------------------------------------------
+// Telemetry (owned by the `telemetry` module; RF-TEL-06, RF-TEL-08, ARCHITECTURE §19.2).
+// Preferences (install id, enabled metrics, consent version) live in `settings`.
+// ---------------------------------------------------------------------------
+
+/** Local days (YYYY-MM-DD) in which the app was used, recorded only while telemetry is accepted. */
+export const telemetryActivityDays = sqliteTable('telemetry_activity_days', {
+  day: text('day').primaryKey(),
+});
+
+/** One built report per day, stored exactly as it is (or will be) sent. */
+export const telemetryReports = sqliteTable(
+  'telemetry_reports',
+  {
+    day: text('day').primaryKey(),
+    /** JSON of a `TelemetryReportV1`. */
+    payload: text('payload').notNull(),
+    status: text('status', { enum: ['PENDING', 'SENT', 'FAILED'] }).notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    createdAt: text('created_at').notNull(),
+    sentAt: text('sent_at'),
+  },
+  (table) => [index('telemetry_reports_status_idx').on(table.status)],
+);

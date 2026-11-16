@@ -5,7 +5,7 @@ export type Credentials = NonNullable<AiCredentials['credentials']>;
 
 /**
  * The active AI provider and its API key, held only in memory (RNF-03). They arrive from the
- * Electron main process (`PUT /internal/ai-credentials`, ADR-19) and are never written to the
+ * Electron main process (`PUT /internal/ai-credentials`, ADR-23) and are never written to the
  * database, files or logs.
  *
  * The credentials live in a private field, so `JSON.stringify`, pino and `util.inspect` skip them.

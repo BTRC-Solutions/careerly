@@ -6,7 +6,7 @@
 import type { AiKeysStatus, AiProvider } from '@careerly/contracts';
 
 /**
- * AI API keys kept by Electron's main process (RF-CONF-01, ADR-19). Write-only: the interface can
+ * AI API keys kept by Electron's main process (RF-CONF-01, ADR-23). Write-only: the interface can
  * save, remove and choose the active provider, and see which ones are configured, never the keys.
  */
 export interface DesktopAiKeys {

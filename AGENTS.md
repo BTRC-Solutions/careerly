@@ -12,7 +12,7 @@ App de **escritorio, local-first y de un solo usuario** para:
 3. Generar un **CV adaptado de 1–2 páginas** (Typst → PDF, compatible con ATS), fiel al perfil.
 4. Congelarlo como **snapshot inmutable** y asociarlo a una **postulación** con seguimiento (kanban, timeline).
 
-Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario, con varios proveedores: Gemini primero, Claude después (ADR-19).
+Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario, con varios proveedores: Gemini primero, Claude después (ADR-23).
 
 ## Dónde está cada cosa
 
@@ -24,14 +24,17 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 | Colores, tipografía, componentes de UI | [STYLES.md](STYLES.md) (tokens ya volcados en `apps/web/src/styles.css`) |
 | Comandos para correr, testear y generar migraciones | [README.md](README.md) |
 | Cómo se versiona y qué revisar antes de largar una versión | [VERSIONING.md](VERSIONING.md) |
-| Tablero de tareas | Trello, vía el conector de claude.ai (ver [Flujo de trabajo](#flujo-de-trabajo)) |
+| Tablero de tareas | [Trello](https://trello.com/b/ifdBf9SV/careerly) (workspace "RCBT solutions"), vía el conector de claude.ai (ver [Flujo de trabajo](#flujo-de-trabajo)) |
 
 ## Estado actual
 
-- **Fase 0 (fundaciones)** prácticamente cerrada: pasos 0.6 y 0.7 están 🟨 a la espera de una corrida de CI
-  real (PR de prueba con checks en verde).
-- **Siguiente:** Fase 1 — paso **1.1** (asistente de primer inicio + API key con `safeStorage`).
-- La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md); mantenela actualizada.
+- **Fase 0** cerrada. **Fase 1** en curso: 1.2 hecho; 1.1 con desktop hecho (PR #14) y la verificación del
+  backend en revisión; 1.3 con el backend hecho (falta la pantalla); 1.5 con el backend en revisión; faltan
+  1.4 y 1.6. **Fase 2**: 2.1–2.5 hechos (se adelantaron); faltan 2.6 y 2.7.
+- Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
+  Fase 1 larga `v0.1.0`.
+- La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
+  mergeado**, junto con la tarjeta de Trello ("En proceso" al abrir el PR, "Hecho" al mergear).
 
 ## Stack y estructura
 
@@ -107,5 +110,8 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 1. Se trabaja **un paso del roadmap por vez, en orden**, sin adelantar pasos.
 2. Cada paso cierra con su criterio de terminado cumplido + lint, typecheck, tests y build en verde + commit/PR.
 3. Al cerrar un paso: actualizar su estado en ROADMAP.md y mover la tarjeta en Trello.
-4. Las tarjetas de Trello se nombran con el ID del paso (p. ej. `1.1 — Asistente de primer inicio`) y
-   enlazan los `RF-*`/`RNF-*` correspondientes.
+4. Las tarjetas de Trello se nombran `[F<paso>] título` (p. ej. `[F1.1] Asistente de primer inicio`; un rango
+   como `[F2.2–2.5]` si cubre varios pasos). La descripción empieza con `Roadmap <paso> · <RF-*/RNF-*/ADR-*>`,
+   sigue con el detalle y termina con `**Terminado cuando:** …`. Las listas son por área (Backend, Frontend,
+   IA y prompts, Desktop/Typst/releases, QA y docs, Post-MVP) más "En proceso" y "Hecho"; un paso con parte de
+   backend y de frontend lleva una tarjeta en cada lista.

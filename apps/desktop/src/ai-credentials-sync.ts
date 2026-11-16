@@ -11,7 +11,7 @@ export interface CredentialsSyncOptions {
 }
 
 /**
- * Sends the active AI API key from main to the backend's memory (ADR-19, RNF-03).
+ * Sends the active AI API key from main to the backend's memory (ADR-23, RNF-03).
  * The key only travels over loopback, authenticated with the control token.
  */
 export class AiCredentialsSync {
