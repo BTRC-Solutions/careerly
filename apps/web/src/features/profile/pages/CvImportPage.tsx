@@ -112,7 +112,7 @@ function PickStep({
   const [fileName, setFileName] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Claude Code with the subscription (ADR-24) needs no API key.
+  // Claude Code with the subscription (ADR-25) needs no API key.
   const usesClaudeCode = claudeCode.data?.enabled === true;
   // Inside the desktop app we know up front whether there is a key; in the browser the API says.
   const noAiKey =

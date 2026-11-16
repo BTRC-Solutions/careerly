@@ -321,7 +321,7 @@ devolvió la IA.
 - **Puerto `LlmClient`** en el módulo `ai` con operaciones tipadas: `extractRequirements`, `matchEvidence`,
   `scoreRelevance`, `writeResume`. Cada una recibe y devuelve tipos de dominio; el adaptador arma el prompt.
 - **Proveedores (ADR-23):** varios, con la **API key del usuario** para cada uno y uno activo a la vez. Primer
-  adaptador: **Google Gemini**; el de **Claude (Anthropic)** es el siguiente y OpenAI queda abierto. Cada
+  adaptador: **Google Gemini**; luego **Claude (Anthropic)**, con el SDK oficial; OpenAI queda abierto. Cada
   adaptador implementa todo `LlmClient`, y el dominio no sabe cuál está activo. Modelo grande para la redacción
   (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7). Cada nivel es una **lista de modelos en
   orden de preferencia** (valores por defecto en código, configurables por entorno): si un modelo fue retirado
@@ -333,6 +333,18 @@ devolvió la IA.
   para keys nuevas), así que los valores por defecto se revisan con `GET /internal/ai/models` y
   `POST /internal/ai/smoke`. Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador los aplica
   sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
+- **Claude Code local (ADR-25, opcional):** en lugar de una API key, el proveedor `claude-code` usa el `claude`
+  instalado y logueado en la computadora (`claude -p --output-format json --json-schema …`), con el plan de
+  Claude del usuario. Es experimental y solo para uso personal: Anthropic no permite que apps de terceros
+  ofrezcan el login de claude.ai sin aprobación, así que nunca es el valor por defecto. Se activa con un
+  interruptor en Configuración (`ai.claudeCode.enabled`, solo si `claude auth status` dice que hay sesión) y,
+  mientras está activo, `ActiveAiCredentials` lo elige en cada llamada en lugar de la key que manda Electron.
+  Como Claude Code es un agente y el CV o la JD son contenido no confiable, cada llamada corre aislada: carpeta
+  temporal propia como directorio de trabajo (se borra al terminar), sin herramientas salvo `Read(./**)` sobre
+  los PDF copiados ahí, `--permission-mode dontAsk`, sin MCP (`--strict-mcp-config`), sin la configuración del
+  usuario (`--setting-sources ""`), sin guardar la sesión y sin variables `ANTHROPIC_*` ni `CAREERLY_*` en su
+  entorno (factura la suscripción y nunca ve los tokens de la app). El prompt va por stdin, sin shell. Los
+  tokens se registran en `AiGeneration` sin costo (los paga el plan).
 - **Salida estructurada:** *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
   reintento con el error; si vuelve a fallar, el paso queda en `FAILED`.
 - **Prompts versionados** como archivos en el repo (`ai/prompts/*.v3.md`). `promptVersion` se guarda en
@@ -685,6 +697,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 | ADR-24 | Plantillas propias: el usuario sube un `.typ` con el mismo contrato que las incluidas (un JSON `TemplateData` con los textos fijos traducidos por la app). Se ejecuta con el mismo aislamiento de Typst (sin red, lectura solo dentro de `--root`, fuentes del sistema ignoradas, timeout) y se valida renderizando los ejemplos | Aceptada (Fase 3) |
+| ADR-25 | Proveedor opcional "Claude Code local": el `claude` instalado y logueado, invocado como proceso aislado (carpeta temporal, solo lectura de los archivos de entrada, sin MCP ni configuración del usuario), con el plan del usuario en lugar de una API key; experimental y solo para uso personal | Aceptada (Fase 4) |
 
 ## 18. Extensiones post-MVP
 

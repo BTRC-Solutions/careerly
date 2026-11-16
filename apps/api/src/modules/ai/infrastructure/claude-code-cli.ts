@@ -16,7 +16,7 @@ export interface CliResult {
 const MAX_OUTPUT_BYTES = 20 * 1024 * 1024;
 
 /**
- * Runs the Claude Code installed on this computer (ADR-24). Never through a shell: arguments go
+ * Runs the Claude Code installed on this computer (ADR-25). Never through a shell: arguments go
  * to the process as they are and the prompt goes through stdin. Its output is never logged.
  */
 @Injectable()

@@ -4,7 +4,7 @@ import { apiGet, apiPut } from '../../../shared/api/client';
 import { AI_MODELS_QUERY_KEY } from './useAiModels';
 
 /*
- * Claude Code with the user's subscription (RF-CONF-14, ADR-24): whether it is installed and
+ * Claude Code with the user's subscription (RF-CONF-14, ADR-25): whether it is installed and
  * signed in on this computer, and the switch that sends AI calls to it instead of an API key.
  */
 

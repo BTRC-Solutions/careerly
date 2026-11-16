@@ -8,7 +8,7 @@ import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js
 import { ClaudeCodeService } from '../application/claude-code.service.js';
 
 /**
- * Claude Code with the user's subscription (RF-CONF-14, ADR-24). `PUT` always answers 200 with
+ * Claude Code with the user's subscription (RF-CONF-14, ADR-25). `PUT` always answers 200 with
  * the status: if it cannot be turned on, `enabled` stays `false` and `problem` says why.
  */
 @Controller('settings/claude-code')

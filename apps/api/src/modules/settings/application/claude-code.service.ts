@@ -15,7 +15,7 @@ export interface ClaudeCodeCheck {
 }
 
 /**
- * Port: the `ai` module's side of Claude Code (ADR-24). Declared as an abstract class so it can be
+ * Port: the `ai` module's side of Claude Code (ADR-25). Declared as an abstract class so it can be
  * used as a Nest DI token.
  */
 export abstract class ClaudeCodeGateway {
@@ -25,7 +25,7 @@ export abstract class ClaudeCodeGateway {
 }
 
 /**
- * Using Claude Code with the user's subscription instead of an API key (RF-CONF-14, ADR-24).
+ * Using Claude Code with the user's subscription instead of an API key (RF-CONF-14, ADR-25).
  * Turning it on is refused while it is not installed and signed in, so AI calls never switch to
  * something that cannot answer. AI calls read the switch on every call.
  */

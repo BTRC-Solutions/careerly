@@ -9,7 +9,7 @@ export interface ActiveCredentials {
 }
 
 /**
- * Which provider answers AI calls (ADR-23, ADR-24): Claude Code with the user's subscription when
+ * Which provider answers AI calls (ADR-23, ADR-25): Claude Code with the user's subscription when
  * it is turned on in Settings, otherwise the API key Electron sent. The `settings` module stores
  * the switch and plugs its reader in at startup (`useClaudeCodeSource`); reading it on every call
  * keeps it right after a change, a restore or a deletion of all data.
