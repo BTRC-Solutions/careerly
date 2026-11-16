@@ -31,7 +31,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 1.1 | Asistente de primer inicio: API key guardada con `safeStorage` por main, enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | ⬜ |
+| 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | ⬜ |
 | 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ⬜ |
 | 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | ⬜ |
 | 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ⬜ |
@@ -68,7 +68,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 4.1 | Módulo `ai`: puerto `LlmClient`, adaptador de Claude con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
+| 4.1 | Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-19; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
 | 4.2 | Pantalla de consumo de IA (tokens y costo por día, mes y tarea). Acciones de IA deshabilitadas sin conexión o sin key válida. `[RF-CONF-06, RNF-13]` | Sin red, la app sigue funcionando y las acciones de IA muestran por qué no están disponibles. | ⬜ |
 | 4.3 | Módulo `jobs`: cola persistida en SQLite, ejecutor con concurrencia y reintentos, reanudación al iniciar, progreso por SSE. | Cerrar la app a mitad de una tarea y volver a abrirla la completa. | ⬜ |
 | 4.4 | CRUD de JDs. `[RF-JD-01]` | Se crean y listan desde la app. | ⬜ |

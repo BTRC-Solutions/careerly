@@ -39,7 +39,8 @@ Perfil maestro (todo lo que hice) + Job description
 ## 3. Actores
 
 - **Usuario:** persona que busca trabajo. Es el único actor: la app no tiene cuentas ni login.
-- **Proveedor de IA:** servicio externo de LLM, usado con la API key propia del usuario (ver ARCHITECTURE.md).
+- **Proveedor de IA:** servicio externo de LLM, usado con la API key propia del usuario. Se soportan varios
+  (Gemini primero, luego Claude) y el usuario elige cuál usar (ver ARCHITECTURE.md, ADR-19).
 - **Proveedor de búsqueda web** *(post-MVP)*: para el research de empresas.
 - **Receptor de telemetría:** servidor propio del proyecto que recibe los reportes anónimos de uso de quienes
   lo aceptan y publica estadísticas agregadas (ver sección 5.10).
@@ -67,7 +68,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 
 | ID | Requerimiento | Prioridad |
 |---|---|---|
-| RF-CONF-01 | Configurar la API key del proveedor de IA en el primer inicio (y cambiarla después). Se guarda cifrada con el almacén seguro del sistema operativo, nunca en texto plano. | MVP |
+| RF-CONF-01 | Elegir el proveedor de IA y configurar su API key en el primer inicio (y cambiarlos después). Se puede guardar una key por proveedor y uno queda activo. Se guardan cifradas con el almacén seguro del sistema operativo, nunca en texto plano. | MVP |
 | RF-CONF-02 | Verificar la API key al guardarla (llamada de prueba) e informar si es inválida. | MVP |
 | RF-CONF-03 | Ver la carpeta donde se guardan los datos y abrirla desde la app. | MVP |
 | RF-CONF-04 | **Backup:** exportar todos los datos (base de datos + PDFs) a un único archivo y restaurarlos desde ese archivo. | MVP |
@@ -364,7 +365,8 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-03 | ¿Integración con email (RF-APP-10)? | Fuera del alcance por ahora. |
 | D-04 | ¿Umbral de años para el límite por defecto de 1 vs. 2 páginas? | 8 años (configurable por sesión, RF-TAIL-08). |
 | D-05 | ¿El usuario puede subir una foto para el CV? | No. |
-| D-06 | ¿Cómo se obtiene la información pública de las empresas (RF-PREP-02)? | Herramienta de búsqueda web del mismo proveedor de IA, para usar una sola API key. Se revisa si la calidad de las citas no alcanza. |
+| D-06 | ¿Cómo se obtiene la información pública de las empresas (RF-PREP-02)? | Herramienta de búsqueda web del proveedor de IA activo, para usar una sola API key. Se revisa si la calidad de las citas no alcanza. |
+| D-10 | ¿Qué proveedores de IA se soportan? | Varios, uno activo a la vez: **Gemini** primero, **Claude** después, OpenAI abierto (ADR-19). |
 | D-07 | ¿Las recomendaciones de capacitación incluyen cursos de plataformas? | No: solo documentación oficial, certificaciones y proyectos sugeridos, con enlaces verificados. |
 | D-08 | ¿Aplicación web o de escritorio? | **Escritorio** (Electron), con datos locales en SQLite. Ver ARCHITECTURE.md. |
 | D-09 | ¿Telemetría? | Sí, con consentimiento: casillas activadas por defecto, pero nada se envía sin "Aceptar". Reportes diarios agregados con ID anónimo regenerable. Sin observabilidad técnica (errores, rendimiento). |
