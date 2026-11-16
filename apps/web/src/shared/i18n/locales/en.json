@@ -86,7 +86,8 @@
     },
     "personal": {
       "title": "Personal info",
-      "fullName": "Full name",
+      "firstNames": "First name(s)",
+      "lastNames": "Last name(s)",
       "headline": "Professional headline",
       "headlineHint": "For example: “Senior Backend Engineer”.",
       "email": "Email",

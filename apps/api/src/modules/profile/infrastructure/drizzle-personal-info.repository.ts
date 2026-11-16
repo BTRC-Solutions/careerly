@@ -13,7 +13,8 @@ const SINGLE_ROW_ID = 1;
 const LinksSchema = z.array(ProfileLinkSchema).catch([]);
 
 const EMPTY: PersonalInfo = {
-  fullName: null,
+  firstNames: null,
+  lastNames: null,
   headline: null,
   location: null,
   email: null,

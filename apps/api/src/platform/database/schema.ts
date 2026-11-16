@@ -71,7 +71,10 @@ export const profilePersonalInfo = sqliteTable(
   'profile_personal_info',
   {
     id: integer('id').primaryKey(),
-    fullName: text('full_name'),
+    /** Given name(s), e.g. "María José". */
+    firstNames: text('first_names'),
+    /** Surname(s), e.g. "García López". */
+    lastNames: text('last_names'),
     headline: text('headline'),
     location: text('location'),
     email: text('email'),
