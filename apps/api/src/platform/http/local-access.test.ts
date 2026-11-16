@@ -43,4 +43,33 @@ describe('checkLocalAccess', () => {
     const result = checkLocalAccess(validHeaders, { ...options, address: { port: undefined } });
     expect(result.allowed).toBe(false);
   });
+
+  describe('/internal routes (Electron main only)', () => {
+    const withControl = { ...options, controlToken: 'control-token-123456' };
+    const control = { host: validHeaders.host, authorization: 'Bearer control-token-123456' };
+
+    it('accept only the control token', () => {
+      expect(checkLocalAccess(control, withControl, '/internal/ai-credentials').allowed).toBe(true);
+      expect(checkLocalAccess(validHeaders, withControl, '/internal/ai-credentials')).toMatchObject(
+        { status: 401 },
+      );
+    });
+
+    it('are matched case-insensitively and with query strings', () => {
+      expect(
+        checkLocalAccess(validHeaders, withControl, '/Internal/AI-credentials?x=1'),
+      ).toMatchObject({ status: 401 });
+    });
+
+    it('reject browser contexts and are disabled without a control token', () => {
+      expect(
+        checkLocalAccess({ ...control, origin: 'app://careerly' }, withControl, '/internal/x'),
+      ).toMatchObject({ status: 403 });
+      expect(checkLocalAccess(control, options, '/internal/x')).toMatchObject({ status: 403 });
+    });
+
+    it('do not let the control token open the regular API', () => {
+      expect(checkLocalAccess(control, withControl, '/profile')).toMatchObject({ status: 401 });
+    });
+  });
 });

@@ -3,21 +3,36 @@
  * The rest of the UI must not know whether it runs inside Electron or in a regular browser.
  */
 
+import type { AiKeyStatus, AiProvider } from '@careerly/contracts';
+
+/**
+ * AI API keys kept by Electron's main process (RF-CONF-01, ADR-19). Write-only: the interface can
+ * save, remove and choose the active provider, and see which ones are configured, never the keys.
+ */
+export interface DesktopAiKeys {
+  status(): Promise<AiKeyStatus>;
+  save(provider: AiProvider, apiKey: string): Promise<AiKeyStatus>;
+  remove(provider: AiProvider): Promise<AiKeyStatus>;
+  setActive(provider: AiProvider): Promise<AiKeyStatus>;
+}
+
 /** What the preload script exposes on `window.careerly` (see apps/desktop/src/preload.cts). */
 export interface DesktopBridge {
   apiBaseUrl: string;
   apiToken: string;
   /** Opens the local data folder in the system file manager (RF-CONF-03). */
   openDataFolder?: () => Promise<void>;
+  aiKeys?: DesktopAiKeys;
 }
 
 /** Native actions available only inside Electron. Empty in `npm run dev:web`. */
 export interface DesktopActions {
   openDataFolder?: () => Promise<void>;
+  aiKeys?: DesktopAiKeys;
 }
 
 export function getDesktopActions(): DesktopActions {
-  return { openDataFolder: window.careerly?.openDataFolder };
+  return { openDataFolder: window.careerly?.openDataFolder, aiKeys: window.careerly?.aiKeys };
 }
 
 export interface ApiConnection {

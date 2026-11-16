@@ -1,9 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { AiProviderSchema } from '@careerly/contracts';
+import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, shell } from 'electron';
+import { AiCredentialsSync } from './ai-credentials-sync.js';
+import { AiKeyStore } from './ai-key-store.js';
 import { APP_ORIGIN, registerAppScheme, serveUi } from './app-protocol.js';
 import { startBackend, type RunningBackend } from './backend.js';
+import { safeStorageEncryptor } from './safe-storage.js';
 import { applySecurityPolicies } from './security.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -14,6 +18,8 @@ interface Connection {
   uiUrl: string;
   apiBaseUrl: string;
   apiToken: string;
+  /** For the backend's `/internal/*` routes. Never given to the renderer. */
+  controlToken: string;
 }
 
 let backend: RunningBackend | undefined;
@@ -61,19 +67,83 @@ async function start() {
         : { apiBaseUrl: '', apiToken: '' };
   });
 
+  const assertFromUi = (event: IpcMainInvokeEvent) => {
+    const senderOrigin = event.senderFrame ? new URL(event.senderFrame.url).origin : undefined;
+    if (senderOrigin !== uiOrigin) throw new Error('Not allowed.');
+  };
+
   // The renderer never chooses the path: main asks the API for its data folder and opens only that.
   ipcMain.handle('careerly:open-data-folder', async (event) => {
-    const senderOrigin = event.senderFrame ? new URL(event.senderFrame.url).origin : undefined;
-    if (senderOrigin !== uiOrigin) {
-      throw new Error('Not allowed.');
-    }
+    assertFromUi(event);
     const error = await shell.openPath(await fetchDataDir(connection));
     if (error) {
       throw new Error(error);
     }
   });
 
+  registerAiKeyHandlers(connection, assertFromUi);
   createWindow(connection.uiUrl);
+}
+
+/**
+ * API keys per AI provider (ADR-19, RF-CONF-01, RNF-03). The renderer can save, remove and pick
+ * the active provider, and read which ones are configured, but it can never read a key back.
+ * Every change is sent to the backend's memory right away (no restart).
+ */
+function registerAiKeyHandlers(
+  connection: Connection,
+  assertFromUi: (event: IpcMainInvokeEvent) => void,
+) {
+  const store = new AiKeyStore(
+    path.join(app.getPath('userData'), 'secrets.bin'),
+    safeStorageEncryptor,
+    (message) => console.warn(`[ai-keys] ${message}`),
+  );
+  const sync = new AiCredentialsSync({
+    apiBaseUrl: connection.apiBaseUrl,
+    controlToken: connection.controlToken,
+    activeCredentials: () => store.activeCredentials(),
+  });
+
+  const applyToBackend = async () => {
+    try {
+      await sync.push();
+    } catch (error) {
+      // Saved anyway; the next start (or the dev keep-alive) sends it again.
+      console.warn(`[ai-keys] ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  void sync.pushWhenReady().catch((error: unknown) => {
+    console.warn(`[ai-keys] ${error instanceof Error ? error.message : String(error)}`);
+  });
+  if (isDev) sync.startKeepAlive();
+
+  ipcMain.handle('careerly:ai-keys:status', (event) => {
+    assertFromUi(event);
+    return store.status();
+  });
+
+  ipcMain.handle('careerly:ai-keys:save', async (event, provider: unknown, apiKey: unknown) => {
+    assertFromUi(event);
+    const status = store.save(AiProviderSchema.parse(provider), String(apiKey));
+    await applyToBackend();
+    return status;
+  });
+
+  ipcMain.handle('careerly:ai-keys:remove', async (event, provider: unknown) => {
+    assertFromUi(event);
+    const status = store.remove(AiProviderSchema.parse(provider));
+    await applyToBackend();
+    return status;
+  });
+
+  ipcMain.handle('careerly:ai-keys:set-active', async (event, provider: unknown) => {
+    assertFromUi(event);
+    const status = store.setActive(AiProviderSchema.parse(provider));
+    await applyToBackend();
+    return status;
+  });
 }
 
 /** The data folder the API is using (in development it is `.data/`, not `userData`). */
@@ -91,6 +161,7 @@ async function fetchDataDir(connection: Connection): Promise<string> {
 /** `npm start` / installed app: start the API ourselves and serve the built UI. */
 async function packagedConnection(): Promise<Connection> {
   const apiToken = randomBytes(32).toString('base64url');
+  const controlToken = randomBytes(32).toString('base64url');
   // TODO(roadmap 1.4): resolve the API and UI from `process.resourcesPath` in the installer build.
   const appsDir = path.resolve(here, '..', '..');
 
@@ -98,13 +169,14 @@ async function packagedConnection(): Promise<Connection> {
     entry: path.join(appsDir, 'api', 'dist', 'main.js'),
     dataDir: app.getPath('userData'),
     token: apiToken,
+    controlToken,
     appVersion: app.getVersion(),
     allowedOrigins: [APP_ORIGIN],
     forwardOutput: !app.isPackaged,
   });
   serveUi(path.join(appsDir, 'web', 'dist'), backend.url);
 
-  return { uiUrl: `${APP_ORIGIN}/index.html`, apiBaseUrl: backend.url, apiToken };
+  return { uiUrl: `${APP_ORIGIN}/index.html`, apiBaseUrl: backend.url, apiToken, controlToken };
 }
 
 /** `npm run dev`: Vite serves the UI with HMR and the API runs separately in watch mode. */
@@ -116,6 +188,7 @@ async function developmentConnection(): Promise<Connection> {
     uiUrl,
     apiBaseUrl: requiredEnv('CAREERLY_API_URL'),
     apiToken: requiredEnv('CAREERLY_API_TOKEN'),
+    controlToken: requiredEnv('CAREERLY_CONTROL_TOKEN'),
   };
 }
 

@@ -3,3 +3,4 @@ export * from './health.js';
 export * from './settings.js';
 export * from './tools.js';
 export * from './profile.js';
+export * from './ai.js';
