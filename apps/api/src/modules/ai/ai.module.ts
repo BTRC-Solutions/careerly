@@ -8,6 +8,7 @@ import { AiSmokeTestService } from './application/smoke-test.service.js';
 import { InternalAiCredentialsController } from './http/internal-ai-credentials.controller.js';
 import { InternalAiSmokeController } from './http/internal-ai-smoke.controller.js';
 import { DrizzleAiGenerationRepository } from './infrastructure/drizzle-ai-generation.repository.js';
+import { AnthropicLlmProvider } from './infrastructure/anthropic-llm.provider.js';
 import { GeminiLlmProvider } from './infrastructure/gemini-llm.provider.js';
 import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registry.js';
 
@@ -27,6 +28,7 @@ import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registr
     LlmClient,
     AiSmokeTestService,
     GeminiLlmProvider,
+    AnthropicLlmProvider,
     { provide: LlmProviderRegistry, useClass: StaticLlmProviderRegistry },
     { provide: AiGenerationRepository, useClass: DrizzleAiGenerationRepository },
   ],

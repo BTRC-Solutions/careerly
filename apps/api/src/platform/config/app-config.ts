@@ -50,6 +50,12 @@ const EnvSchema = z.object({
   CAREERLY_GEMINI_MODELS_LARGE: modelList.prefault(
     'gemini-3.6-flash,gemini-flash-latest,gemini-3.5-flash-lite',
   ),
+  /**
+   * Claude models per tier (ADR-23), same rules: a fast, cheap model for extraction and the most
+   * capable one for writing, with Sonnet as its fallback.
+   */
+  CAREERLY_ANTHROPIC_MODELS_SMALL: modelList.prefault('claude-haiku-5-5'),
+  CAREERLY_ANTHROPIC_MODELS_LARGE: modelList.prefault('claude-opus-5-5,claude-sonnet-5-5'),
 });
 
 export interface AppConfig {
@@ -81,6 +87,8 @@ export interface AppConfig {
   aiBaseUrls: Record<AiProvider, string>;
   /** Gemini models for each tier, in order of preference: small (extraction, scoring), large (writing). */
   geminiModels: { small: string[]; large: string[] };
+  /** Claude models for each tier, in order of preference. */
+  anthropicModels: { small: string[]; large: string[] };
 }
 
 export class ConfigError extends Error {
@@ -136,6 +144,10 @@ export function loadConfig(
     geminiModels: {
       small: parsed.CAREERLY_GEMINI_MODELS_SMALL,
       large: parsed.CAREERLY_GEMINI_MODELS_LARGE,
+    },
+    anthropicModels: {
+      small: parsed.CAREERLY_ANTHROPIC_MODELS_SMALL,
+      large: parsed.CAREERLY_ANTHROPIC_MODELS_LARGE,
     },
   };
 }
