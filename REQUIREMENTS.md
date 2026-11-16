@@ -120,7 +120,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-TAIL-06 | Deshacer los cambios que una sesión hizo en el perfil maestro (individualmente o todos). | MVP |
 | RF-TAIL-07 | Elegir uno o más **idiomas de salida** para la sesión. Se genera un CV por idioma. Por defecto, el idioma de la JD. | MVP |
 | RF-TAIL-08 | Elegir el **límite de páginas** (1 o 2). Por defecto: 1 página con menos de 8 años de experiencia, 2 con 8 o más. | MVP |
-| RF-TAIL-09 | Elegir la plantilla visual del CV. | MVP (1 plantilla) / Post (varias) |
+| RF-TAIL-09 | Elegir la plantilla visual del CV: la incluida (`classic`) o una propia subida como archivo `.typ`. | MVP |
 | RF-TAIL-10 | Generar el CV adaptado: seleccionar y priorizar experiencias, logros, proyectos y herramientas relevantes, reformular con la terminología de la JD sin alterar los hechos, y escribir un resumen profesional orientado al puesto. | MVP |
 | RF-TAIL-11 | Cada bullet del CV generado muestra de qué logro(s) del perfil maestro proviene. | MVP |
 | RF-TAIL-12 | Vista previa del PDF y edición del CV adaptado: texto de bullets, orden, incluir/excluir elementos y resumen. Tras cada cambio se vuelve a ajustar el largo y se avisa si se excede el límite de páginas. | MVP |

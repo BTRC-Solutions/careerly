@@ -1,0 +1,136 @@
+{
+  "language": "en",
+  "paper": "us-letter",
+  "basics": {
+    "name": "Ana Pérez",
+    "headline": "Senior Backend Developer · Node.js & TypeScript",
+    "location": "Córdoba, Argentina",
+    "email": "ana.perez@example.com",
+    "phone": "+54 351 555-0100",
+    "links": [
+      {
+        "url": "https://www.linkedin.com/in/ana-perez-example/",
+        "label": null
+      },
+      {
+        "url": "https://github.com/ana-perez-example",
+        "label": "github.com/ana-perez-example"
+      }
+    ]
+  },
+  "summary": "Backend developer with 8 years of experience designing APIs and payment systems. I care about code quality, observability and helping small teams grow without losing speed.",
+  "experience": [
+    {
+      "company": "Pagos del Sur S.A.",
+      "title": "Senior Backend Developer",
+      "location": "Remote",
+      "startDate": "2022-03",
+      "endDate": null,
+      "bullets": [
+        "Redesigned the reconciliation service on NestJS and PostgreSQL, cutting the daily close from 4 h to 25 min.",
+        "Led the migration of 14 services from JavaScript to strict TypeScript with no production incidents.",
+        "Rolled out distributed tracing with OpenTelemetry, reducing mean time to diagnosis by 60%.",
+        "Mentored 3 junior developers; two were promoted to mid-level within a year.",
+        "Defined the team's code review process and style guides (C#, *.ts and SQL)."
+      ]
+    },
+    {
+      "company": "Tienda Nube Example",
+      "title": "Backend Developer",
+      "location": "Buenos Aires, Argentina",
+      "startDate": "2019-06",
+      "endDate": "2022-02",
+      "bullets": [
+        "Built the shipping API used by 20,000+ merchants at 99.95% availability.",
+        "Cut the monthly AWS bill by 35% by tuning queues and Redis caches.",
+        "Wrote the integration test suite that now runs on every PR (Jest + Testcontainers)."
+      ]
+    },
+    {
+      "company": "Consultora Andina",
+      "title": "Full Stack Developer",
+      "location": "Córdoba, Argentina",
+      "startDate": "2017-02",
+      "endDate": "2019-05",
+      "bullets": [
+        "Built scheduling and billing systems for healthcare clients with Express, React and MySQL.",
+        "Automated deployments with GitHub Actions, from 2 days to under an hour per release."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "feriados-ar",
+      "role": "Author and maintainer",
+      "url": "https://github.com/ana-perez-example/feriados-ar",
+      "startDate": "2021-01",
+      "endDate": null,
+      "bullets": [
+        "Open source library of Argentine public holidays with 15,000 weekly downloads on npm.",
+        "Prices in $ and formulas like a_b * c or #tag show up as written: text is never evaluated."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "label": "Languages",
+      "items": ["TypeScript", "JavaScript", "SQL", "C#"]
+    },
+    {
+      "label": "Backend",
+      "items": ["Node.js", "NestJS", "Express", "PostgreSQL", "Redis", "Kafka"]
+    },
+    {
+      "label": "Infrastructure",
+      "items": ["AWS", "Docker", "GitHub Actions", "OpenTelemetry"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universidad Nacional de Córdoba",
+      "title": "Information Systems Engineering",
+      "field": null,
+      "startDate": "2011-03",
+      "endDate": "2017-12"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Developer – Associate",
+      "issuer": "Amazon Web Services",
+      "issueDate": "2023-09"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Spanish",
+      "level": "NATIVE"
+    },
+    {
+      "language": "English",
+      "level": "C1"
+    }
+  ],
+  "labels": {
+    "sections": {
+      "summary": "Summary",
+      "experience": "Work Experience",
+      "projects": "Projects",
+      "skills": "Skills",
+      "education": "Education",
+      "certifications": "Certifications",
+      "languages": "Languages"
+    },
+    "present": "Present",
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "levels": {
+      "NATIVE": "native",
+      "C2": "C2",
+      "C1": "C1",
+      "B2": "B2",
+      "B1": "B1",
+      "A2": "A2",
+      "A1": "A1"
+    }
+  }
+}
