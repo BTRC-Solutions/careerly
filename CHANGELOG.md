@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.0](https://github.com/BTRC-Solutions/careerly/compare/v0.1.0...v0.2.0) (2026-11-16)
+
+
+### Features
+
+* **ai:** LlmClient with a Gemini adapter, structured output and usage log (F4.1) ([d7a4199](https://github.com/BTRC-Solutions/careerly/commit/d7a41995f39e0d7405c11c3073756175161b74c7))
+* import a CV into the master profile (F2.7) ([8cc574c](https://github.com/BTRC-Solutions/careerly/commit/8cc574c0a2de80253fa8bb7886a671b1cff9ec37))
+* **profile:** per-session change log of gap answers, with undo (F2.6) ([6148a5c](https://github.com/BTRC-Solutions/careerly/commit/6148a5c1046d88ca70da31078264c756baeebcee))
+* **profile:** per-session change log of gap answers, with undo (F2.6) ([9f580f4](https://github.com/BTRC-Solutions/careerly/commit/9f580f4cd987479fbf8ad0de79c3bfc6e7c9d80a))
+* **settings:** choose the AI model per tier in Settings (F4.10) ([a39a627](https://github.com/BTRC-Solutions/careerly/commit/a39a62781f5bbf025098fa260f8dd1ea10c7b7ab))
+* **settings:** choose the AI model per tier in Settings (F4.10) ([31e42cb](https://github.com/BTRC-Solutions/careerly/commit/31e42cb67c1e1c63acc9361529d94a65358936fa))
+* **web:** import a CV from the master profile and review it before saving (F2.7) ([2da7ee9](https://github.com/BTRC-Solutions/careerly/commit/2da7ee9e231d648de15dcd463ce84824c649fa02))
+
+
+### Bug Fixes
+
+* **profile:** capitalize language names in an imported CV ([5a8e65d](https://github.com/BTRC-Solutions/careerly/commit/5a8e65d710181eb6b7e7eb8e79d0dfcfc94b4064))
+* **profile:** keep the person's location off imported positions ([ec0afb9](https://github.com/BTRC-Solutions/careerly/commit/ec0afb9c8bcf2d297867c600d18f1e8f32795882))
+* **profile:** read the link targets of an imported CV ([3b74a52](https://github.com/BTRC-Solutions/careerly/commit/3b74a526a707ca2fa5c573b4e1f7a3c5c4ca29c3))
+
+
+### Miscellaneous Chores
+
+* close phase 2 ([a381643](https://github.com/BTRC-Solutions/careerly/commit/a381643ad354119ce481577c84eee878b209edf1))
+
 ## [0.1.0](https://github.com/BTRC-Solutions/careerly/compare/v0.0.1...v0.1.0) (2026-11-16)
 
 
