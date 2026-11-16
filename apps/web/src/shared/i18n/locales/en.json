@@ -166,6 +166,23 @@
         "AI_MODEL_UNAVAILABLE": "The model is not available to your key (it does not exist or is overloaded). It was not saved.",
         "AI_FAILED": "The model did not answer in the format Careerly needs. It was not saved."
       }
+    },
+    "claudeCode": {
+      "title": "Claude with your subscription",
+      "experimental": "Experimental",
+      "description": "Uses the Claude Code installed on this computer, with your Claude plan, instead of an API key. For personal use only: it uses your plan limits and each call takes a few more seconds, because Claude Code starts.",
+      "checking": "Checking Claude Code…",
+      "loadError": "Claude Code could not be checked: {{message}}",
+      "ready": "Claude Code {{version}} installed and signed in ({{authMethod}}).",
+      "problems": {
+        "NOT_INSTALLED": "Claude Code was not found on this computer. Install it from claude.com/claude-code and check again.",
+        "NOT_LOGGED_IN": "Claude Code {{version}} is installed but not signed in. Open a terminal, run this command, sign in with your Claude account and check again:",
+        "CHECK_FAILED": "Claude Code did not answer the check. Try again in a while."
+      },
+      "use": "Use Claude Code for AI",
+      "enabledNote": "While it is on, Careerly uses Claude Code for AI even if you have an API key saved.",
+      "safety": "It runs locked down: no tools except reading the file being analyzed, none of your MCP servers or settings, and no saved session.",
+      "recheck": "Check again"
     }
   },
   "common": {
