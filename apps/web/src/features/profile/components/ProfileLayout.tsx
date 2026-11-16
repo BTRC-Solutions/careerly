@@ -1,10 +1,11 @@
 import type { Profile } from '@careerly/contracts';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
+import { UploadIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { useProfile } from '../api/profile-api';
@@ -22,7 +23,19 @@ export function ProfileLayout() {
   const { t } = useTranslation();
   return (
     <div className="flex max-w-[70rem] flex-col gap-6">
-      <PageHeader title={t('profile.title')} description={t('profile.subtitle')} />
+      <PageHeader
+        title={t('profile.title')}
+        description={t('profile.subtitle')}
+        actions={
+          <Link
+            to="/profile/import"
+            className="inline-flex h-9 items-center gap-2 rounded-control border border-indigo-navy px-4 text-sm font-medium text-indigo-navy transition-colors hover:bg-cloud-canvas"
+          >
+            <UploadIcon />
+            {t('profile.import.open')}
+          </Link>
+        }
+      />
       <nav aria-label={t('profile.tabs.label')} className="border-b border-silver-lining">
         <ul className="-mb-px flex gap-1">
           {TABS.map((tab) => (

@@ -6,6 +6,7 @@ import { ContainerDetailPage } from '../features/profile/pages/ContainerDetailPa
 import { ContainerListPage } from '../features/profile/pages/ContainerListPage';
 import { EducationPage } from '../features/profile/pages/EducationPage';
 import { LanguagesPage } from '../features/profile/pages/LanguagesPage';
+import { CvImportPage } from '../features/profile/pages/CvImportPage';
 import { PersonalInfoPage } from '../features/profile/pages/PersonalInfoPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { AppLayout } from './layout/AppLayout';
@@ -18,6 +19,8 @@ export const router = createHashRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      // Outside the profile tabs: a focused flow of its own.
+      { path: 'profile/import', element: <CvImportPage /> },
       {
         path: 'profile',
         element: <ProfileLayout />,
