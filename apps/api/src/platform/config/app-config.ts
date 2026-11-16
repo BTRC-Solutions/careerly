@@ -18,7 +18,7 @@ const EnvSchema = z.object({
   CAREERLY_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   CAREERLY_LOG_TO_STDOUT: booleanString,
   CAREERLY_MIGRATIONS_DIR: z.string().min(1).optional(),
-  /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-19). */
+  /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-23). */
   CAREERLY_CONTROL_TOKEN: z
     .string()
     .min(16, 'CAREERLY_CONTROL_TOKEN must have at least 16 characters')

@@ -5,7 +5,7 @@ import { AiCredentialsStore } from '../application/ai-credentials.store.js';
 import { ControlTokenGuard } from './control-token.guard.js';
 
 /**
- * Receives the active AI API key from the Electron main process (ADR-19).
+ * Receives the active AI API key from the Electron main process (ADR-23).
  * Write-only: there is no route that returns the key.
  */
 @Controller('internal/ai-credentials')

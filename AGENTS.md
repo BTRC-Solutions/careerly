@@ -12,7 +12,7 @@ App de **escritorio, local-first y de un solo usuario** para:
 3. Generar un **CV adaptado de 1–2 páginas** (Typst → PDF, compatible con ATS), fiel al perfil.
 4. Congelarlo como **snapshot inmutable** y asociarlo a una **postulación** con seguimiento (kanban, timeline).
 
-Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario, con varios proveedores: Gemini primero, Claude después (ADR-19).
+Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario, con varios proveedores: Gemini primero, Claude después (ADR-23).
 
 ## Dónde está cada cosa
 
@@ -28,10 +28,13 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 
 ## Estado actual
 
-- **Fase 0 (fundaciones)** prácticamente cerrada: pasos 0.6 y 0.7 están 🟨 a la espera de una corrida de CI
-  real (PR de prueba con checks en verde).
-- **Siguiente:** Fase 1 — paso **1.1** (asistente de primer inicio + API key con `safeStorage`).
-- La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md); mantenela actualizada.
+- **Fase 0** cerrada. **Fase 1** en curso: 1.2 hecho; 1.1 con desktop hecho (PR #14) y la verificación del
+  backend en revisión; 1.3 con el backend hecho (falta la pantalla); 1.5 con el backend en revisión; faltan
+  1.4 y 1.6. **Fase 2**: 2.1–2.5 hechos (se adelantaron); faltan 2.6 y 2.7.
+- Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
+  Fase 1 larga `v0.1.0`.
+- La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
+  mergeado**, junto con la tarjeta de Trello ("En proceso" al abrir el PR, "Hecho" al mergear).
 
 ## Stack y estructura
 
