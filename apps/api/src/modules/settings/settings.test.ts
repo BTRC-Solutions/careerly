@@ -46,7 +46,7 @@ describe('settings API (integration)', () => {
     const response = await request('GET');
     expect(response.status).toBe(200);
     expect(SettingsResponseSchema.parse(await response.json())).toEqual({
-      preferences: { uiLanguage: null },
+      preferences: { uiLanguage: null, onboardingCompletedAt: null },
       dataDir: config().dataDir,
       appVersion: '0.0.0-dev',
       aiKey: { configured: false, provider: null },
@@ -71,8 +71,18 @@ describe('settings API (integration)', () => {
     expect(reset.preferences.uiLanguage).toBeNull();
   });
 
+  it('PATCH records when the first-run wizard was finished', async () => {
+    const at = '2026-11-16T18:30:00.000Z';
+    const patched = await request('PATCH', { onboardingCompletedAt: at });
+    expect(SettingsResponseSchema.parse(await patched.json()).preferences).toEqual({
+      uiLanguage: null,
+      onboardingCompletedAt: at,
+    });
+  });
+
   it.each([
     ['an unsupported language', { uiLanguage: 'fr' }],
+    ['a completion date that is not ISO', { onboardingCompletedAt: 'yesterday' }],
     ['an unknown key', { dataDir: 'C:/elsewhere' }],
     ['an empty patch', {}],
     ['a non-object body', ['en']],

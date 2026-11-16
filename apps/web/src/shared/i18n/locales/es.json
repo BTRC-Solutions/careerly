@@ -83,6 +83,29 @@
     "about": {
       "title": "Acerca de Careerly",
       "version": "Versión"
+    },
+    "privacy": {
+      "title": "Privacidad y estadísticas de uso",
+      "description": "Qué se comparte, qué nunca sale de tu computadora y lo que ya se armó para enviar.",
+      "loadError": "No se pudo cargar la configuración de privacidad: {{message}}",
+      "pending": "Todavía no elegiste si compartir estadísticas de uso: no se registra ni se envía nada.",
+      "choose": "Elegir ahora",
+      "metricsTitle": "Estadísticas que compartís",
+      "metricsHint": "Los cambios rigen desde el próximo envío.",
+      "saveError": "No se pudo guardar el cambio: {{message}}",
+      "installId": "ID anónimo de esta instalación",
+      "regenerate": "Regenerar ID",
+      "regenerateTitle": "¿Regenerar el ID anónimo?",
+      "regenerateDescription": "Los próximos reportes van a usar un ID nuevo y no se van a poder vincular con los anteriores.",
+      "previewTitle": "Ver el reporte de hoy, tal como se enviaría",
+      "previewEmpty": "No hay nada para enviar con las estadísticas que tenés activadas.",
+      "historyTitle": "Reportes armados",
+      "historyEmpty": "Todavía no se armó ningún reporte. Se arman al terminar cada día con uso.",
+      "reportStatus": {
+        "PENDING": "Pendiente de envío",
+        "SENT": "Enviado",
+        "FAILED": "Falló el envío"
+      }
     }
   },
   "common": {
@@ -281,5 +304,82 @@
       "notes": "Notas",
       "notesHint": "Opcional. Por ejemplo: «TOEFL 110»."
     }
+  },
+  "onboarding": {
+    "brand": "Careerly",
+    "progress": "Paso {{current}} de {{total}}",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Empezar a usar Careerly",
+    "loadError": "No se pudo conectar con el servicio local: {{message}}",
+    "saveError": "No se pudo guardar: {{message}}",
+    "steps": {
+      "language": {
+        "title": "Te damos la bienvenida a Careerly",
+        "description": "Primero, elegí el idioma de la interfaz. Podés cambiarlo cuando quieras en Configuración."
+      },
+      "ai": {
+        "title": "Conectá tu proveedor de IA",
+        "description": "Careerly usa tu propia API key para analizar ofertas y adaptar tu CV. Se verifica antes de guardarla y queda cifrada en esta computadora.",
+        "later": "Podés hacerlo más tarde en Configuración."
+      },
+      "telemetry": {
+        "title": "Ayudanos a mejorar Careerly",
+        "description": "Elegí qué estadísticas de uso compartir. No se envía nada hasta que respondas."
+      }
+    }
+  },
+  "telemetry": {
+    "consent": {
+      "intro": "Con tu permiso, Careerly manda una vez por día un resumen anónimo de uso. Destildá lo que no quieras compartir.",
+      "newMetrics": "Esta versión agrega estadísticas nuevas. Lo que ya elegiste no cambia: solo te preguntamos por estas.",
+      "metricsTitle": "Qué se comparte",
+      "accept": "Aceptar",
+      "rejectAll": "Rechazar todo",
+      "error": "No se pudo guardar tu elección: {{message}}"
+    },
+    "metrics": {
+      "activeUsage": {
+        "name": "Uso activo",
+        "description": "Si usaste la app ese día (sí o no)."
+      },
+      "applications": {
+        "name": "Cantidad de postulaciones",
+        "description": "Cuántas postulaciones creaste en el día."
+      },
+      "sources": {
+        "name": "Portales de origen",
+        "description": "De qué portal salió cada oferta (por ejemplo, linkedin.com). Nunca la URL completa."
+      },
+      "positionCategories": {
+        "name": "Categoría y seniority",
+        "description": "Tipo de rol y nivel de cada oferta (por ejemplo, backend senior)."
+      },
+      "positionTitles": {
+        "name": "Títulos de las posiciones",
+        "description": "El título de la oferta, recortado a 80 caracteres."
+      },
+      "funnel": {
+        "name": "Embudo de estados",
+        "description": "Cuántas postulaciones pasaron a cada estado (entrevista, oferta…)."
+      },
+      "workModeAndCountry": {
+        "name": "Modalidad y país",
+        "description": "Remoto, híbrido o presencial, y el país de la oferta."
+      },
+      "features": {
+        "name": "Uso de funciones",
+        "description": "Cuántos CVs generaste y en qué idiomas, cuántos gaps respondiste y los tokens de IA usados."
+      }
+    },
+    "neverSent": {
+      "title": "Nunca se envía",
+      "resume": "Tu CV ni tu perfil maestro.",
+      "personal": "Tu nombre, email, teléfono ni ningún otro dato personal.",
+      "companies": "Nombres de empresas, contactos, notas ni salarios.",
+      "jobPostings": "El texto ni la URL completa de las ofertas.",
+      "ai": "Prompts, respuestas de la IA ni tu API key."
+    },
+    "retention": "Los reportes son diarios, van con un ID anónimo que podés regenerar y se guardan sin límite de tiempo."
   }
 }

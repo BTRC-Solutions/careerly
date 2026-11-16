@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
+import { OnboardingGate } from '../../features/onboarding/components/OnboardingGate';
 import { UiLanguageSync } from '../../features/settings/components/UiLanguageSync';
 import { cn } from '../../shared/lib/cn';
 
@@ -15,6 +16,7 @@ export function AppLayout() {
   return (
     <div className="flex h-full">
       <UiLanguageSync />
+      <OnboardingGate />
       <aside className="flex w-60 shrink-0 flex-col border-r border-silver-lining bg-pure-white px-4 py-6">
         <p className="px-3 text-xl font-semibold tracking-tight text-indigo-navy">Careerly</p>
         <nav aria-label={t('nav.label')} className="mt-8">

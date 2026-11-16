@@ -278,7 +278,7 @@ describe('backups and data deletion (integration)', () => {
     expect(response.status).toBe(204);
 
     const after = await app.snapshot();
-    expect(after.preferences).toEqual({ uiLanguage: null });
+    expect(after.preferences).toEqual({ uiLanguage: null, onboardingCompletedAt: null });
     expect(after.tools).toEqual((await (await install()).snapshot()).tools);
     expect((after.profile as { positions: unknown[] }).positions).toEqual([]);
     expect(fs.existsSync(app.config.filesDir)).toBe(false);
