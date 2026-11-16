@@ -9,6 +9,8 @@ export interface ServerAddress {
 
 export interface LocalAccessOptions {
   apiToken: string;
+  /** Token for `/internal/*` routes (Electron main only). `undefined` disables those routes. */
+  controlToken?: string | undefined;
   allowedOrigins: string[];
   address: ServerAddress;
 }
@@ -21,10 +23,12 @@ export type LocalAccessResult =
  * - `Host` must be the loopback address and our port (blocks DNS rebinding).
  * - `Origin`, when present, must be one of the allowed origins (blocks other websites).
  * - `Authorization: Bearer <token>` must match the per-launch token.
+ * - `/internal/*` routes only accept the control token, and never from a browser context (`Origin`).
  */
 export function checkLocalAccess(
   headers: IncomingMessage['headers'],
   options: LocalAccessOptions,
+  path = '/',
 ): LocalAccessResult {
   const port = options.address.port;
   const allowedHosts = port === undefined ? [] : [`127.0.0.1:${port}`, `localhost:${port}`];
@@ -39,6 +43,14 @@ export function checkLocalAccess(
 
   const authorization = headers.authorization ?? '';
   const token = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length) : '';
+
+  if (isInternalPath(path)) {
+    if (!options.controlToken || origin !== undefined) {
+      return forbidden('Not available.');
+    }
+    return tokensMatch(token, options.controlToken) ? { allowed: true } : unauthorized();
+  }
+
   if (!tokensMatch(token, options.apiToken)) {
     return {
       allowed: false,
@@ -53,7 +65,7 @@ export function checkLocalAccess(
 /** Express-compatible middleware around {@link checkLocalAccess}. */
 export function localAccessMiddleware(options: LocalAccessOptions) {
   return (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-    const result = checkLocalAccess(req.headers, options);
+    const result = checkLocalAccess(req.headers, options, req.url ?? '/');
     if (result.allowed) {
       next();
       return;
@@ -61,6 +73,19 @@ export function localAccessMiddleware(options: LocalAccessOptions) {
     res.statusCode = result.status;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(result.body));
+  };
+}
+
+function isInternalPath(path: string): boolean {
+  const pathname = path.split('?')[0]!.toLowerCase();
+  return pathname === '/internal' || pathname.startsWith('/internal/');
+}
+
+function unauthorized(): LocalAccessResult {
+  return {
+    allowed: false,
+    status: 401,
+    body: { error: { code: 'UNAUTHORIZED', message: 'Missing or invalid token.' } },
   };
 }
 

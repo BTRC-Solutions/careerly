@@ -8,6 +8,8 @@ export interface BackendOptions {
   entry: string;
   dataDir: string;
   token: string;
+  /** Lets main call the backend's `/internal/*` routes (e.g. to send the AI API key). */
+  controlToken: string;
   appVersion: string;
   allowedOrigins: string[];
   /** Forward the API's stdout/stderr to this process (useful when running from source). */
@@ -33,6 +35,7 @@ export function startBackend(options: BackendOptions): Promise<RunningBackend> {
       ...process.env,
       CAREERLY_DATA_DIR: options.dataDir,
       CAREERLY_API_TOKEN: options.token,
+      CAREERLY_CONTROL_TOKEN: options.controlToken,
       CAREERLY_API_PORT: '0',
       CAREERLY_ALLOWED_ORIGINS: options.allowedOrigins.join(','),
       CAREERLY_APP_VERSION: options.appVersion,

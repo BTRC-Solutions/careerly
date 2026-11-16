@@ -29,6 +29,7 @@ export async function startServer(config: AppConfig, logger: Logger): Promise<Ru
   app.use(
     localAccessMiddleware({
       apiToken: config.apiToken,
+      controlToken: config.controlToken,
       allowedOrigins: config.allowedOrigins,
       address,
     }),

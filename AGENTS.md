@@ -12,7 +12,7 @@ App de **escritorio, local-first y de un solo usuario** para:
 3. Generar un **CV adaptado de 1–2 páginas** (Typst → PDF, compatible con ATS), fiel al perfil.
 4. Congelarlo como **snapshot inmutable** y asociarlo a una **postulación** con seguimiento (kanban, timeline).
 
-Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario (Claude).
+Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario, con varios proveedores: Gemini primero, Claude después (ADR-19).
 
 ## Dónde está cada cosa
 

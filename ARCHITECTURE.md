@@ -76,22 +76,29 @@ flowchart LR
 
 | Proceso | Responsabilidad |
 |---|---|
-| **main** (Electron) | Crea la ventana, garantiza una sola instancia, lanza el backend con `utilityProcess.fork`, guarda la API key con `safeStorage`, gestiona actualizaciones (electron-updater) y abre enlaces externos en el navegador del sistema. |
-| **preload** | Expone al renderer, vía `contextBridge`, solo lo mínimo: URL del backend, token de sesión y unas pocas acciones nativas (abrir la carpeta de datos, elegir archivo de backup). |
+| **main** (Electron) | Crea la ventana, garantiza una sola instancia, lanza el backend con `utilityProcess.fork`, guarda las API keys de los proveedores de IA con `safeStorage`, gestiona actualizaciones (electron-updater) y abre enlaces externos en el navegador del sistema. |
+| **preload** | Expone al renderer, vía `contextBridge`, solo lo mínimo: URL del backend, token de sesión y unas pocas acciones nativas (guardar o quitar una API key sin poder leerla, abrir la carpeta de datos, elegir archivo de backup). |
 | **renderer** | La SPA de React. Sin acceso a Node (`contextIsolation`, `sandbox`, sin `nodeIntegration`). |
 | **backend** (NestJS) | API HTTP, casos de uso, acceso a SQLite, cola de tareas en segundo plano, llamadas a la IA y render con Typst. |
 
 ### Arranque
 
 ```
-1. main obtiene la carpeta de datos (app.getPath('userData')) y genera un token aleatorio
-2. main lanza el backend con: carpeta de datos, token y API key (descifrada con safeStorage, solo en memoria)
+1. main obtiene la carpeta de datos (app.getPath('userData')) y genera dos tokens aleatorios: el de la
+   interfaz y el de control (solo main lo conoce)
+2. main lanza el backend con: carpeta de datos y ambos tokens
 3. backend: backup automático si hay migraciones pendientes → aplica migraciones → reanuda tareas pendientes
    → escucha en 127.0.0.1:0 (puerto libre) → informa el puerto a main
-4. main abre la ventana; el preload entrega URL + token al renderer
+4. main descifra la API key del proveedor activo y se la envía al backend (solo en memoria)
+5. main abre la ventana; el preload entrega URL + token de la interfaz al renderer
 ```
 
-Si el usuario cambia la API key, main la vuelve a cifrar y se la envía al backend por mensaje, sin reiniciar.
+La key viaja de main al backend por `PUT /internal/ai-credentials` sobre loopback, autenticado con el token
+de control; el token de la interfaz no sirve para esa ruta y no existe ninguna ruta que devuelva la key. Se usa
+HTTP y no un mensaje del `utilityProcess` porque en `npm run dev` la API corre como un proceso aparte, sin canal
+de mensajes: así hay un solo camino en desarrollo y en la app instalada. Si el usuario cambia la key o el
+proveedor activo, main la vuelve a cifrar y se la envía al backend, sin reiniciar. En desarrollo main la reenvía
+cada pocos segundos, porque la API en modo watch se reinicia y pierde lo que tenía en memoria.
 
 ### Modos de ejecución (RNF-18)
 
@@ -115,7 +122,7 @@ En los modos de desarrollo la API usa un token fijo, no secreto, definido en los
     guides/<id>.pdf      # guías de entrevista exportadas (post-MVP)
   backups/               # backups automáticos previos a migraciones + backups manuales
   logs/                  # logs rotativos, sin contenido sensible
-  secrets.bin            # API key cifrada con safeStorage (la escribe y lee solo main)
+  secrets.bin            # API keys por proveedor + proveedor activo, cifrado con safeStorage (solo main)
 ```
 
 ## 4. Módulos (bounded contexts)
@@ -308,9 +315,12 @@ devolvió la IA.
 
 - **Puerto `LlmClient`** en el módulo `ai` con operaciones tipadas: `extractRequirements`, `matchEvidence`,
   `scoreRelevance`, `writeResume`. Cada una recibe y devuelve tipos de dominio; el adaptador arma el prompt.
-- **Proveedor por defecto:** Claude (Anthropic), con la **API key del usuario**. Modelo grande para la redacción
-  (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7). Los modelos son configurables
-  (RF-CONF-09) con valores por defecto en código.
+- **Proveedores (ADR-19):** varios, con la **API key del usuario** para cada uno y uno activo a la vez. Primer
+  adaptador: **Google Gemini**; el de **Claude (Anthropic)** es el siguiente y OpenAI queda abierto. Cada
+  adaptador implementa todo `LlmClient`, y el dominio no sabe cuál está activo. Modelo grande para la redacción
+  (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7), con valores por defecto por proveedor en
+  código y configurables (RF-CONF-09). Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador
+  los aplica sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
 - **Salida estructurada:** *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
   reintento con el error; si vuelve a fallar, el paso queda en `FAILED`.
 - **Prompts versionados** como archivos en el repo (`ai/prompts/*.v3.md`). `promptVersion` se guarda en
@@ -518,15 +528,19 @@ careerly/
 - **Endurecimiento de Electron:** `contextIsolation`, `sandbox`, sin `nodeIntegration`, *Content Security
   Policy* estricta, sin carga de contenido remoto en la ventana, navegación bloqueada fuera de la app y enlaces
   externos abiertos en el navegador del sistema (solo `http`/`https`).
-- **API key:** cifrada con `safeStorage` (usa el almacén del sistema operativo: DPAPI en Windows, Keychain en
-  macOS, libsecret en Linux). Solo main la descifra y se la pasa al backend en memoria; nunca se escribe en la
-  base, en logs ni en backups.
+- **API keys:** cifradas con `safeStorage` (usa el almacén del sistema operativo: DPAPI en Windows, Keychain en
+  macOS, libsecret en Linux). Si el sistema no ofrece un almacén seguro (p. ej. Linux sin llavero, donde
+  Electron usaría una clave fija), la app se niega a guardar la key en vez de guardarla sin protección. Solo main
+  la descifra y se la pasa al backend en memoria; el renderer puede guardarla o quitarla pero nunca leerla; nunca
+  se escribe en la base, en logs ni en backups.
 - **Contenido generado:** las salidas de la IA nunca se renderizan como HTML sin sanitizar.
 - **Logs:** locales, rotativos, sin contenido del perfil, JDs ni prompts (RNF-02).
 - **Backups:** el archivo exportado contiene datos personales; la app lo advierte al exportar. (Cifrado opcional
   con contraseña: post-MVP.)
-- **Proveedor de IA:** documentar qué datos se envían y la política de retención del proveedor en una pantalla
-  de "Privacidad" dentro de la app.
+- **Proveedor de IA:** documentar qué datos se envían y la política de retención de cada proveedor en una
+  pantalla de "Privacidad" dentro de la app. Gemini: según los términos de Google, en el nivel gratuito de la
+  API el contenido puede usarse para mejorar sus productos; con facturación activada no. La pantalla lo advierte
+  y recomienda una key con facturación (verificar los términos vigentes al implementar el paso 8.4).
 - **Telemetría:** solo con consentimiento y con un esquema cerrado que hace imposible enviar el CV o datos
   personales (RN-18). El detalle está en §19.
 
@@ -610,6 +624,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-16 | Telemetría con consentimiento por métrica, reportes diarios agregados, ID anónimo regenerable y esquema cerrado compartido entre app y receptor | Aceptada |
 | ADR-17 | Receptor autohospedado en un VPS: NestJS + Postgres + Caddy con docker-compose (no serverless ni servicios de terceros) | Aceptada |
 | ADR-18 | Página pública como React SPA servida por un servidor Node intermediario; la API de lectura del receptor solo es accesible por la red interna | Aceptada |
+| ADR-19 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 | ADR-19 | Versionado con release-please: una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
 | ADR-20 | GitHub Actions para CI, instaladores e imágenes (GHCR); Jenkins solo para desplegar la telemetría | Aceptada |
 | ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |

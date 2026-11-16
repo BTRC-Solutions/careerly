@@ -18,6 +18,11 @@ const EnvSchema = z.object({
   CAREERLY_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   CAREERLY_LOG_TO_STDOUT: booleanString,
   CAREERLY_MIGRATIONS_DIR: z.string().min(1).optional(),
+  /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-19). */
+  CAREERLY_CONTROL_TOKEN: z
+    .string()
+    .min(16, 'CAREERLY_CONTROL_TOKEN must have at least 16 characters')
+    .optional(),
 });
 
 export interface AppConfig {
@@ -29,6 +34,11 @@ export interface AppConfig {
   migrationsDir: string;
   /** Per-launch secret that every request must send as `Authorization: Bearer <token>`. */
   apiToken: string;
+  /**
+   * Per-launch secret known only to the Electron main process. Required by `/internal/*` routes
+   * (e.g. sending the AI API key); the interface token is not accepted there. Absent = routes disabled.
+   */
+  controlToken: string | undefined;
   /** The API always listens on the loopback interface only. */
   host: '127.0.0.1';
   /** 0 means "any free port". */
@@ -76,6 +86,7 @@ export function loadConfig(
       parsed.CAREERLY_MIGRATIONS_DIR ?? options.defaultMigrationsDir,
     ),
     apiToken: parsed.CAREERLY_API_TOKEN,
+    controlToken: parsed.CAREERLY_CONTROL_TOKEN,
     host: '127.0.0.1',
     port: parsed.CAREERLY_API_PORT,
     allowedOrigins: parsed.CAREERLY_ALLOWED_ORIGINS.split(',')
