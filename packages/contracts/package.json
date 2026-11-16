@@ -1,6 +1,6 @@
 {
   "name": "@careerly/contracts",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Zod schemas and types shared by the Careerly API and UI.",
   "type": "module",
