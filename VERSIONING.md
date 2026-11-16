@@ -1,6 +1,6 @@
 # Careerly — Versionado y releases
 
-> Estado: v0.1 · Última actualización: 2026-11-16
+> Estado: v0.2 · Última actualización: 2026-11-16
 > Documentos relacionados: [ARCHITECTURE.md §16.1](ARCHITECTURE.md) (decisión técnica, ADR-19) ·
 > [ARCHITECTURE.md §19.6](ARCHITECTURE.md) (despliegue de la telemetría) · [ROADMAP.md](ROADMAP.md)
 
@@ -40,18 +40,37 @@ es la decisión de largar la versión.**
 
 ### 2.1 Qué versión resulta de cada commit
 
-| Commit | Ejemplo | Efecto |
+**Hasta la 1.0, la versión sigue las fases del roadmap: `0.N.X`.**
+
+- `N` es la **última fase cerrada** del [ROADMAP](ROADMAP.md). Cerrar la Fase 1 larga `v0.1.0`, cerrar la
+  Fase 2 larga `v0.2.0`, y así hasta `v0.8.0` (MVP).
+- `X` cuenta las **versiones intermedias** mientras se trabaja en la fase siguiente: fixes o pasos ya
+  terminados que conviene largar antes del cierre (`v0.1.1`, `v0.1.2`…).
+
+Para lograrlo, la app usa `"versioning": "always-bump-patch"` en release-please:
+
+| Commit | Ejemplo | Efecto en la app (antes de la 1.0) |
 |---|---|---|
 | `fix:` / `perf:` | `fix: keep page limit after editing a bullet` | **patch** (0.3.1 → 0.3.2) |
-| `feat:` | `feat: add kanban view for applications` | **minor** (0.3.2 → 0.4.0) |
-| `feat!:` o pie `BREAKING CHANGE:` | `feat!: new backup file format` | **major** (1.4.0 → 2.0.0). Antes de la 1.0, sube el **minor** |
+| `feat:` | `feat: add kanban view for applications` | **patch** también (0.3.2 → 0.3.3) |
+| Cierre de fase: pie `Release-As: 0.N.0` | `chore: close phase 4` + `Release-As: 0.4.0` | **0.N.0** |
 | `docs:`, `chore:`, `test:`, `ci:`, `build:`, `refactor:`, `style:` | `docs: update roadmap` | No genera versión |
 
-- Si en un PR de release hay varios commits, gana el de mayor impacto.
+**Cómo se cierra una fase:**
+
+1. Todos los pasos de la fase están ✅ en el ROADMAP y sus tarjetas en "Hecho".
+2. PR `chore: close phase N` que actualiza el ROADMAP (fase marcada como cerrada, con su versión) y cuyo commit
+   lleva el pie `Release-As: 0.N.0`.
+3. Al mergearlo, release-please actualiza su PR de release a `0.N.0`; se revisan los criterios de §4 y se
+   mergea.
+
+Otras reglas:
+
+- Si en un PR de release hay varios commits, sale una sola versión con todos.
 - El componente lo deciden **las rutas tocadas**, no el *scope* del commit. Evitá commits que mezclen la app y
   los servicios de telemetría: aparecerían en los dos CHANGELOGs.
-- Para forzar un número (por ejemplo, la `1.0.0`), agregá el pie `Release-As: 1.0.0` a un commit.
 - El mensaje del commit **es** la entrada del CHANGELOG: escribilo para alguien que usa la app, no para vos.
+- `telemetry-api` y `stats-web` **no** siguen las fases: usan SemVer normal (`fix` → patch, `feat` → minor).
 
 ### 2.2 Qué es un cambio "que rompe" en una app de escritorio
 
@@ -68,9 +87,11 @@ Una migración de base de datos **no** es por sí sola un cambio que rompe: se a
 
 ### 2.3 Antes y después de la 1.0
 
-- **`0.x`:** etapa de desarrollo. `v0.1.0` es el MVP. Los cambios que rompen suben el minor.
-- **`1.0.0`:** se larga cuando el modelo de datos y el formato de backup se consideren estables y haya al
-  menos un ciclo de betas sin problemas de migración. A partir de ahí, un cambio que rompe sube el major.
+- **`0.N.X`:** etapa de desarrollo, una versión menor por fase (§2.1). `v0.8.0` es el MVP. Un cambio que
+  rompe no cambia el número: se anota en el CHANGELOG y pasa por beta.
+- **`1.0.0`:** se larga (con `Release-As: 1.0.0`) cuando el modelo de datos y el formato de backup se
+  consideren estables y haya al menos un ciclo de betas sin problemas de migración. A partir de ahí rige
+  SemVer normal: `fix` → patch, `feat` → minor, `!` → major (se quita `always-bump-patch`).
 
 ## 3. Canales: stable y beta
 
@@ -130,10 +151,10 @@ Las betas **no cambian** el PR de release ni el CHANGELOG: son fotos de `main` a
 
 | Tipo de versión | ¿Beta obligatoria? |
 |---|---|
-| Patch sin migraciones | No |
-| Patch con migraciones | Sí |
-| Minor | Sí |
-| Major / `1.0.0` | Sí, y conviene más de una |
+| Intermedia (`0.N.X`) sin migraciones | No |
+| Intermedia con migraciones | Sí |
+| Cierre de fase (`0.N.0`) | Sí |
+| `1.0.0` y majors posteriores | Sí, y conviene más de una |
 
 ## 5. Criterios para largar `telemetry-api` y `stats-web`
 
@@ -193,8 +214,8 @@ No hay ramas de release: todo sale de `main`.
 
 ```
 ¿Hay que largar?   → mergeá el PR de release del componente
-¿Qué número sale?  → lo deciden los commits (fix → patch, feat → minor, ! → major)
-¿Beta antes?       → sí si es minor o mayor, o si hay migraciones
+¿Qué número sale?  → 0.<fase cerrada>.<intermedia>; al cerrar la fase N, Release-As: 0.N.0
+¿Beta antes?       → sí al cerrar una fase, o si hay migraciones
 ¿Telemetría?       → receptor primero, app después
 ¿Salió mal?        → patch nuevo; nunca reutilizar un número
 ```

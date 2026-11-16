@@ -86,7 +86,7 @@ async function start() {
 }
 
 /**
- * API keys per AI provider (ADR-19, RF-CONF-01, RNF-03). The renderer can save, remove and pick
+ * API keys per AI provider (ADR-23, RF-CONF-01, RNF-03). The renderer can save, remove and pick
  * the active provider, and read which ones are configured, but it can never read a key back.
  * Every change is sent to the backend's memory right away (no restart).
  */

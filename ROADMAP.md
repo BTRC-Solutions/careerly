@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.3 · Última actualización: 2026-11-16
+> Estado: borrador v0.4 · Última actualización: 2026-11-16
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -11,11 +11,17 @@
 - El orden prioriza **reducir riesgo pronto**: el empaquetado de escritorio se prueba en la Fase 1, Typst y el
   ajuste de páginas antes de la IA, y la IA antes de la interfaz pulida.
 
+- **Al mergear cada PR** se actualiza el estado del paso acá y se mueve su tarjeta en Trello ("En proceso" al
+  abrir el PR, "Hecho" al mergearlo).
+- **Versión por fase:** cerrar la Fase N larga la versión **`0.N.0`** de la app; las versiones intermedias
+  mientras se trabaja en la fase siguiente son `0.N.X` (fixes o pasos ya terminados). `v0.8.0` es el MVP.
+  Detalle en [VERSIONING.md §2.1](VERSIONING.md).
+
 Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 ---
 
-## Fase 0 — Fundaciones
+## Fase 0 — Fundaciones · sin release
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -24,36 +30,36 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 0.3 | SQLite con `node:sqlite` + Drizzle: primera migración, modo WAL, migraciones aplicadas al iniciar con backup automático previo. `[RNF-20]` | Test: una migración que falla restaura el backup. | ✅ |
 | 0.4 | Esqueleto de Vite + React: router (modo hash), TanStack Query, tokens de STYLES.md en Tailwind + componentes base propios, i18n (ES/EN), layout base, módulo puente con Electron. | La interfaz muestra el resultado de `/health`. | ✅ |
 | 0.5 | Shell de Electron: main lanza el backend con `utilityProcess.fork`, puerto libre, token aleatorio, preload con `contextBridge`, una sola instancia, endurecimiento (`contextIsolation`, `sandbox`, CSP, enlaces externos al navegador). Comandos `npm run dev`, `npm run dev:web` y `npm start`. `[RNF-18]` | La app de escritorio abre y muestra `/health`; `npm run dev:web` funciona en el navegador. | ✅ |
-| 0.6 | Reglas de límites entre módulos (ESLint) y setup de tests (unitarios + integración con SQLite temporal). | Un test de ejemplo de cada tipo corre en CI. | 🟨 (pasa localmente; falta la corrida en CI) |
-| 0.7 | CI en GitHub Actions: formato, lint, typecheck, tests y build en cada PR (Windows + Ubuntu). | PR de prueba con checks en verde. | 🟨 (workflow listo; falta el PR de prueba) |
+| 0.6 | Reglas de límites entre módulos (ESLint) y setup de tests (unitarios + integración con SQLite temporal). | Un test de ejemplo de cada tipo corre en CI. | ✅ |
+| 0.7 | CI en GitHub Actions: formato, lint, typecheck, tests y build en cada PR (Windows + Ubuntu). | PR de prueba con checks en verde. | ✅ |
 
-## Fase 1 — Configuración y datos locales
+## Fase 1 — Configuración y datos locales · `v0.1.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | ⬜ |
-| 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ⬜ |
-| 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | ⬜ |
+| 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | 🟨 (desktop hecho en PR #14; falta la verificación del backend, PR #11, y el asistente) |
+| 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ✅ |
+| 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | 🟨 (backend hecho en PR #13; falta la pantalla) |
 | 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ⬜ |
 | 1.5 | **Telemetría (base):** módulo `telemetry`, esquema `TelemetryReportV1` estricto en `contracts`, ventana de consentimiento dentro del asistente de primer inicio (casillas activadas, "Aceptar" / "Rechazar todo" al mismo nivel, lista explícita de lo que nunca se envía), Configuración → Privacidad (métricas, vista previa del JSON, historial, regenerar ID) y la métrica "uso activo". Todavía **sin envío**: los reportes quedan en `PENDING`. `[RF-TEL-01 a 07, RN-18, RN-19]` | Tests: con "Rechazar todo" o sin elegir no se genera ID ni reporte; un campo fuera del esquema hace fallar el armado; la vista previa coincide con lo que se guardaría. | ⬜ |
 | 1.6 | **Versionado:** release-please (componente raíz para la app con `exclude-paths`, `extra-files` para los `package.json`), `CHANGELOG.md`, versión visible en Configuración y como `appVersion`. `[RF-CONF-13, ADR-19]` | Mergear el PR de release de prueba crea el tag `v0.0.1` y la versión aparece en la app. | ⬜ |
 
-## Fase 2 — Perfil maestro
+## Fase 2 — Perfil maestro · `v0.2.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 2.1 | Catálogo de herramientas con alias y *seed* incluido en la app (lenguajes, frameworks, cloud, bases de datos, herramientas comunes). Búsqueda con autocompletado. `[RF-PROF-06]` | `GET /tools?query=postgres` devuelve PostgreSQL. | ⬜ |
-| 2.2 | Datos personales. `[RF-PROF-01]` | Se editan y persisten. | ⬜ |
-| 2.3 | Experiencias con logros (texto, métricas, herramientas), con orden editable. `[RF-PROF-02, RF-PROF-03]` | Se puede cargar una experiencia con 20+ logros sin problemas de UX. | ⬜ |
-| 2.4 | Proyectos (personales, open source, cursos, freelance) con logros. `[RF-PROF-04]` | Ídem 2.3. | ⬜ |
-| 2.5 | Educación, certificaciones e idiomas. `[RF-PROF-05]` | CRUD completo. | ⬜ |
+| 2.1 | Catálogo de herramientas con alias y *seed* incluido en la app (lenguajes, frameworks, cloud, bases de datos, herramientas comunes). Búsqueda con autocompletado. `[RF-PROF-06]` | `GET /tools?query=postgres` devuelve PostgreSQL. | ✅ |
+| 2.2 | Datos personales. `[RF-PROF-01]` | Se editan y persisten. | ✅ |
+| 2.3 | Experiencias con logros (texto, métricas, herramientas), con orden editable. `[RF-PROF-02, RF-PROF-03]` | Se puede cargar una experiencia con 20+ logros sin problemas de UX. | ✅ |
+| 2.4 | Proyectos (personales, open source, cursos, freelance) con logros. `[RF-PROF-04]` | Ídem 2.3. | ✅ |
+| 2.5 | Educación, certificaciones e idiomas. `[RF-PROF-05]` | CRUD completo. | ✅ |
 | 2.6 | Origen de cada elemento (`MANUAL`, `IMPORT`, `GAP_ANSWER` + sesión) y registro de cambios mínimo para poder revertir. `[RF-PROF-07]` | Test de dominio: crear desde gap y revertir deja el perfil como estaba. | ⬜ |
 | 2.7 | Cargar el propio perfil maestro real como dato de prueba. | Un perfil completo y realista disponible para las fases siguientes. | ⬜ |
 
 > RF-PROF-10 (sugerencias de redacción con IA) es MVP pero depende del módulo de IA: se implementa al final de
 > la Fase 4 (paso 4.8).
 
-## Fase 3 — Render con Typst (reducir riesgo)
+## Fase 3 — Render con Typst (reducir riesgo) · `v0.3.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -64,11 +70,11 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 3.5 | `page-fitter` puro: reglas iniciales por sección + recorte por score + relleno. Tests con medidor falso. `[RN-04, RN-06, RN-07]` | Tests unitarios cubren: entra justo, sobra, falta y mínimo por puesto. | ⬜ |
 | 3.6 | Prueba manual: con el perfil real y scores asignados a mano, generar CVs de 1 y 2 páginas. | El resultado es un CV presentable. **Validar la plantilla antes de seguir.** | ⬜ |
 
-## Fase 4 — Job descriptions + módulo de IA
+## Fase 4 — Job descriptions + módulo de IA · `v0.4.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 4.1 | Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-19; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
+| 4.1 | Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-23; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
 | 4.2 | Pantalla de consumo de IA (tokens y costo por día, mes y tarea). Acciones de IA deshabilitadas sin conexión o sin key válida. `[RF-CONF-06, RNF-13]` | Sin red, la app sigue funcionando y las acciones de IA muestran por qué no están disponibles. | ⬜ |
 | 4.3 | Módulo `jobs`: cola persistida en SQLite, ejecutor con concurrencia y reintentos, reanudación al iniciar, progreso por SSE. | Cerrar la app a mitad de una tarea y volver a abrirla la completa. | ⬜ |
 | 4.4 | CRUD de JDs. `[RF-JD-01]` | Se crean y listan desde la app. | ⬜ |
@@ -78,7 +84,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.8 | Sugerencias de redacción de logros con IA. `[RF-PROF-10]` | El usuario acepta o descarta cada sugerencia; nada cambia sin su confirmación. | ⬜ |
 | 4.9 | Telemetría: métrica "uso de funciones" (tokens de IA por día). `[RF-TEL-03h]` | Test: los tokens del reporte coinciden con `AiGeneration` del día. | ⬜ |
 
-## Fase 5 — Match y gaps
+## Fase 5 — Match y gaps · `v0.5.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -90,7 +96,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ⬜ |
 | 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ⬜ |
 
-## Fase 6 — Generación del CV adaptado
+## Fase 6 — Generación del CV adaptado · `v0.6.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -104,7 +110,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ⬜ |
 | 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ⬜ |
 
-## Fase 7 — Snapshots y postulaciones
+## Fase 7 — Snapshots y postulaciones · `v0.7.0`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -116,7 +122,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 7.6 | Contactos y datos adicionales (canal, prioridad, salarios). `[RF-APP-05, RF-APP-07]` | CRUD completo. | ⬜ |
 | 7.7 | Telemetría: métricas de postulaciones (cantidad, plataforma de origen con lista de portales, categoría y seniority, título recortado, embudo, modalidad y país). `[RF-TEL-03b–g]` | Test: ningún nombre de empresa, URL completa, contacto, nota ni salario llega al reporte. | ⬜ |
 
-## Fase 8 — Dashboard, pulido y primer release
+## Fase 8 — Dashboard, pulido y primer release · `v0.8.0 · MVP`
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|

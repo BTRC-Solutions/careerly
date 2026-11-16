@@ -315,7 +315,7 @@ devolvió la IA.
 
 - **Puerto `LlmClient`** en el módulo `ai` con operaciones tipadas: `extractRequirements`, `matchEvidence`,
   `scoreRelevance`, `writeResume`. Cada una recibe y devuelve tipos de dominio; el adaptador arma el prompt.
-- **Proveedores (ADR-19):** varios, con la **API key del usuario** para cada uno y uno activo a la vez. Primer
+- **Proveedores (ADR-23):** varios, con la **API key del usuario** para cada uno y uno activo a la vez. Primer
   adaptador: **Google Gemini**; el de **Claude (Anthropic)** es el siguiente y OpenAI queda abierto. Cada
   adaptador implementa todo `LlmClient`, y el dominio no sabe cuál está activo. Modelo grande para la redacción
   (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7), con valores por defecto por proveedor en
@@ -586,11 +586,14 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
   `.release-please-manifest.json`: la app es el componente raíz (`.`) con `exclude-paths` para los servicios
   y la infraestructura, y `extra-files` copia la versión a los `package.json` de `apps/desktop`, `apps/api` y
   `apps/web`.
-- **Reglas de bump:** `fix` → patch, `feat` → minor, `!` o `BREAKING CHANGE` → major. Antes de la 1.0
-  (`bump-minor-pre-major`), un cambio que rompe sube el minor. `docs`, `chore`, `test` y `ci` no generan
-  versión.
-- **Hitos:** `v0.1.0` es el MVP. La `v1.0.0` sale cuando el modelo de datos y el formato de backup se
-  consideren estables.
+- **Versión por fase (antes de la 1.0): `0.N.X`.** `N` es la última fase del roadmap cerrada y `X` cuenta las
+  versiones intermedias (fixes o entregas parciales) mientras se trabaja en la fase siguiente. Para eso la app
+  usa `"versioning": "always-bump-patch"` en release-please: cualquier `feat` o `fix` sube solo el patch, y al
+  cerrar la fase N el commit de cierre lleva el pie `Release-As: 0.N.0`. `docs`, `chore`, `test` y `ci` no
+  generan versión.
+- **Hitos:** `v0.1.0` cierra la Fase 1 y `v0.8.0` (cierre de la Fase 8) es el MVP. La `v1.0.0` sale cuando el
+  modelo de datos y el formato de backup se consideren estables; desde ahí rige SemVer normal (`fix` → patch,
+  `feat` → minor, `!` → major).
 - **Canales:** `stable` (Releases normales) y `beta` (`vX.Y.Z-beta.N`, publicadas como *prerelease*). Las
   betas se generan con un workflow manual (`workflow_dispatch`) que toma la versión propuesta en el PR de
   release abierto y le agrega `-beta.N`. electron-builder genera los archivos de actualización de los dos
@@ -625,11 +628,11 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-16 | Telemetría con consentimiento por métrica, reportes diarios agregados, ID anónimo regenerable y esquema cerrado compartido entre app y receptor | Aceptada |
 | ADR-17 | Receptor autohospedado en un VPS: NestJS + Postgres + Caddy con docker-compose (no serverless ni servicios de terceros) | Aceptada |
 | ADR-18 | Página pública como React SPA servida por un servidor Node intermediario; la API de lectura del receptor solo es accesible por la red interna | Aceptada |
-| ADR-19 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
-| ADR-19 | Versionado con release-please: una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
+| ADR-19 | Versionado con release-please (`0.<fase>.<fix>` hasta la 1.0): una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
 | ADR-20 | GitHub Actions para CI, instaladores e imágenes (GHCR); Jenkins solo para desplegar la telemetría | Aceptada |
 | ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
 | ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
+| ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 
 ## 18. Extensiones post-MVP
 

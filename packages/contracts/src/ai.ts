@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Supported AI providers (ADR-19). Gemini is implemented first; Claude follows. */
+/** Supported AI providers (ADR-23). Gemini is implemented first; Claude follows. */
 export const AiProviderSchema = z.enum(['gemini', 'anthropic']);
 export type AiProvider = z.infer<typeof AiProviderSchema>;
 

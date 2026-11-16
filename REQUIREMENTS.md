@@ -40,7 +40,7 @@ Perfil maestro (todo lo que hice) + Job description
 
 - **Usuario:** persona que busca trabajo. Es el único actor: la app no tiene cuentas ni login.
 - **Proveedor de IA:** servicio externo de LLM, usado con la API key propia del usuario. Se soportan varios
-  (Gemini primero, luego Claude) y el usuario elige cuál usar (ver ARCHITECTURE.md, ADR-19).
+  (Gemini primero, luego Claude) y el usuario elige cuál usar (ver ARCHITECTURE.md, ADR-23).
 - **Proveedor de búsqueda web** *(post-MVP)*: para el research de empresas.
 - **Receptor de telemetría:** servidor propio del proyecto que recibe los reportes anónimos de uso de quienes
   lo aceptan y publica estadísticas agregadas (ver sección 5.10).
@@ -366,7 +366,6 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-04 | ¿Umbral de años para el límite por defecto de 1 vs. 2 páginas? | 8 años (configurable por sesión, RF-TAIL-08). |
 | D-05 | ¿El usuario puede subir una foto para el CV? | No. |
 | D-06 | ¿Cómo se obtiene la información pública de las empresas (RF-PREP-02)? | Herramienta de búsqueda web del proveedor de IA activo, para usar una sola API key. Se revisa si la calidad de las citas no alcanza. |
-| D-10 | ¿Qué proveedores de IA se soportan? | Varios, uno activo a la vez: **Gemini** primero, **Claude** después, OpenAI abierto (ADR-19). |
 | D-07 | ¿Las recomendaciones de capacitación incluyen cursos de plataformas? | No: solo documentación oficial, certificaciones y proyectos sugeridos, con enlaces verificados. |
 | D-08 | ¿Aplicación web o de escritorio? | **Escritorio** (Electron), con datos locales en SQLite. Ver ARCHITECTURE.md. |
 | D-09 | ¿Telemetría? | Sí, con consentimiento: casillas activadas por defecto, pero nada se envía sin "Aceptar". Reportes diarios agregados con ID anónimo regenerable. Sin observabilidad técnica (errores, rendimiento). |
@@ -376,3 +375,4 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-13 | ¿Cómo se versiona? | SemVer con release-please: una versión para la app de escritorio y otras propias para cada servicio de telemetría; canales stable y beta. Ver ARCHITECTURE.md §16.1. |
 | D-14 | ¿Cómo se despliega la telemetría? | Jenkins en el mismo VPS, solo para desplegar: staging automático en cada merge a `main` y prod con aprobación al crear un tag. GitHub Actions sigue con la CI, los instaladores y las imágenes. Ver ARCHITECTURE.md §19.6. |
 | D-15 | ¿La app envía errores o métricas de rendimiento? | No: la telemetría es solo de uso. La observabilidad técnica se limita al servidor propio (uptime, logs, alertas). Ver ARCHITECTURE.md §19.7. |
+| D-16 | ¿Qué proveedores de IA se soportan? | Varios, uno activo a la vez: **Gemini** primero, **Claude** después, OpenAI abierto (ADR-23). |

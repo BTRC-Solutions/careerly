@@ -4,7 +4,7 @@ import { InternalAiCredentialsController } from './http/internal-ai-credentials.
 
 /**
  * AI infrastructure (ARCHITECTURE §4, §7.3). For now it only holds the active provider's API key in
- * memory; the `LlmClient` port and the provider adapters arrive in F4.1 (Gemini first, ADR-19).
+ * memory; the `LlmClient` port and the provider adapters arrive in F4.1 (Gemini first, ADR-23).
  */
 @Module({
   controllers: [InternalAiCredentialsController],
