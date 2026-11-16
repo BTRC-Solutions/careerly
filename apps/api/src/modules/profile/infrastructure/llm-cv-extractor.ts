@@ -27,6 +27,7 @@ import {
   type CvImportFailure,
   type RawCvDraft,
 } from '../application/cv-import.ports.js';
+import { docxLinks, pdfLinks } from './cv-links.js';
 import { CV_IMPORT_V1 } from './prompts/cv-import.v1.js';
 
 /*
@@ -147,18 +148,25 @@ export class LlmCvExtractor extends CvExtractor {
   }
 
   private async toParts(file: CvFile): Promise<LlmPart[]> {
-    if (file.kind === 'pdf') {
-      return [{ type: 'document', mimeType: 'application/pdf', data: file.data }];
-    }
+    const content =
+      file.kind === 'pdf'
+        ? [{ type: 'document', mimeType: 'application/pdf', data: file.data } satisfies LlmPart]
+        : [await this.docxText(file.data)];
+    const links = file.kind === 'pdf' ? await pdfLinks(file.data) : await docxLinks(file.data);
+    // The link targets of the file: the visible text of a link is often just "LinkedIn".
+    return links.length > 0 ? [...content, untrustedText('cv-links', links.join('\n'))] : content;
+  }
+
+  private async docxText(data: Buffer): Promise<LlmPart> {
     let raw: string;
     try {
-      raw = (await mammoth.extractRawText({ buffer: file.data })).value;
+      raw = (await mammoth.extractRawText({ buffer: data })).value;
     } catch {
       throw new CvImportError('UNREADABLE_FILE', 'The DOCX file could not be read.');
     }
     const cleaned = raw.replace(/\n{3,}/g, '\n\n').trim();
     if (!cleaned) throw new CvImportError('UNREADABLE_FILE', 'The DOCX file has no text.');
-    return [untrustedText('cv', cleaned)];
+    return untrustedText('cv', cleaned);
   }
 }
 

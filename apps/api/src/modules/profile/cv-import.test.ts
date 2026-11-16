@@ -7,6 +7,7 @@ import {
   CvImportDraftSchema,
   ProfileSchema,
 } from '@careerly/contracts';
+import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DatabaseService } from '../../platform/database/database.service.js';
 import { createTempDir } from '../../test-support/temp-dir.js';
@@ -213,6 +214,25 @@ describe('CV import (integration)', () => {
     const saved = await profile();
     expect(saved.positions).toEqual([]);
     expect(saved.personalInfo.firstNames).toBeNull();
+  });
+
+  it('sends the link targets of the file, which the visible text often hides', async () => {
+    await start();
+    const document = await PDFDocument.create();
+    const page = document.addPage();
+    const link = document.context.register(
+      document.context.obj({
+        Type: 'Annot',
+        Subtype: 'Link',
+        Rect: [50, 700, 120, 712],
+        A: { S: 'URI', URI: PDFString.of('https://www.linkedin.com/in/lucia') },
+      }),
+    );
+    page.node.set(PDFName.of('Annots'), document.context.obj([link]));
+
+    expect((await upload(Buffer.from(await document.save()))).status).toBe(200);
+    const texts = gemini.calls[0]!.parts.map((part) => part.text ?? '').join('\n');
+    expect(texts).toContain('<untrusted source="cv-links">\nhttps://www.linkedin.com/in/lucia\n');
   });
 
   it('reads a DOCX locally and sends its text marked as untrusted', async () => {
