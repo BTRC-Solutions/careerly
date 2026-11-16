@@ -42,7 +42,7 @@ const EnvSchema = z.object({
    * Gemini models per tier, comma-separated, in order of preference: later ones are fallbacks when
    * a model is retired (404) or overloaded (503). Checked against the API in November 2026: the 2.5
    * family is gone for new keys and Pro models have no free-tier quota, so the defaults are Flash
-   * models. Choosing models in the UI is RF-CONF-09 (post-MVP).
+   * models. The user's choice in Settings (RF-CONF-09) goes before these, which stay as fallbacks.
    */
   CAREERLY_GEMINI_MODELS_SMALL: modelList.prefault(
     'gemini-3.5-flash-lite,gemini-flash-lite-latest',

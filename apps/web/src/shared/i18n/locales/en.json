@@ -131,6 +131,41 @@
       "deleteConfirmTitle": "Delete all your data?",
       "deleteConfirmDescription": "Your master profile, applications, generated resumes, every backup and your API keys are deleted. This cannot be undone. Export a backup first if you want to keep anything.",
       "deleteConfirm": "Yes, delete everything"
+    },
+    "aiModels": {
+      "title": "AI models",
+      "description": "Choose the model for each kind of task. If the chosen one stops existing, Careerly goes back to the default models.",
+      "loading": "Looking up the models available to your key…",
+      "retry": "Try again",
+      "tiers": {
+        "small": {
+          "label": "Small model",
+          "hint": "For extracting and scoring (reading a CV, analyzing a job posting). A fast, cheap one works best."
+        },
+        "large": {
+          "label": "Large model",
+          "hint": "For writing the tailored resume. The best quality one works best."
+        }
+      },
+      "defaultOption": "Default ({{model}})",
+      "recommended": "recommended",
+      "price": "{{price}} per million tokens",
+      "unknownModel": "no known price, not tested",
+      "unavailable": "no longer available",
+      "selectedUnavailable": "The chosen model ({{model}}) is no longer available: the default models are used.",
+      "testAndSave": "Test and save",
+      "useDefaults": "Go back to the default model",
+      "testing": "Testing the model…",
+      "saved": "Done: the next calls use {{model}}.",
+      "savedDefaults": "Done: the default model ({{model}}) is used.",
+      "errors": {
+        "AI_NOT_CONFIGURED": "Set up an API key to choose the models.",
+        "AI_KEY_REJECTED": "The provider rejected the API key. Check it in the section above.",
+        "AI_RATE_LIMITED": "The provider's usage limit was reached. Try again in a few minutes.",
+        "AI_UNAVAILABLE": "Could not reach the AI provider. Check your connection.",
+        "AI_MODEL_UNAVAILABLE": "The model is not available to your key (it does not exist or is overloaded). It was not saved.",
+        "AI_FAILED": "The model did not answer in the format Careerly needs. It was not saved."
+      }
     }
   },
   "common": {

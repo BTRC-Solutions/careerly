@@ -1,4 +1,4 @@
-import type { AiProvider } from '@careerly/contracts';
+import type { AiProvider, ModelTier } from '@careerly/contracts';
 
 /** A piece of input for the model: text, or a document the provider reads natively (e.g. a PDF CV). */
 export type LlmPart =
@@ -10,11 +10,17 @@ export interface LlmTurn {
   parts: LlmPart[];
 }
 
-/**
- * Small model for extraction and scoring, large model for writing (ARCHITECTURE §7.3).
- * Each provider maps tiers to concrete models.
- */
-export type ModelTier = 'small' | 'large';
+/** Small or large model (ARCHITECTURE §7.3). Each provider maps tiers to concrete models. */
+export type { ModelTier };
+
+/** What is known about a model from the provider's catalog in code (RF-CONF-09). */
+export interface ModelFacts {
+  inputUsdPerMTok: number;
+  outputUsdPerMTok: number;
+  recommendedFor: ModelTier[];
+  /** Tried with Careerly's structured output. */
+  tested: boolean;
+}
 
 /**
  * A versioned prompt (prompts live as files in `ai/prompts/*.vN.ts`). The id is stored in

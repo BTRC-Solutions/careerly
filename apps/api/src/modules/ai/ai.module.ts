@@ -1,5 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { AiCredentialsStore } from './application/ai-credentials.store.js';
+import { AiModelChoiceStore } from './application/ai-model-choice.store.js';
+import { AiModelsService } from './application/ai-models.service.js';
 import { LlmClient } from './application/llm-client.js';
 import { AiGenerationRepository, LlmProviderRegistry } from './application/llm.ports.js';
 import { AiSmokeTestService } from './application/smoke-test.service.js';
@@ -12,19 +14,22 @@ import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registr
 /**
  * AI infrastructure (ARCHITECTURE §4, §7.3, ADR-23): the active key in memory, `LlmClient` (the
  * single entry point for AI calls) and one adapter per provider (Gemini first).
- * Global so other modules can inject `AiCredentialsStore` and `LlmClient`.
+ * Global so other modules can inject `AiCredentialsStore`, `LlmClient` and the model choice
+ * services (RF-CONF-09).
  */
 @Global()
 @Module({
   controllers: [InternalAiCredentialsController, InternalAiSmokeController],
   providers: [
     AiCredentialsStore,
+    AiModelChoiceStore,
+    AiModelsService,
     LlmClient,
     AiSmokeTestService,
     GeminiLlmProvider,
     { provide: LlmProviderRegistry, useClass: StaticLlmProviderRegistry },
     { provide: AiGenerationRepository, useClass: DrizzleAiGenerationRepository },
   ],
-  exports: [AiCredentialsStore, LlmClient],
+  exports: [AiCredentialsStore, AiModelChoiceStore, AiModelsService, LlmClient],
 })
 export class AiModule {}

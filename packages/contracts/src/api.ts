@@ -16,6 +16,8 @@ export const ApiErrorCode = z.enum([
   'AI_RATE_LIMITED',
   /** Offline, timeout or provider outage. */
   'AI_UNAVAILABLE',
+  /** The chosen AI model does not exist (anymore) or is overloaded; another model may work. */
+  'AI_MODEL_UNAVAILABLE',
   /** The AI answered something unusable (invalid structure or blocked content). */
   'AI_FAILED',
 ]);

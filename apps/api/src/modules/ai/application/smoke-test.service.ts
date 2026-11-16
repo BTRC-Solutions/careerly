@@ -41,23 +41,31 @@ export class AiSmokeTestService {
     return { provider: active.provider, models: await provider.listModels(active.apiKey) };
   }
 
+  /**
+   * One minimal structured call; throws an `AiError` if it fails. With `model`, only that model is
+   * tried (no fallbacks): this is how a model is checked before the user chooses it.
+   */
+  probe(model?: string) {
+    return this.llm.generateStructured({
+      task: 'smoke-test',
+      prompt: SMOKE_TEST_V1,
+      tier: 'small',
+      ...(model ? { model } : {}),
+      input: [
+        {
+          type: 'text',
+          text: 'Set "ok" to true and "greeting" to the Spanish word for "hello", in lowercase.',
+        },
+      ],
+      schema: SmokeAnswerSchema,
+      timeoutMs: 30_000,
+    });
+  }
+
   /** `model` overrides the small-tier default, to try a specific model. */
   async run(model?: string): Promise<SmokeTestResult> {
     try {
-      const { data, usage } = await this.llm.generateStructured({
-        task: 'smoke-test',
-        prompt: SMOKE_TEST_V1,
-        tier: 'small',
-        ...(model ? { model } : {}),
-        input: [
-          {
-            type: 'text',
-            text: 'Set "ok" to true and "greeting" to the Spanish word for "hello", in lowercase.',
-          },
-        ],
-        schema: SmokeAnswerSchema,
-        timeoutMs: 30_000,
-      });
+      const { data, usage } = await this.probe(model);
       return {
         status: data.ok ? 'OK' : 'INVALID_OUTPUT',
         provider: usage.provider,

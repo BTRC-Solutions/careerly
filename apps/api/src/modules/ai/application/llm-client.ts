@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { AiGenerationStatus, AiTask } from '@careerly/contracts';
+import type { AiGenerationStatus, AiProvider, AiTask } from '@careerly/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { AiCredentialsStore } from './ai-credentials.store.js';
+import { AiModelChoiceStore } from './ai-model-choice.store.js';
 import {
   AiError,
   AiInvalidOutputError,
@@ -28,7 +29,7 @@ export interface StructuredRequest<T extends z.ZodType> {
   task: AiTask;
   prompt: PromptVersion;
   tier: ModelTier;
-  /** Overrides the tier default (diagnostics; per-task model choice is RF-CONF-09). */
+  /** Uses only this model, without fallbacks (to try a model before choosing it). */
   model?: string;
   /** The user turn: instructions for this call plus data (wrap untrusted data with `untrustedText`). */
   input: LlmPart[];
@@ -56,6 +57,7 @@ export class LlmClient {
     private readonly credentials: AiCredentialsStore,
     private readonly providers: LlmProviderRegistry,
     private readonly generations: AiGenerationRepository,
+    private readonly choices: AiModelChoiceStore,
   ) {}
 
   /** Whether AI calls can be attempted at all (a key is configured for a supported provider). */
@@ -72,7 +74,9 @@ export class LlmClient {
     const provider = this.providers.get(credentials.provider);
     if (!provider) throw new AiProviderNotSupportedError(credentials.provider);
 
-    const models = request.model ? [request.model] : provider.modelsFor(request.tier);
+    const models = request.model
+      ? [request.model]
+      : await this.modelsFor(credentials.provider, request.tier);
     const jsonSchema = toProviderJsonSchema(request.schema);
     const usage: LlmUsage = {
       provider: credentials.provider,
@@ -172,6 +176,23 @@ export class LlmClient {
 
     this.logger.warn(`No model of the "${request.tier}" tier is available for "${request.task}".`);
     throw lastUnavailable ?? new AiInvalidOutputError();
+  }
+
+  /**
+   * The user's model for the tier (RF-CONF-09) followed by the defaults, which are also the
+   * fallbacks if the chosen model is retired. A choice that cannot be read is ignored.
+   */
+  private async modelsFor(providerId: AiProvider, tier: ModelTier): Promise<string[]> {
+    const defaults = this.providers.get(providerId)!.modelsFor(tier);
+    let chosen: string | undefined;
+    try {
+      chosen = (await this.choices.get(providerId))[tier];
+    } catch (error) {
+      this.logger.error(
+        `Could not read the AI model choice: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    return chosen ? [chosen, ...defaults.filter((model) => model !== chosen)] : defaults;
   }
 
   private async record(

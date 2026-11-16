@@ -324,9 +324,12 @@ devolvió la IA.
   adaptador: **Google Gemini**; el de **Claude (Anthropic)** es el siguiente y OpenAI queda abierto. Cada
   adaptador implementa todo `LlmClient`, y el dominio no sabe cuál está activo. Modelo grande para la redacción
   (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7). Cada nivel es una **lista de modelos en
-  orden de preferencia** (valores por defecto en código, configurables por entorno; elegirlos desde la interfaz es
-  RF-CONF-09): si un modelo fue retirado (404) o está sobrecargado (503), `LlmClient` pasa al siguiente y registra
-  cada intento. Los proveedores retiran modelos seguido (en noviembre de 2026 la familia Gemini 2.5 ya no sirve
+  orden de preferencia** (valores por defecto en código, configurables por entorno): si un modelo fue retirado
+  (404) o está sobrecargado (503), `LlmClient` pasa al siguiente y registra cada intento. El usuario puede elegir
+  el modelo de cada nivel en Configuración (RF-CONF-09, paso 4.10): la lista sale de la API del proveedor y se
+  cruza con un catálogo en código (precio, nivel recomendado, probado con salida estructurada). La elección se
+  guarda en `settings` (`ai.models.<proveedor>.<nivel>`), va primero y los valores por defecto quedan como
+  alternativas, así que un modelo retirado no rompe nada. Los proveedores retiran modelos seguido (en noviembre de 2026 la familia Gemini 2.5 ya no sirve
   para keys nuevas), así que los valores por defecto se revisan con `GET /internal/ai/models` y
   `POST /internal/ai/smoke`. Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador los aplica
   sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
@@ -424,6 +427,8 @@ Todas las rutas exigen el token de sesión (RNF-19).
 GET    /settings | PATCH /settings
 GET    /settings/ai-usage?from=&to=
 POST   /settings/ai-key/verify                     # prueba la key activa en memoria o una candidata { provider, apiKey }; nunca la guarda
+GET    /settings/ai-models                         # modelos que la key puede usar + catálogo (precio, recomendado, probado) + elección por nivel
+PUT    /settings/ai-models                         # { tier, model | null }: prueba el modelo con una llamada mínima y lo guarda; null = por defecto
 GET    /backups | POST /backups | POST /backups/restore   # archivo único .careerly-backup (SQLite: base + PDFs)
 DELETE /data                                # body { confirmation: "DELETE_ALL_DATA" }
 
