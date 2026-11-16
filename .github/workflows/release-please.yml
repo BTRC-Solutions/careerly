@@ -1,10 +1,19 @@
 name: Release Please
 
 # Keeps one release PR per component up to date from the Conventional Commits on main (VERSIONING.md).
-# Merging that PR creates the tag (vX.Y.Z for the desktop app) and the GitHub Release.
+# Merging that PR creates the tag (vX.Y.Z for the desktop app) and the GitHub Release, and then the
+# Windows installer is built and attached to that release.
+#
+# The installer job lives here and not in a workflow triggered by tags: tags created with GITHUB_TOKEN do
+# not trigger other workflows. `workflow_dispatch` rebuilds the installer of an existing tag.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)build the installer for, e.g. v0.1.0
+        required: true
 
 permissions:
   contents: write
@@ -12,9 +21,44 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  windows-installer:
+    name: Windows installer
+    needs: release-please
+    # Runs after a desktop release was created, or by hand for an existing tag.
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true')
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run package:win
+
+      - name: Attach the installer to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG" apps/desktop/release/installer/*.exe apps/desktop/release/installer/*.exe.blockmap --clobber
