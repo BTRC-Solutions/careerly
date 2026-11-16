@@ -5,15 +5,20 @@
  * 1. The compiled main process and API (`dist/`, emitted by tsc with decorator metadata, which Nest's DI
  *    needs) are bundled with esbuild into self-contained ES modules.
  * 2. release/app/       → the Electron app (inside app.asar): package.json, main.mjs, preload.cjs
- *    release/resources/ → next to it, outside the asar: api/main.mjs, api/drizzle/ (migrations), web/ (UI)
+ *    release/resources/ → next to it, outside the asar: api/main.mjs, api/drizzle/ (migrations),
+ *                         api/templates/ (CV templates), typst/ (pinned Typst CLI, ADR-14), web/ (UI)
  * 3. electron-builder turns that into an NSIS installer in release/installer/.
+ * 4. Smoke test: the packaged Typst renders the packaged template with nothing from the system.
  */
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build as bundle } from 'esbuild';
 import { Arch, build as buildInstaller, Platform } from 'electron-builder';
+import { fetchTypst } from '../../../scripts/fetch-typst.mjs';
 
 const require = createRequire(import.meta.url);
 const desktopDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -110,6 +115,13 @@ fs.cpSync(path.join(appsDir, 'api', 'drizzle'), path.join(stageResources, 'api',
 });
 requireBuilt(path.join(appsDir, 'web', 'dist', 'index.html'));
 fs.cpSync(path.join(appsDir, 'web', 'dist'), path.join(stageResources, 'web'), { recursive: true });
+fs.cpSync(path.join(appsDir, 'api', 'templates'), path.join(stageResources, 'api', 'templates'), {
+  recursive: true,
+  filter: (source) => !source.endsWith('.md'),
+});
+// Binary plus Typst's LICENSE and NOTICE (Apache-2.0).
+const typstFiles = path.dirname(await fetchTypst('win32-x64'));
+fs.cpSync(typstFiles, path.join(stageResources, 'typst'), { recursive: true });
 
 // 3. Installer.
 await buildInstaller({
@@ -137,6 +149,34 @@ await buildInstaller({
     },
   },
 });
+
+// 4. Smoke test on the unpacked app (only possible on Windows, where the installer is built).
+if (process.platform === 'win32') {
+  const resources = path.join(releaseDir, 'installer', 'win-unpacked', 'resources');
+  const templates = path.join(resources, 'api', 'templates');
+  const output = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'careerly-smoke-')), 'cv.pdf');
+  const result = spawnSync(
+    path.join(resources, 'typst', 'typst.exe'),
+    [
+      'compile',
+      path.join(templates, 'classic', 'template.typ'),
+      output,
+      '--root',
+      templates,
+      '--input',
+      'data=/examples/example.es.json',
+      '--font-path',
+      path.join(templates, 'fonts'),
+      '--ignore-system-fonts',
+    ],
+    { encoding: 'utf8' },
+  );
+  if (result.status !== 0 || !fs.readFileSync(output).subarray(0, 5).equals(Buffer.from('%PDF-'))) {
+    throw new Error(`The packaged Typst could not render a CV: ${result.stderr || result.error}`);
+  }
+  fs.rmSync(path.dirname(output), { recursive: true, force: true });
+  console.log('Smoke test: the packaged Typst rendered the classic template.');
+}
 
 console.log(
   `Installer written to ${path.relative(process.cwd(), path.join(releaseDir, 'installer'))}`,

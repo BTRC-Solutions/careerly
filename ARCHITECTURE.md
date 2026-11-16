@@ -391,9 +391,12 @@ apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates
   traducciones propias. Al subirla se valida renderizando los ejemplos de cada idioma; se guarda en el directorio
   de datos (`files/templates/<id>/<versión>/`) con versión propia, como las incluidas.
 
-- **Binario empaquetado:** el CLI de `typst` se incluye en el instalador por plataforma (`extraResources` de
-  electron-builder), con versión fija y checksum verificado al descargarlo en CI. Alternativa a evaluar: el
-  compilador de Typst como módulo nativo de Node (ADR-14).
+- **Binario empaquetado (ADR-14):** el CLI de `typst` se incluye en el instalador por plataforma
+  (`resources/typst/`, con su LICENSE y NOTICE), con versión fija y checksum verificado por
+  `scripts/fetch-typst.mjs`. Se descarta el compilador como módulo nativo de Node: un proceso hijo se puede matar
+  por timeout (clave con plantillas subidas por el usuario), no bloquea el backend, usa la versión oficial de
+  Typst y no requiere recompilar nada para Electron. El empaquetado termina renderizando `classic` con el binario
+  y las plantillas del instalador, sin nada del sistema.
 - **Datos, no código:** el adaptador escribe `data.json` en un directorio temporal y la plantilla lo lee. El
   contenido del usuario nunca se concatena dentro de un `.typ` (RNF-05).
 - **Ejecución aislada:** `typst compile` como proceso hijo (no bloquea el backend), con `--root` limitado al
@@ -520,7 +523,7 @@ careerly/
     eslint-config/
     tsconfig/
   scripts/
-    fetch-typst.ts       # descarga el binario de typst por plataforma (versión + checksum)
+    fetch-typst.mjs      # descarga el binario de typst por plataforma (versión + checksum) a vendor/typst/
   REQUIREMENTS.md  ARCHITECTURE.md  ROADMAP.md
   release-please-config.json  .release-please-manifest.json   # versionado (§16.1)
 ```
@@ -655,7 +658,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-11 | Cache del research de empresas | Resuelta: local, en SQLite |
 | ADR-12 | Electron como contenedor de escritorio (no Tauri) | Aceptada |
 | ADR-13 | Comunicación interfaz–backend por HTTP local con token (no IPC) | Aceptada |
-| ADR-14 | Typst: CLI empaquetado vs. compilador como módulo nativo de Node | Pendiente (Fase 3) |
+| ADR-14 | Typst como CLI empaquetado (versión fija + checksum, proceso hijo con timeout), no como módulo nativo de Node | Aceptada (Fase 3) |
 | ADR-15 | Cola de tareas en SQLite dentro del proceso del backend (sin Redis ni worker) | Aceptada |
 | ADR-16 | Telemetría con consentimiento por métrica, reportes diarios agregados, ID anónimo regenerable y esquema cerrado compartido entre app y receptor | Aceptada |
 | ADR-17 | Receptor autohospedado en un VPS: NestJS + Postgres + Caddy con docker-compose (no serverless ni servicios de terceros) | Aceptada |

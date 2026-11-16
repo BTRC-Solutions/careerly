@@ -24,7 +24,8 @@
     "predev:web": "npm run build -w @careerly/contracts -w @careerly/api",
     "dev:web": "concurrently -k -n contracts,api,web -c gray,blue,magenta \"npm run dev -w @careerly/contracts\" \"npm run dev -w @careerly/api\" \"npm run dev -w @careerly/web\"",
     "start": "npm run build && npm run start -w @careerly/desktop",
-    "package:win": "npm run build && npm run package -w @careerly/desktop"
+    "package:win": "npm run build && npm run package -w @careerly/desktop",
+    "typst:fetch": "node scripts/fetch-typst.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

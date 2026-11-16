@@ -44,7 +44,14 @@ const DOMAIN_FORBIDDEN_IMPORTS = [
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/release/**', '**/node_modules/**', '.data/**', 'coverage/**'],
+    ignores: [
+      '**/dist/**',
+      '**/release/**',
+      '**/node_modules/**',
+      '.data/**',
+      'coverage/**',
+      'vendor/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -64,6 +71,7 @@ export default tseslint.config(
       'apps/api/**/*.ts',
       'apps/desktop/**/*.{ts,cts}',
       'apps/*/scripts/**/*.mjs',
+      'scripts/**/*.mjs',
       '*.{js,ts}',
       '**/*.config.ts',
     ],

@@ -8,8 +8,9 @@ import { createTempDir } from '../../test-support/temp-dir.js';
 import { RESUME_LABELS, toTemplateData } from './domain/resume-labels.js';
 
 /*
- * Built-in templates and the shared examples (ARCHITECTURE.md §9). The render test needs the Typst CLI: it uses
- * `TYPST_BIN` or `typst` from the PATH, and is skipped when there is none (CI gets a pinned binary in step 3.2).
+ * Built-in templates and the shared examples (ARCHITECTURE.md §9). The render test needs the Typst CLI: the one
+ * in `TYPST_BIN`, else the pinned one from `npm run typst:fetch` (CI fetches it), else `typst` from the PATH.
+ * Without any, it is skipped.
  */
 
 const TEMPLATES_DIR = path.resolve(import.meta.dirname, '..', '..', '..', 'templates');
@@ -28,8 +29,20 @@ const examples = fs
     data: JSON.parse(fs.readFileSync(path.join(EXAMPLES_DIR, name), 'utf8')) as unknown,
   }));
 
-const typst = process.env.TYPST_BIN ?? 'typst';
+const typst = process.env.TYPST_BIN ?? vendoredTypst() ?? 'typst';
 const hasTypst = spawnSync(typst, ['--version']).status === 0;
+
+/** The newest binary downloaded by scripts/fetch-typst.mjs for this platform, if any. */
+function vendoredTypst(): string | undefined {
+  const root = path.resolve(TEMPLATES_DIR, '..', '..', '..', 'vendor', 'typst');
+  const binary = process.platform === 'win32' ? 'typst.exe' : 'typst';
+  const versions = fs.existsSync(root)
+    ? fs.readdirSync(root).sort((a, b) => b.localeCompare(a, 'en', { numeric: true }))
+    : [];
+  return versions
+    .map((version) => path.join(root, version, `${process.platform}-${process.arch}`, binary))
+    .find((candidate) => fs.existsSync(candidate));
+}
 
 describe('CV templates', () => {
   it('ships the classic template with its manifest', () => {
