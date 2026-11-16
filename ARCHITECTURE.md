@@ -120,7 +120,7 @@ En los modos de desarrollo la API usa un token fijo, no secreto, definido en los
   files/
     snapshots/<id>.pdf   # PDFs de CVs finalizados (inmutables)
     guides/<id>.pdf      # guías de entrevista exportadas (post-MVP)
-  backups/               # backups automáticos previos a migraciones + backups manuales
+  backups/               # automáticos (previos a migraciones y a restaurar) + manual/*.careerly-backup
   logs/                  # logs rotativos, sin contenido sensible
   secrets.bin            # API keys por proveedor + proveedor activo, cifrado con safeStorage (solo main)
 ```
@@ -415,7 +415,8 @@ Todas las rutas exigen el token de sesión (RNF-19).
 GET    /settings | PATCH /settings
 GET    /settings/ai-usage?from=&to=
 POST   /settings/ai-key/verify                     # la key la gestiona main; el backend solo prueba la recibida
-POST   /backups | POST /backups/restore | DELETE /data
+GET    /backups | POST /backups | POST /backups/restore   # archivo único .careerly-backup (SQLite: base + PDFs)
+DELETE /data                                # body { confirmation: "DELETE_ALL_DATA" }
 
 GET    /profile
 PATCH  /profile/personal-info
