@@ -3,17 +3,17 @@
  * The rest of the UI must not know whether it runs inside Electron or in a regular browser.
  */
 
-import type { AiKeyStatus, AiProvider } from '@careerly/contracts';
+import type { AiKeysStatus, AiProvider } from '@careerly/contracts';
 
 /**
  * AI API keys kept by Electron's main process (RF-CONF-01, ADR-19). Write-only: the interface can
  * save, remove and choose the active provider, and see which ones are configured, never the keys.
  */
 export interface DesktopAiKeys {
-  status(): Promise<AiKeyStatus>;
-  save(provider: AiProvider, apiKey: string): Promise<AiKeyStatus>;
-  remove(provider: AiProvider): Promise<AiKeyStatus>;
-  setActive(provider: AiProvider): Promise<AiKeyStatus>;
+  status(): Promise<AiKeysStatus>;
+  save(provider: AiProvider, apiKey: string): Promise<AiKeysStatus>;
+  remove(provider: AiProvider): Promise<AiKeysStatus>;
+  setActive(provider: AiProvider): Promise<AiKeysStatus>;
 }
 
 /** What the preload script exposes on `window.careerly` (see apps/desktop/src/preload.cts). */

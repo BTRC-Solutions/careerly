@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { AiProvider } from '@careerly/contracts';
 import { z } from 'zod';
 
 /** DI token for the validated {@link AppConfig}. */
@@ -23,6 +24,9 @@ const EnvSchema = z.object({
     .string()
     .min(16, 'CAREERLY_CONTROL_TOKEN must have at least 16 characters')
     .optional(),
+  /** Base URL of each AI provider (ADR-19). Only overridden by tests, which use a local fake. */
+  CAREERLY_GEMINI_BASE_URL: z.url().default('https://generativelanguage.googleapis.com'),
+  CAREERLY_ANTHROPIC_BASE_URL: z.url().default('https://api.anthropic.com'),
 });
 
 export interface AppConfig {
@@ -48,6 +52,8 @@ export interface AppConfig {
   appVersion: string;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   logToStdout: boolean;
+  /** Base URL of each AI provider's API (ADR-19). Only overridden by tests (a local fake provider). */
+  aiBaseUrls: Record<AiProvider, string>;
 }
 
 export class ConfigError extends Error {
@@ -95,5 +101,9 @@ export function loadConfig(
     appVersion: parsed.CAREERLY_APP_VERSION,
     logLevel: parsed.CAREERLY_LOG_LEVEL,
     logToStdout: parsed.CAREERLY_LOG_TO_STDOUT,
+    aiBaseUrls: {
+      gemini: parsed.CAREERLY_GEMINI_BASE_URL.replace(/\/+$/, ''),
+      anthropic: parsed.CAREERLY_ANTHROPIC_BASE_URL.replace(/\/+$/, ''),
+    },
   };
 }

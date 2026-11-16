@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  type AiKeyStatus,
+  type AiKeysStatus,
   AiApiKeySchema,
   type AiProvider,
   AiProviderSchema,
@@ -60,7 +60,7 @@ export class AiKeyStore {
     private readonly warn: (message: string) => void = () => {},
   ) {}
 
-  status(): AiKeyStatus {
+  status(): AiKeysStatus {
     const secrets = this.read();
     return {
       activeProvider: secrets.activeProvider,
@@ -69,7 +69,7 @@ export class AiKeyStore {
           provider,
           secrets.keys[provider] !== undefined,
         ]),
-      ) as AiKeyStatus['configured'],
+      ) as AiKeysStatus['configured'],
       secureStorageAvailable: this.encryptor.isAvailable(),
     };
   }
@@ -82,7 +82,7 @@ export class AiKeyStore {
   }
 
   /** Saves (or replaces) the key of a provider and makes that provider the active one. */
-  save(provider: AiProvider, apiKey: string): AiKeyStatus {
+  save(provider: AiProvider, apiKey: string): AiKeysStatus {
     const key = AiApiKeySchema.parse(apiKey);
     const secrets = this.read();
     this.write({
@@ -94,7 +94,7 @@ export class AiKeyStore {
   }
 
   /** Removes a provider's key. If it was active, another configured provider (if any) becomes active. */
-  remove(provider: AiProvider): AiKeyStatus {
+  remove(provider: AiProvider): AiKeysStatus {
     const secrets = this.read();
     const keys = { ...secrets.keys };
     delete keys[provider];
@@ -105,7 +105,7 @@ export class AiKeyStore {
     return this.status();
   }
 
-  setActive(provider: AiProvider): AiKeyStatus {
+  setActive(provider: AiProvider): AiKeysStatus {
     const secrets = this.read();
     if (secrets.keys[provider] === undefined) throw new ProviderNotConfiguredError(provider);
     this.write({ ...secrets, activeProvider: provider });
