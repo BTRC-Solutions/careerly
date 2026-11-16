@@ -371,8 +371,16 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 - **Conteo de páginas (ADR-07):** se cuenta en el PDF resultante (pdf-lib), no con `typst query`. Funciona con
   cualquier plantilla, incluidas las propias, sin pedirles metadata; no compila dos veces y cuenta exactamente
   lo que recibe el usuario. Cada render devuelve el PDF y su `pageCount`.
-- `page-fitter.ts` es puro: recibe una función `measure(resume) → pageCount` (el puerto), así que se testea
-  con un medidor falso.
+- `page-fitter.ts` (`tailoring/domain`) es puro: recibe una función `measure(selección) → pageCount` (el
+  puerto), así que se testea con un medidor falso.
+  - Los puestos viejos y los proyectos no relevantes no se rellenan nunca.
+  - Si quitar no alcanza (queda un bullet por puesto reciente), devuelve `fits: false` (RN-04).
+  - Las reglas son configurables y hay un tope de 30 mediciones (RNF-08).
+  - El `fitLog` dice qué quedó afuera y por qué (`OLD_POSITION`, `SECTION_LIMIT`, `NOT_RELEVANT`,
+    `OVER_BUDGET`) y qué se agregó para llenar (`SPACE_LEFT`).
+- **Relleno sin medir el espacio libre:** como `measure` solo devuelve páginas, el paso 4 agrega a los
+  candidatos descartados de mayor score mientras el CV siga entrando, en vez de usar el umbral del 85 %.
+  Medir cuánto se llena la última página se puede sumar más adelante si los CVs quedan demasiado cargados.
 
 ## 9. Render con Typst (módulo `documents`)
 
