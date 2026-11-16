@@ -414,7 +414,7 @@ Todas las rutas exigen el token de sesión (RNF-19).
 ```
 GET    /settings | PATCH /settings
 GET    /settings/ai-usage?from=&to=
-POST   /settings/ai-key/verify                     # la key la gestiona main; el backend solo prueba la recibida
+POST   /settings/ai-key/verify                     # prueba la key activa en memoria o una candidata { provider, apiKey }; nunca la guarda
 GET    /backups | POST /backups | POST /backups/restore   # archivo único .careerly-backup (SQLite: base + PDFs)
 DELETE /data                                # body { confirmation: "DELETE_ALL_DATA" }
 

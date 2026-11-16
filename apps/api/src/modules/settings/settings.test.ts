@@ -48,6 +48,7 @@ describe('settings API (integration)', () => {
     expect(SettingsResponseSchema.parse(await response.json())).toEqual({
       preferences: { uiLanguage: null },
       dataDir: config().dataDir,
+      aiKey: { configured: false, provider: null },
     });
   });
 

@@ -11,21 +11,21 @@ export type AiProvider = z.infer<typeof AiProviderSchema>;
 export const AiApiKeySchema = z
   .string()
   .trim()
-  .min(10)
-  .max(500)
+  .min(10, 'The API key is too short.')
+  .max(512, 'The API key is too long.')
   .regex(/^\S+$/, 'The API key cannot contain spaces.');
 
 /**
  * Which providers have a saved key and which one is active. This is everything the interface can
  * know about the keys: the keys themselves never leave the main process and the backend.
  */
-export const AiKeyStatusSchema = z.object({
+export const AiKeysStatusSchema = z.object({
   activeProvider: AiProviderSchema.nullable(),
   configured: z.record(AiProviderSchema, z.boolean()),
   /** `false` when the OS offers no secure storage: keys cannot be saved (they would be unprotected). */
   secureStorageAvailable: z.boolean(),
 });
-export type AiKeyStatus = z.infer<typeof AiKeyStatusSchema>;
+export type AiKeysStatus = z.infer<typeof AiKeysStatusSchema>;
 
 /**
  * `PUT /internal/ai-credentials`: main → backend only (control token), never the interface.

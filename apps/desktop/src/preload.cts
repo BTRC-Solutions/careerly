@@ -12,7 +12,7 @@ interface ApiConnection {
 
 type AiProvider = 'gemini' | 'anthropic';
 
-interface AiKeyStatus {
+interface AiKeysStatus {
   activeProvider: AiProvider | null;
   configured: Record<AiProvider, boolean>;
   secureStorageAvailable: boolean;
@@ -30,12 +30,12 @@ contextBridge.exposeInMainWorld('careerly', {
    * the status only says which providers have one and which is active.
    */
   aiKeys: {
-    status: (): Promise<AiKeyStatus> => ipcRenderer.invoke('careerly:ai-keys:status'),
-    save: (provider: AiProvider, apiKey: string): Promise<AiKeyStatus> =>
+    status: (): Promise<AiKeysStatus> => ipcRenderer.invoke('careerly:ai-keys:status'),
+    save: (provider: AiProvider, apiKey: string): Promise<AiKeysStatus> =>
       ipcRenderer.invoke('careerly:ai-keys:save', provider, apiKey),
-    remove: (provider: AiProvider): Promise<AiKeyStatus> =>
+    remove: (provider: AiProvider): Promise<AiKeysStatus> =>
       ipcRenderer.invoke('careerly:ai-keys:remove', provider),
-    setActive: (provider: AiProvider): Promise<AiKeyStatus> =>
+    setActive: (provider: AiProvider): Promise<AiKeysStatus> =>
       ipcRenderer.invoke('careerly:ai-keys:set-active', provider),
   },
 });

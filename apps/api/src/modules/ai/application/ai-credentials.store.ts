@@ -1,23 +1,28 @@
 import type { AiCredentials, AiProvider } from '@careerly/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 
-type Credentials = NonNullable<AiCredentials['credentials']>;
+export type Credentials = NonNullable<AiCredentials['credentials']>;
 
 /**
- * The AI API key in use, held only in memory (RNF-03). It arrives from the Electron main process
- * (`PUT /internal/ai-credentials`) and is never written to the database, files or logs.
+ * The active AI provider and its API key, held only in memory (RNF-03). They arrive from the
+ * Electron main process (`PUT /internal/ai-credentials`, ADR-23) and are never written to the
+ * database, files or logs.
+ *
+ * The credentials live in a private field, so `JSON.stringify`, pino and `util.inspect` skip them.
  */
 @Injectable()
 export class AiCredentialsStore {
   private readonly logger = new Logger(AiCredentialsStore.name);
-  private credentials: Credentials | null = null;
+  #credentials: Credentials | null = null;
 
   /** Replaces the credentials. Logs only the provider, and only when something changed. */
   set(credentials: Credentials | null): void {
+    const current = this.#credentials;
     const changed =
-      credentials?.provider !== this.credentials?.provider ||
-      credentials?.apiKey !== this.credentials?.apiKey;
-    this.credentials = credentials ? { ...credentials } : null;
+      credentials?.provider !== current?.provider || credentials?.apiKey !== current?.apiKey;
+    this.#credentials = credentials
+      ? { provider: credentials.provider, apiKey: credentials.apiKey }
+      : null;
     if (changed) {
       this.logger.log(
         credentials
@@ -27,12 +32,12 @@ export class AiCredentialsStore {
     }
   }
 
-  /** For the AI adapters only. Never return this from an HTTP route. */
+  /** For the AI adapters and the key check only. Never return this from an HTTP route. */
   get(): Credentials | null {
-    return this.credentials ? { ...this.credentials } : null;
+    return this.#credentials ? { ...this.#credentials } : null;
   }
 
   activeProvider(): AiProvider | null {
-    return this.credentials?.provider ?? null;
+    return this.#credentials?.provider ?? null;
   }
 }
