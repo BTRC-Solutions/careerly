@@ -27,7 +27,7 @@ interface ProviderInfo {
   name: string;
   /** Where to create a key. */
   keyUrl: string;
-  /** `false` until its adapter exists (ADR-19: Gemini first, Claude next). */
+  /** `false` until its adapter exists (ADR-23: Gemini first, Claude next). */
   available: boolean;
 }
 
@@ -50,7 +50,7 @@ const providerName = (id: AiProvider | null) =>
   PROVIDERS.find((provider) => provider.id === id)?.name ?? '';
 
 /**
- * AI provider and API key (RF-CONF-01, RF-CONF-02, ADR-19). Keys are verified by the backend
+ * AI provider and API key (RF-CONF-01, RF-CONF-02, ADR-23). Keys are verified by the backend
  * and saved encrypted by Electron's main process; this card can never read a saved key back.
  */
 export function AiKeyCard({

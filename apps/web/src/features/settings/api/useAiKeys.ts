@@ -10,7 +10,7 @@ import { getDesktopActions } from '../../../shared/desktop';
 import { SETTINGS_QUERY_KEY } from './useSettings';
 
 /*
- * AI API keys (RF-CONF-01, RF-CONF-02, ADR-19). Keys are saved by Electron's main process
+ * AI API keys (RF-CONF-01, RF-CONF-02, ADR-23). Keys are saved by Electron's main process
  * (encrypted, write-only from here) and verified by the backend. The key typed by the user only
  * lives in the form until it is saved; it is never put in a query key or in the cache.
  */
