@@ -42,12 +42,13 @@ describe('settings API (integration)', () => {
     temp.cleanup();
   });
 
-  it('GET returns the defaults and the data folder', async () => {
+  it('GET returns the defaults, the data folder and the app version', async () => {
     const response = await request('GET');
     expect(response.status).toBe(200);
     expect(SettingsResponseSchema.parse(await response.json())).toEqual({
       preferences: { uiLanguage: null },
       dataDir: config().dataDir,
+      appVersion: '0.0.0-dev',
       aiKey: { configured: false, provider: null },
     });
   });

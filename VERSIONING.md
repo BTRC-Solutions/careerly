@@ -38,6 +38,11 @@ Las versiones **no se editan a mano**. Salen de los mensajes de commit.
 El PR de release se puede dejar abierto todo el tiempo que haga falta: va acumulando los cambios. **Mergearlo
 es la decisión de largar la versión.**
 
+**Configuración:** `release-please-config.json`, `.release-please-manifest.json` (última versión de cada
+componente) y `.github/workflows/release-please.yml`. El historial empieza en el commit `bootstrap-sha`: lo
+anterior no entra al primer CHANGELOG. Requisito del repo: *Settings → Actions → General → Allow GitHub Actions
+to create and approve pull requests* activado; si no, la Action no puede abrir el PR de release.
+
 ### 2.1 Qué versión resulta de cada commit
 
 **Hasta la 1.0, la versión sigue las fases del roadmap: `0.N.X`.**

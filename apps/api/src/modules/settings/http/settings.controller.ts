@@ -45,6 +45,7 @@ export class SettingsController {
     return {
       preferences,
       dataDir: this.config.dataDir,
+      appVersion: this.config.appVersion,
       aiKey: this.aiKey.status(),
     };
   }

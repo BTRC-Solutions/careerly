@@ -1,0 +1,20 @@
+name: Release Please
+
+# Keeps one release PR per component up to date from the Conventional Commits on main (VERSIONING.md).
+# Merging that PR creates the tag (vX.Y.Z for the desktop app) and the GitHub Release.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
