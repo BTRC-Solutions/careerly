@@ -9,13 +9,30 @@
       "component": "careerly",
       "include-component-in-tag": false,
       "versioning": "always-bump-patch",
+      "initial-version": "0.0.1",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": ["apps/telemetry-api", "apps/stats-web", "infra"],
       "extra-files": [
-        { "type": "json", "path": "apps/desktop/package.json", "jsonpath": "$.version" },
-        { "type": "json", "path": "apps/api/package.json", "jsonpath": "$.version" },
-        { "type": "json", "path": "apps/web/package.json", "jsonpath": "$.version" },
-        { "type": "json", "path": "packages/contracts/package.json", "jsonpath": "$.version" },
+        {
+          "type": "json",
+          "path": "apps/desktop/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "apps/api/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "apps/web/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/contracts/package.json",
+          "jsonpath": "$.version"
+        },
         {
           "type": "json",
           "path": "package-lock.json",
