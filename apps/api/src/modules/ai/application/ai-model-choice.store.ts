@@ -1,4 +1,4 @@
-import type { AiProvider } from '@careerly/contracts';
+import type { LlmProviderId } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import type { ModelTier } from './llm.types.js';
 
@@ -12,13 +12,13 @@ export type ModelChoice = Partial<Record<ModelTier, string>>;
  */
 @Injectable()
 export class AiModelChoiceStore {
-  private source: (provider: AiProvider) => Promise<ModelChoice> = () => Promise.resolve({});
+  private source: (provider: LlmProviderId) => Promise<ModelChoice> = () => Promise.resolve({});
 
-  useSource(source: (provider: AiProvider) => Promise<ModelChoice>): void {
+  useSource(source: (provider: LlmProviderId) => Promise<ModelChoice>): void {
     this.source = source;
   }
 
-  get(provider: AiProvider): Promise<ModelChoice> {
+  get(provider: LlmProviderId): Promise<ModelChoice> {
     return this.source(provider);
   }
 }

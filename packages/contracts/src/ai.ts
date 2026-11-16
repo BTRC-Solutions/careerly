@@ -1,8 +1,16 @@
 import { z } from 'zod';
 
-/** Supported AI providers (ADR-23). Gemini is implemented first; Claude follows. */
+/** AI providers used with the user's API key (ADR-23): the keys Electron stores and verifies. */
 export const AiProviderSchema = z.enum(['gemini', 'anthropic']);
 export type AiProvider = z.infer<typeof AiProviderSchema>;
+
+/**
+ * What generates the answers: a provider with an API key, or `claude-code`, the Claude Code
+ * installed and logged in on this computer, with the user's Claude subscription instead of a key
+ * (RF-CONF-14, ADR-24; optional, personal use).
+ */
+export const LlmProviderIdSchema = z.enum([...AiProviderSchema.options, 'claude-code']);
+export type LlmProviderId = z.infer<typeof LlmProviderIdSchema>;
 
 /**
  * An API key as the user pastes it. Only the shape is checked here; whether it works is
@@ -110,7 +118,7 @@ export type AiModelTier = z.infer<typeof AiModelTierSchema>;
 
 /** `GET /settings/ai-models`: models of the active provider and the choice per tier. */
 export const AiModelsResponseSchema = z.object({
-  provider: AiProviderSchema,
+  provider: LlmProviderIdSchema,
   tiers: z.record(ModelTierSchema, AiModelTierSchema),
   models: z.array(AiModelOptionSchema),
 });
@@ -124,3 +132,34 @@ export const UpdateAiModelRequestSchema = z
   .object({ tier: ModelTierSchema, model: AiModelIdSchema.nullable() })
   .strict();
 export type UpdateAiModelRequest = z.infer<typeof UpdateAiModelRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Claude Code with the user's subscription (RF-CONF-14, ADR-24)
+// ---------------------------------------------------------------------------
+
+/**
+ * Why Claude Code cannot be used right now:
+ * - `NOT_INSTALLED`: no `claude` command was found.
+ * - `NOT_LOGGED_IN`: it is installed but not signed in (`claude auth login`).
+ * - `CHECK_FAILED`: it did not answer the status check.
+ */
+export const ClaudeCodeProblemSchema = z.enum(['NOT_INSTALLED', 'NOT_LOGGED_IN', 'CHECK_FAILED']);
+export type ClaudeCodeProblem = z.infer<typeof ClaudeCodeProblemSchema>;
+
+/** `GET /settings/claude-code` and `PUT /settings/claude-code` response. */
+export const ClaudeCodeStatusSchema = z.object({
+  /** The user turned it on: AI calls go to Claude Code instead of the API key. */
+  enabled: z.boolean(),
+  /** Installed and signed in, so it can be used. */
+  ready: z.boolean(),
+  problem: ClaudeCodeProblemSchema.nullable(),
+  /** e.g. `2.1.318`, when installed. */
+  version: z.string().nullable(),
+  /** How it is signed in, as Claude Code reports it (e.g. `claude.ai`), when known. */
+  authMethod: z.string().nullable(),
+});
+export type ClaudeCodeStatus = z.infer<typeof ClaudeCodeStatusSchema>;
+
+/** `PUT /settings/claude-code`: turning it on is refused (not saved) unless it is ready. */
+export const UpdateClaudeCodeRequestSchema = z.object({ enabled: z.boolean() }).strict();
+export type UpdateClaudeCodeRequest = z.infer<typeof UpdateClaudeCodeRequestSchema>;

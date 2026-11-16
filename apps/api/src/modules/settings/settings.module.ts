@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiKeySource, AiKeyVerifier } from './application/ai-key.ports.js';
 import { AiModelChoiceService } from './application/ai-model-choice.service.js';
+import { ClaudeCodeGateway, ClaudeCodeService } from './application/claude-code.service.js';
 import { AiModelCatalog } from './application/ai-models.ports.js';
 import { AiKeyService } from './application/ai-key.service.js';
 import { BackupService } from './application/backup.service.js';
@@ -8,6 +9,8 @@ import { LocalDataStore } from './application/local-data.port.js';
 import { SettingsRepository } from './application/settings.repository.js';
 import { SettingsService } from './application/settings.service.js';
 import { AiModelsController } from './http/ai-models.controller.js';
+import { ClaudeCodeController } from './http/claude-code.controller.js';
+import { AiModuleClaudeCodeGateway } from './infrastructure/ai-module-claude-code.gateway.js';
 import { BackupsController } from './http/backups.controller.js';
 import { SettingsController } from './http/settings.controller.js';
 import { AiModuleModelCatalog } from './infrastructure/ai-module-model-catalog.js';
@@ -23,12 +26,14 @@ import { ProviderKeyVerifier } from './infrastructure/provider-key-verifier.js';
  * (ARCHITECTURE §4). AI usage comes later.
  */
 @Module({
-  controllers: [SettingsController, AiModelsController, BackupsController],
+  controllers: [SettingsController, AiModelsController, ClaudeCodeController, BackupsController],
   providers: [
     SettingsService,
     AiKeyService,
     AiModelChoiceService,
     { provide: AiModelCatalog, useClass: AiModuleModelCatalog },
+    ClaudeCodeService,
+    { provide: ClaudeCodeGateway, useClass: AiModuleClaudeCodeGateway },
     BackupService,
     { provide: SettingsRepository, useClass: DrizzleSettingsRepository },
     { provide: AiKeySource, useClass: MemoryAiKeySource },

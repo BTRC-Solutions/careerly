@@ -1,6 +1,6 @@
-import type { AiModelOption, AiModelsResponse, AiProvider } from '@careerly/contracts';
+import type { AiModelOption, AiModelsResponse, LlmProviderId } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { AiCredentialsStore } from './ai-credentials.store.js';
+import { ActiveAiCredentials } from './active-ai-credentials.js';
 import { AiModelChoiceStore } from './ai-model-choice.store.js';
 import { AiNotConfiguredError, AiProviderNotSupportedError } from './llm-errors.js';
 import { type LlmProvider, LlmProviderRegistry } from './llm.ports.js';
@@ -17,19 +17,19 @@ const TIERS: ModelTier[] = ['small', 'large'];
 @Injectable()
 export class AiModelsService {
   constructor(
-    private readonly credentials: AiCredentialsStore,
+    private readonly credentials: ActiveAiCredentials,
     private readonly providers: LlmProviderRegistry,
     private readonly choices: AiModelChoiceStore,
     private readonly smoke: AiSmokeTestService,
   ) {}
 
   /** The active provider; throws `AiNotConfiguredError` without a usable key. */
-  activeProvider(): AiProvider {
-    return this.active().provider.id;
+  async activeProvider(): Promise<LlmProviderId> {
+    return (await this.active()).provider.id;
   }
 
   async overview(): Promise<AiModelsResponse> {
-    const { provider, apiKey } = this.active();
+    const { provider, apiKey } = await this.active();
     const [listed, choice] = await Promise.all([
       provider.listModels(apiKey),
       this.choices.get(provider.id),
@@ -75,8 +75,8 @@ export class AiModelsService {
     await this.smoke.probe(model);
   }
 
-  private active(): { provider: LlmProvider; apiKey: string } {
-    const credentials = this.credentials.get();
+  private async active(): Promise<{ provider: LlmProvider; apiKey: string }> {
+    const credentials = await this.credentials.get();
     if (!credentials) throw new AiNotConfiguredError();
     const provider = this.providers.get(credentials.provider);
     if (!provider) throw new AiProviderNotSupportedError(credentials.provider);

@@ -1,7 +1,7 @@
 import {
   AiModelIdSchema,
   type AiModelsResponse,
-  type AiProvider,
+  type LlmProviderId,
   type ModelTier,
   type UpdateAiModelRequest,
 } from '@careerly/contracts';
@@ -12,7 +12,7 @@ import { SettingsService } from './settings.service.js';
 /** Settings namespace of the choice: `ai.models.<provider>.<tier>` = model id. */
 const NAMESPACE = 'ai';
 const TIERS: ModelTier[] = ['small', 'large'];
-const storageKey = (provider: AiProvider, tier: ModelTier) => `models.${provider}.${tier}`;
+const storageKey = (provider: LlmProviderId, tier: ModelTier) => `models.${provider}.${tier}`;
 
 /**
  * AI models chosen by the user, per provider and tier (RF-CONF-09, ADR-23). A model is tried with a
@@ -36,7 +36,7 @@ export class AiModelChoiceService implements OnModuleInit {
 
   /** Tries and saves `model` for the tier, or goes back to the defaults with `null`. */
   async choose({ tier, model }: UpdateAiModelRequest): Promise<AiModelsResponse> {
-    const provider = this.catalog.activeProvider();
+    const provider = await this.catalog.activeProvider();
     if (model !== null) await this.catalog.tryModel(model);
     await this.settings.updateNamespace(NAMESPACE, {
       [storageKey(provider, tier)]: model ?? undefined,
@@ -45,7 +45,7 @@ export class AiModelChoiceService implements OnModuleInit {
   }
 
   /** Stored values that are not a valid model id are ignored (the defaults apply). */
-  private async read(provider: AiProvider): Promise<StoredModelChoice> {
+  private async read(provider: LlmProviderId): Promise<StoredModelChoice> {
     const stored = await this.settings.getNamespace(NAMESPACE);
     const choice: StoredModelChoice = {};
     for (const tier of TIERS) {

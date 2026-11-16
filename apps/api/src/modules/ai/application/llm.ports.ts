@@ -1,4 +1,4 @@
-import type { AiGenerationStatus, AiProvider, AiTask } from '@careerly/contracts';
+import type { AiGenerationStatus, AiTask, LlmProviderId } from '@careerly/contracts';
 import type { ModelFacts, ModelTier, ProviderRequest, ProviderResponse } from './llm.types.js';
 
 /**
@@ -6,7 +6,7 @@ import type { ModelFacts, ModelTier, ProviderRequest, ProviderResponse } from '.
  * errors to `AiError`s. They never log prompts, answers or the key.
  */
 export abstract class LlmProvider {
-  abstract readonly id: AiProvider;
+  abstract readonly id: LlmProviderId;
   /**
    * Default models for a tier, in order of preference (defaults in code, overridable by config).
    * Later ones are fallbacks when a model is retired or overloaded; the user's choice goes first.
@@ -23,14 +23,14 @@ export abstract class LlmProvider {
 
 /** Port: the adapters available, by provider. */
 export abstract class LlmProviderRegistry {
-  abstract get(provider: AiProvider): LlmProvider | undefined;
+  abstract get(provider: LlmProviderId): LlmProvider | undefined;
 }
 
 /** One attempt of an AI call, as stored in `AiGeneration` (no content, ever). */
 export interface AiGenerationEntry {
   id: string;
   task: AiTask;
-  provider: AiProvider;
+  provider: LlmProviderId;
   model: string;
   promptVersion: string;
   attempt: number;

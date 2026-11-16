@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { AiGenerationStatus, AiProvider, AiTask } from '@careerly/contracts';
+import type { AiGenerationStatus, AiTask, LlmProviderId } from '@careerly/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
-import { AiCredentialsStore } from './ai-credentials.store.js';
+import { ActiveAiCredentials } from './active-ai-credentials.js';
 import { AiModelChoiceStore } from './ai-model-choice.store.js';
 import {
   AiError,
@@ -54,22 +54,22 @@ export class LlmClient {
   private readonly logger = new Logger(LlmClient.name);
 
   constructor(
-    private readonly credentials: AiCredentialsStore,
+    private readonly credentials: ActiveAiCredentials,
     private readonly providers: LlmProviderRegistry,
     private readonly generations: AiGenerationRepository,
     private readonly choices: AiModelChoiceStore,
   ) {}
 
   /** Whether AI calls can be attempted at all (a key is configured for a supported provider). */
-  isAvailable(): boolean {
-    const active = this.credentials.get();
+  async isAvailable(): Promise<boolean> {
+    const active = await this.credentials.get();
     return active !== null && this.providers.get(active.provider) !== undefined;
   }
 
   async generateStructured<T extends z.ZodType>(
     request: StructuredRequest<T>,
   ): Promise<StructuredResult<z.infer<T>>> {
-    const credentials = this.credentials.get();
+    const credentials = await this.credentials.get();
     if (!credentials) throw new AiNotConfiguredError();
     const provider = this.providers.get(credentials.provider);
     if (!provider) throw new AiProviderNotSupportedError(credentials.provider);
@@ -182,7 +182,7 @@ export class LlmClient {
    * The user's model for the tier (RF-CONF-09) followed by the defaults, which are also the
    * fallbacks if the chosen model is retired. A choice that cannot be read is ignored.
    */
-  private async modelsFor(providerId: AiProvider, tier: ModelTier): Promise<string[]> {
+  private async modelsFor(providerId: LlmProviderId, tier: ModelTier): Promise<string[]> {
     const defaults = this.providers.get(providerId)!.modelsFor(tier);
     let chosen: string | undefined;
     try {
