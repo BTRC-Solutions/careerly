@@ -558,7 +558,16 @@ careerly/
 ## 16. Distribución y actualizaciones
 
 - **Empaquetado:** electron-builder. Windows: instalador NSIS (+ versión portable opcional). macOS: `.dmg`.
-  Linux: AppImage y `.deb`.
+  Linux: AppImage y `.deb`. `npm run package:win` (script `apps/desktop/scripts/package-app.mjs`):
+  - electron-builder no se lleva bien con los npm workspaces, así que no se empaqueta nada de `node_modules`:
+    la salida de `tsc` (que trae la metadata de decoradores que necesita Nest) se agrupa con **esbuild** en
+    módulos autocontenidos.
+  - `app.asar` lleva solo `main.mjs`, `preload.cjs` y un `package.json` mínimo. Al lado, en `resources/`,
+    van `api/main.mjs`, `api/drizzle/` (migraciones) y `web/` (la UI); main los resuelve desde
+    `process.resourcesPath` cuando la app está empaquetada.
+  - La API corre en un `utilityProcess` con el Node de Electron, así que `node:sqlite` no necesita módulos
+    nativos. Desinstalar no borra la carpeta de datos (borrarla es una acción explícita, RF-CONF-05).
+  - `CAREERLY_USER_DATA_DIR` permite apuntar la carpeta de datos a otro lado para pruebas de humo.
 - **Releases:** GitHub Actions con una matriz de sistemas operativos; al crear un tag `vX.Y.Z` se compila, se
   descarga el binario de `typst` de cada plataforma y se publica en GitHub Releases.
 - **Actualizaciones:** electron-updater contra GitHub Releases (RF-CONF-10). Antes de migrar la base en una

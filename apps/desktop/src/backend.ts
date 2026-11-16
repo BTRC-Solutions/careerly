@@ -4,8 +4,10 @@ const STARTUP_TIMEOUT_MS = 20_000;
 const SHUTDOWN_TIMEOUT_MS = 3_000;
 
 export interface BackendOptions {
-  /** Path to the compiled API entry (`apps/api/dist/main.js`). */
+  /** Path to the API entry: `apps/api/dist/main.js` from source, `resources/api/main.mjs` when installed. */
   entry: string;
+  /** Folder with the SQL migrations (`apps/api/drizzle` from source, `resources/api/drizzle` installed). */
+  migrationsDir: string;
   dataDir: string;
   token: string;
   /** Lets main call the backend's `/internal/*` routes (e.g. to send the AI API key). */
@@ -37,6 +39,7 @@ export function startBackend(options: BackendOptions): Promise<RunningBackend> {
       CAREERLY_API_TOKEN: options.token,
       CAREERLY_CONTROL_TOKEN: options.controlToken,
       CAREERLY_API_PORT: '0',
+      CAREERLY_MIGRATIONS_DIR: options.migrationsDir,
       CAREERLY_ALLOWED_ORIGINS: options.allowedOrigins.join(','),
       CAREERLY_APP_VERSION: options.appVersion,
       CAREERLY_LOG_TO_STDOUT: options.forwardOutput ? 'true' : 'false',

@@ -60,7 +60,13 @@ export default tseslint.config(
 
   // Node code: API, Electron shell, config files.
   {
-    files: ['apps/api/**/*.ts', 'apps/desktop/**/*.{ts,cts}', '*.{js,ts}', '**/*.config.ts'],
+    files: [
+      'apps/api/**/*.ts',
+      'apps/desktop/**/*.{ts,cts}',
+      'apps/*/scripts/**/*.mjs',
+      '*.{js,ts}',
+      '**/*.config.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
 
