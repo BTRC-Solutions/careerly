@@ -1,6 +1,6 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.2 · Última actualización: 2026-11-10
+> Estado: borrador v0.3 · Última actualización: 2026-11-16
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
@@ -8,7 +8,8 @@
 Lo que más influye en las decisiones, en orden:
 
 1. **App de escritorio personal, de un solo usuario y con datos locales.** Sin cuentas, sin servidor en la
-   nube y sin infraestructura que operar.
+   nube y sin infraestructura que operar. La única excepción es el receptor de telemetría (§19), que vive
+   fuera de la app y nunca recibe datos del perfil.
 2. **El flujo de adaptación tiene lógica de dominio real:** match, gaps, reglas de veracidad, ajuste a páginas
    y una máquina de estados de sesión. Tiene que poder testearse sin IA, sin base de datos y sin Typst.
 3. **La IA es lenta, cara, falible y reemplazable.** Debe estar aislada detrás de una interfaz, ejecutarse en
@@ -127,6 +128,7 @@ profile      ◄── tailoring ──► job-postings
                     └──► ai (adaptadores de LLM)
 applications ──► job-postings, documents (snapshots)
 dashboard    ──► applications (solo lectura)
+telemetry    ──► applications, job-postings, tailoring, ai (solo lectura) ──► receptor externo (§19)
 
 post-MVP:
 insights       ──► job-postings, profile, tailoring (solo lectura) ──► ai
@@ -144,6 +146,7 @@ interview-prep ──► applications, job-postings, documents, profile (solo le
 | `ai` | Infraestructura | Adaptadores de LLM, prompts versionados, salida estructurada, registro de uso y costo. |
 | `jobs` | Infraestructura | Cola de tareas persistida en SQLite y su ejecutor (ver §10). |
 | `dashboard` | Lectura | Consultas agregadas (sin dominio propio). |
+| `telemetry` | Capas | Consentimiento por métrica, ID anónimo, armado del reporte diario con esquema cerrado, envío e historial local (ver §19). |
 | `insights` *(post-MVP)* | Dominio ligero | Gaps recurrentes entre JDs y recomendaciones de capacitación (ver §18.1). |
 | `interview-prep` *(post-MVP)* | **Hexagonal** | Research de empresas, guías de entrevista por etapa, debriefs (ver §18.2). |
 
@@ -225,7 +228,7 @@ erDiagram
     Application ||--o{ Contact : ""
 ```
 
-Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Setting`.
+Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Setting`, `TelemetryReport`.
 
 ### Entidades clave
 
@@ -247,7 +250,8 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `SentResume` | applicationId, resumeVersionId, sentAt | Permite varios CVs enviados (p. ej. ES y EN). |
 | `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
 | `AiGeneration` | task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Base del consumo y presupuesto (RF-CONF-06, RF-CONF-07). |
-| `Setting` | key, value (JSON) | Preferencias no secretas. La API key **no** se guarda acá. |
+| `Setting` | key, value (JSON) | Preferencias no secretas. La API key **no** se guarda acá. Incluye las preferencias de telemetría: `installId`, métricas activadas y `consentVersion`. |
+| `TelemetryReport` | day, payload (JSON), status (`PENDING`, `SENT`, `FAILED`), attempts, sentAt? | Historial local de lo enviado, tal cual salió (RF-TEL-06). |
 
 **Origen y reversión en el perfil (RF-PROF-07, RF-TAIL-06):** todo elemento creado desde un gap guarda
 `origin = GAP_ANSWER` y `originSessionId`. "Deshacer" borra esos elementos (o restaura el texto anterior, si se
@@ -433,6 +437,11 @@ POST   /applications/:id/sent-resumes
 CRUD   /applications/:id/events, /applications/:id/contacts
 
 GET    /dashboard/summary
+
+GET    /telemetry/settings | PATCH /telemetry/settings   # métricas activadas, consentimiento
+GET    /telemetry/preview                          # JSON exacto del próximo envío
+GET    /telemetry/reports                          # historial local de envíos
+POST   /telemetry/install-id/regenerate
 ```
 
 ## 12. Interfaz (renderer)
@@ -469,13 +478,19 @@ careerly/
     desktop/             # Electron: main + preload, configuración de electron-builder
     web/                 # Vite + React (renderer)
     api/                 # NestJS (backend local)
+    telemetry-api/       # receptor de telemetría (NestJS + Postgres), corre en el VPS (§19)
+    stats-web/           # página pública de estadísticas: React (Vite) + servidor Node intermediario (§19)
   packages/
-    contracts/           # esquemas Zod + tipos compartidos (DTOs, enums de estado)
+    contracts/           # esquemas Zod + tipos compartidos (DTOs, enums de estado, reporte de telemetría)
+  infra/
+    telemetry/           # docker-compose (staging y prod), Caddyfile y backups del receptor
+    jenkins/             # Jenkins como código: plugins.txt, JCasC y Jenkinsfile de deploy
     eslint-config/
     tsconfig/
   scripts/
     fetch-typst.ts       # descarga el binario de typst por plataforma (versión + checksum)
   REQUIREMENTS.md  ARCHITECTURE.md  ROADMAP.md
+  release-please-config.json  .release-please-manifest.json   # versionado (§16.1)
 ```
 
 - **npm workspaces** (+ Turborepo si los tiempos de build lo justifican). Todo el monorepo es ESM.
@@ -512,6 +527,8 @@ careerly/
   con contraseña: post-MVP.)
 - **Proveedor de IA:** documentar qué datos se envían y la política de retención del proveedor en una pantalla
   de "Privacidad" dentro de la app.
+- **Telemetría:** solo con consentimiento y con un esquema cerrado que hace imposible enviar el CV o datos
+  personales (RN-18). El detalle está en §19.
 
 ## 15. Estrategia de testing
 
@@ -534,7 +551,40 @@ careerly/
 - **Firma de código:** opcional para un proyecto personal. Sin firma, Windows muestra un aviso de SmartScreen y
   macOS requiere abrir la app con clic derecho → Abrir la primera vez. La notarización de macOS requiere una
   cuenta de Apple Developer (paga).
-- **Versionado:** SemVer + changelog generado desde los commits.
+
+### 16.1 Versionado (ADR-19)
+
+**Qué se versiona y cómo:**
+
+| Componente | Incluye | Versión | Tag |
+|---|---|---|---|
+| App de escritorio | `apps/desktop`, `apps/api`, `apps/web`, `packages/contracts` | SemVer única para todo el producto instalable | `vX.Y.Z` |
+| Receptor | `apps/telemetry-api` | SemVer propia | `telemetry-api-vX.Y.Z` |
+| Página pública | `apps/stats-web` | SemVer propia | `stats-web-vX.Y.Z` |
+| Formato del reporte | `TelemetryReportV1…` en `contracts` | Entero `schemaVersion` | — |
+
+- **release-please** (GitHub Action) lee los Conventional Commits de `main` y mantiene un PR de release por
+  componente, con la versión nueva y el `CHANGELOG.md`. Al mergearlo crea el tag y la GitHub Release, y eso
+  dispara el build correspondiente. La configuración vive en `release-please-config.json` y
+  `.release-please-manifest.json`: la app es el componente raíz (`.`) con `exclude-paths` para los servicios
+  y la infraestructura, y `extra-files` copia la versión a los `package.json` de `apps/desktop`, `apps/api` y
+  `apps/web`.
+- **Reglas de bump:** `fix` → patch, `feat` → minor, `!` o `BREAKING CHANGE` → major. Antes de la 1.0
+  (`bump-minor-pre-major`), un cambio que rompe sube el minor. `docs`, `chore`, `test` y `ci` no generan
+  versión.
+- **Hitos:** `v0.1.0` es el MVP. La `v1.0.0` sale cuando el modelo de datos y el formato de backup se
+  consideren estables.
+- **Canales:** `stable` (Releases normales) y `beta` (`vX.Y.Z-beta.N`, publicadas como *prerelease*). Las
+  betas se generan con un workflow manual (`workflow_dispatch`) que toma la versión propuesta en el PR de
+  release abierto y le agrega `-beta.N`. electron-builder genera los archivos de actualización de los dos
+  canales y electron-updater usa `allowPrerelease` según la preferencia del usuario (RF-CONF-12, post-MVP;
+  hasta entonces las betas se instalan a mano).
+- **Sin downgrade de datos:** las migraciones de SQLite solo van hacia adelante. Volver a una versión anterior
+  de la app requiere restaurar el backup automático previo a la migración (RNF-20).
+- **Versión visible:** la app la muestra en Configuración y la envía como `appVersion` en la telemetría.
+- **Compatibilidad del reporte:** un cambio de formato que rompe sube `schemaVersion`. El receptor acepta la
+  versión actual y la anterior (N y N-1); para versiones más viejas responde `410 Gone` y la app deja de
+  enviar sin mostrar errores (RN-21). Cambios compatibles (campos opcionales nuevos) no suben la versión.
 
 ## 17. Registro de decisiones
 
@@ -555,6 +605,12 @@ careerly/
 | ADR-13 | Comunicación interfaz–backend por HTTP local con token (no IPC) | Aceptada |
 | ADR-14 | Typst: CLI empaquetado vs. compilador como módulo nativo de Node | Pendiente (Fase 3) |
 | ADR-15 | Cola de tareas en SQLite dentro del proceso del backend (sin Redis ni worker) | Aceptada |
+| ADR-16 | Telemetría con consentimiento por métrica, reportes diarios agregados, ID anónimo regenerable y esquema cerrado compartido entre app y receptor | Aceptada |
+| ADR-17 | Receptor autohospedado en un VPS: NestJS + Postgres + Caddy con docker-compose (no serverless ni servicios de terceros) | Aceptada |
+| ADR-18 | Página pública como React SPA servida por un servidor Node intermediario; la API de lectura del receptor solo es accesible por la red interna | Aceptada |
+| ADR-19 | Versionado con release-please: una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
+| ADR-20 | GitHub Actions para CI, instaladores e imágenes (GHCR); Jenkins solo para desplegar la telemetría | Aceptada |
+| ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
 
 ## 18. Extensiones post-MVP
 
@@ -648,3 +704,164 @@ GET    /interview-guides/:id/pdf
 POST   /companies/:key/research/refresh
 POST   /applications/:id/events                    # debrief: type INTERVIEW con preguntas recibidas
 ```
+
+## 19. Telemetría
+
+Ver [REQUIREMENTS.md §5.10](REQUIREMENTS.md), RN-18 a RN-21 y ADR-16 a ADR-18.
+
+### 19.1 Visión general
+
+```mermaid
+flowchart LR
+    subgraph APP[Careerly - escritorio]
+        TEL[Módulo telemetry<br/>en el backend local]
+    end
+    subgraph VPS[VPS - docker-compose]
+        CADDY[Caddy<br/>TLS, sin IPs en logs]
+        INGEST[telemetry-api<br/>ingesta + lectura interna]
+        WEB[stats-web<br/>servidor Node + React SPA]
+        PG[(Postgres)]
+    end
+    TEL -->|HTTPS POST /v1/reports<br/>1 reporte por día| CADDY
+    CADDY -->|solo /v1/reports| INGEST
+    CADDY -->|página pública| WEB
+    WEB -->|red interna + secreto compartido| INGEST
+    INGEST --> PG
+    VISITANTE[Visitante] --> CADDY
+```
+
+### 19.2 Cliente (módulo `telemetry` de la app)
+
+- **Estilo en capas.** Solo **lee** los servicios públicos de `applications`, `job-postings`, `tailoring` y
+  `ai`; no toca sus tablas.
+- **Preferencias** en `Setting`: `installId` (UUID v4; se genera recién al aceptar), métricas activadas y
+  `consentVersion`. Cada métrica del catálogo tiene la versión en la que se agregó; si hay métricas con una
+  versión mayor que `consentVersion`, la interfaz vuelve a mostrar la ventana solo con esas (RF-TEL-04).
+- **Armado del reporte.** Una tarea diaria en la cola de `jobs` arma el reporte de cada día cerrado (en la
+  zona horaria local) con uso y todavía no enviado, hasta 30 días atrás. Cada métrica tiene su *collector*
+  (una función que consulta un servicio público y devuelve números o enums). El resultado se valida con el
+  esquema `TelemetryReportV1` de `packages/contracts`, que es **estricto** (`.strict()`, sin campos libres
+  salvo el título recortado); si no valida, el envío falla y se registra en el log (RN-18).
+- **Envío.** `POST https://<dominio>/v1/reports`, con reintentos con *backoff* exponencial a cargo de la cola.
+  El reporte enviado se guarda en `TelemetryReport` tal cual salió (RF-TEL-06). Un fallo nunca afecta al
+  resto de la app (RN-21).
+- **Sin clave en la app.** El instalador no lleva secretos (se podrían extraer); la protección está del lado
+  del receptor (§19.4).
+- **Origen de cada métrica:**
+
+| Métrica | Fuente | Forma en el reporte |
+|---|---|---|
+| Uso activo | Peticiones de la interfaz al backend en el día | `activeUsage.active: true` |
+| Postulaciones creadas | `applications` | `applications.created: n` |
+| Plataforma de origen | URL de la JD (`job-postings`) → dominio → lista de portales conocidos | `sources: { "linkedin.com": n, "other": n, "unknown": n }` |
+| Categoría y seniority | Análisis de la JD (RF-JD-02) | `positionCategories: { "backend:senior": n }` |
+| Título | Título de la JD, recortado a 80 caracteres | `positionTitles: ["…"]` |
+| Embudo | Eventos `STATUS_CHANGE` de `applications` | `funnel: { "SCREENING": n, … }` |
+| Modalidad y país | Análisis de la JD | `workMode: {…}`, `countries: { "AR": n }` |
+| Uso de funciones | `tailoring`, `ai` (`AiGeneration`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }` |
+
+### 19.3 Formato del reporte
+
+Un reporte por instalación por día. Solo aparecen las métricas que el usuario activó.
+
+```json
+{
+  "schemaVersion": 1,
+  "installId": "9f1c2e4a-…",
+  "day": "2026-11-16",
+  "appVersion": "0.1.0",
+  "metrics": {
+    "activeUsage": { "active": true },
+    "applications": { "created": 3 },
+    "sources": { "linkedin.com": 2, "getonbrd.com": 1 },
+    "positionCategories": { "backend:senior": 2, "fullstack:semi-senior": 1 },
+    "positionTitles": ["Senior Backend Engineer"],
+    "funnel": { "SCREENING": 1, "REJECTED": 1 },
+    "workMode": { "remote": 2, "hybrid": 1 },
+    "countries": { "AR": 1, "ES": 2 },
+    "features": { "resumesGenerated": 2, "outputLanguages": { "en": 2 }, "gapsAnswered": 5, "aiTokens": 41000 }
+  }
+}
+```
+
+- `schemaVersion` permite evolucionar el formato: el receptor acepta las versiones que conoce.
+- Idempotencia: la clave es `(installId, day)`. Un reenvío del mismo día reemplaza al anterior.
+
+### 19.4 Receptor (`apps/telemetry-api`)
+
+- **NestJS + Drizzle sobre Postgres**, reutilizando `TelemetryReportV1` de `packages/contracts`.
+- **Ingesta pública:** `POST /v1/reports` es lo único que Caddy expone de este servicio. Valida el esquema,
+  aplica topes de plausibilidad (p. ej. no más de 50 postulaciones por día, `day` no futuro ni de más de 30
+  días atrás), tiene rate limit por IP (en memoria, sin persistir la IP) y responde `202`.
+- **API de lectura interna:** `GET /internal/stats/*` devuelve agregados ya filtrados por el umbral de
+  anonimato (RN-20, k ≥ 5 instalaciones). Solo escucha en la red interna de Docker y además exige un secreto
+  compartido con `stats-web`.
+- **Datos:** tabla `reports` (installId, day, schemaVersion, appVersion, metrics JSONB, receivedAt) con clave
+  única `(installId, day)`. Retención sin límite (D-11). Sin IPs (RNF-23).
+
+### 19.5 Página pública (`apps/stats-web`)
+
+- **React + Vite** (con los tokens de STYLES.md) para la interfaz, servida por un **servidor Node chico** que
+  hace de intermediario: expone solo `GET /api/*` con los agregados que la página necesita y los pide a
+  `telemetry-api` por la red interna con el secreto. El navegador nunca habla con `telemetry-api`.
+- Lo que la página muestra es público por definición; lo que se protege es la API real (ingesta y datos por
+  instalación). El intermediario cachea las respuestas unos minutos para no cargar la base.
+
+### 19.6 Despliegue
+
+**Entornos.** `staging` y `prod` corren en el mismo VPS como dos proyectos de docker-compose separados
+(`careerly-telemetry-staging` y `careerly-telemetry-prod`), cada uno con su propio contenedor de Postgres y su
+volumen. Un único Caddy compartido enruta por subdominio y obtiene los certificados TLS automáticamente, lo que
+**requiere un dominio** (pendiente, D-10):
+
+| Host | Destino |
+|---|---|
+| `telemetry.<dominio>/v1/reports` | `telemetry-api` de prod (solo esa ruta) |
+| `stats.<dominio>` | `stats-web` de prod |
+| `telemetry-staging.<dominio>`, `stats-staging.<dominio>` | ídem en staging |
+| `jenkins.<dominio>` | Jenkins (login obligatorio) |
+
+La app estable y las betas envían a prod. Los builds de desarrollo envían a staging o tienen el envío
+desactivado. La URL se fija en tiempo de build.
+
+**Reparto entre GitHub Actions y Jenkins (ADR-20).** Actions ya corre la CI y tiene los runners: hace los
+tests y construye las imágenes. Jenkins solo despliega.
+
+```
+merge a main ──► Actions: CI + build de imágenes ──► GHCR :sha-<commit> ──► Jenkins: deploy staging (automático)
+tag telemetry-api-vX.Y.Z / stats-web-vX.Y.Z
+             ──► Actions: build ──► GHCR :X.Y.Z ──► Jenkins: deploy prod (con aprobación manual)
+```
+
+Actions dispara a Jenkins **después** de publicar la imagen, con su API remota (`buildWithParameters`:
+componente, tag de imagen, entorno), usando un token guardado en los secrets del repo. Así Jenkins nunca intenta
+desplegar una imagen que todavía no existe.
+
+**Jenkins (ADR-21).**
+
+- Corre en el mismo VPS como contenedor (`jenkins/jenkins:lts`) con heap limitado. Requiere un VPS de al menos
+  4 GB de RAM. Si el VPS se cae, se cae también Jenkins: para recuperarlo hay un procedimiento manual
+  documentado (`docker compose up` con la última versión desplegada).
+- Configuración como código: `infra/jenkins/` con `plugins.txt`, JCasC (`jenkins.yaml`) y el `Jenkinsfile`
+  del pipeline de deploy. Recrear Jenkins desde cero no requiere tocar la interfaz.
+- Jenkins **no monta el socket de Docker**. Despliega por SSH con un usuario `deploy` del host (que sí está en
+  el grupo `docker`), con la clave guardada en las credenciales de Jenkins.
+- Credenciales en Jenkins: token de lectura de GHCR, clave SSH, contraseñas de Postgres y secreto compartido
+  `stats-web` ↔ `telemetry-api`. Se escriben en el host como archivos `.env` con permisos `600` en cada deploy.
+
+**Pipeline de deploy** (`infra/jenkins/Jenkinsfile`, parámetros: componente, tag de imagen, entorno):
+
+```
+1. Validar parámetros (tag existente en GHCR, entorno válido)
+2. Aprobación manual                      (solo prod: step `input`)
+3. Backup: pg_dump del entorno            (antes de migrar)
+4. Pull de la imagen
+5. Migraciones: contenedor efímero `telemetry-api migrate` (Drizzle)
+6. docker compose up -d del componente
+7. Smoke test: /health interno; en staging, además, un POST de un reporte de prueba
+8. Registrar la versión desplegada en el host (deployed-versions.json)
+   Si falla 5–7 → rollback: volver al tag anterior registrado (y restaurar el backup si la migración llegó a correr)
+```
+
+**Backups.** `pg_dump` diario de prod (además del previo a cada deploy), con rotación, guardado en un volumen
+y, de ser posible, copiado fuera del VPS.
