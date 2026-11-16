@@ -373,3 +373,4 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-12 | ¿Cómo se exponen los datos? | Una página pública con agregados. La API de lectura es privada: solo el servidor de la página habla con ella. |
 | D-13 | ¿Cómo se versiona? | SemVer con release-please: una versión para la app de escritorio y otras propias para cada servicio de telemetría; canales stable y beta. Ver ARCHITECTURE.md §16.1. |
 | D-14 | ¿Cómo se despliega la telemetría? | Jenkins en el mismo VPS, solo para desplegar: staging automático en cada merge a `main` y prod con aprobación al crear un tag. GitHub Actions sigue con la CI, los instaladores y las imágenes. Ver ARCHITECTURE.md §19.6. |
+| D-15 | ¿La app envía errores o métricas de rendimiento? | No: la telemetría es solo de uso. La observabilidad técnica se limita al servidor propio (uptime, logs, alertas). Ver ARCHITECTURE.md §19.7. |
