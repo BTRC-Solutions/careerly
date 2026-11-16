@@ -263,6 +263,11 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 **Origen y reversión en el perfil (RF-PROF-07, RF-TAIL-06):** todo elemento creado desde un gap guarda
 `origin = GAP_ANSWER` y `originSessionId`. "Deshacer" borra esos elementos (o restaura el texto anterior, si se
 modificó uno existente, para lo cual se guarda un registro de cambios mínimo por sesión).
+Implementado en el paso 2.6: la tabla `profile_changes` guarda cada alta (`CREATE`) y cada cambio (`UPDATE`,
+solo con los campos tocados, su valor anterior y el nuevo). `ProfileChangesService`, la API pública del
+módulo `profile` para `tailoring`, escribe desde los gaps y deshace la sesión entera o cambio por cambio. La
+función pura `planRevert` decide qué hacer: borra lo creado (lo más nuevo primero) y devuelve cada campo a su
+valor anterior, salvo que el usuario lo haya editado después de la sesión: en ese caso se respeta la edición.
 
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.

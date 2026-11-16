@@ -50,6 +50,13 @@
       "when": 1794852942329,
       "tag": "0006_ai_generations",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794860816861,
+      "tag": "0007_profile_changes",
+      "breakpoints": true
     }
   ]
 }

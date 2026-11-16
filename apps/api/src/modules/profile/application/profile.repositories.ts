@@ -7,18 +7,25 @@ import type {
   Position,
   Project,
 } from '@careerly/contracts';
+import type { ProfileChange } from '../domain/profile-changes.js';
 
 /*
  * Persistence ports of the profile module. Declared as abstract classes so they work as Nest DI tokens.
  * Writes that touch several rows (an element and its tool links) are atomic.
  */
 
-/** Fields every new profile element is created with (RF-PROF-07). */
-export interface NewElement {
-  id: string;
-  /** Always `MANUAL` from the HTTP API for now; `GAP_ANSWER` arrives with tailoring (F5/F2.6). */
+/** Where a new element comes from (RF-PROF-07): `GAP_ANSWER` carries its tailoring session. */
+export interface ElementOrigin {
   origin: 'MANUAL' | 'IMPORT' | 'GAP_ANSWER';
   originSessionId: string | null;
+}
+
+/** Elements created through the profile HTTP API. */
+export const MANUAL_ORIGIN: ElementOrigin = { origin: 'MANUAL', originSessionId: null };
+
+/** Fields every new profile element is created with (RF-PROF-07). */
+export interface NewElement extends ElementOrigin {
+  id: string;
   now: string;
 }
 
@@ -124,4 +131,12 @@ export abstract class SimpleSectionRepository {
     now: string,
   ): Promise<void>;
   abstract delete(section: SimpleSection, id: string): Promise<boolean>;
+}
+
+/** Change log of the tailoring sessions (RF-PROF-07, RF-TAIL-06). */
+export abstract class ProfileChangeRepository {
+  abstract insert(change: ProfileChange): Promise<void>;
+  /** The session's changes, oldest first. */
+  abstract listBySession(sessionId: string): Promise<ProfileChange[]>;
+  abstract markReverted(ids: string[], at: string): Promise<void>;
 }

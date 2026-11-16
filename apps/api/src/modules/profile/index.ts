@@ -3,3 +3,5 @@ export { ProfileModule } from './profile.module.js';
 export { ToolCatalogService } from './application/tool-catalog.service.js';
 /** Read access to the whole master profile (tailoring reads it through this service). */
 export { ProfileService } from './application/profile.service.js';
+/** Profile writes from gap answers, logged per tailoring session so they can be undone. */
+export { ProfileChangesService } from './application/profile-changes.service.js';

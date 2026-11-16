@@ -23,6 +23,7 @@ import {
 } from '../domain/profile-rules.js';
 import {
   ExperienceRepository,
+  MANUAL_ORIGIN,
   PersonalInfoRepository,
   type SimpleSection,
   SimpleSectionRepository,
@@ -135,11 +136,7 @@ export class ProfileService {
     fields: SimpleSectionTypes[S]['fields'],
   ): Promise<SectionItem<S>> {
     const id = randomUUID();
-    await this.sections.insert(
-      section,
-      { id, origin: 'MANUAL', originSessionId: null, now: now() },
-      fields,
-    );
+    await this.sections.insert(section, { id, ...MANUAL_ORIGIN, now: now() }, fields);
     return this.get(section, id);
   }
 
