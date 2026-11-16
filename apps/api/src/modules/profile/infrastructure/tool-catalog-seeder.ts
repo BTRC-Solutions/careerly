@@ -104,6 +104,12 @@ export class ToolCatalogSeeder implements OnModuleInit {
   constructor(private readonly database: DatabaseService) {}
 
   onModuleInit() {
+    this.sync();
+    // A restored backup may predate the current catalog; a wiped database has none.
+    this.database.onReplaced(() => this.sync());
+  }
+
+  private sync() {
     const result = syncToolCatalog(this.database.connection, loadToolCatalogSeed());
     if (result.inserted + result.adopted + result.updated + result.aliasesAdded > 0) {
       this.logger.log(

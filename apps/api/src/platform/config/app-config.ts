@@ -24,6 +24,8 @@ export interface AppConfig {
   /** Root folder for all local data (database, files, backups, logs). */
   dataDir: string;
   databaseFile: string;
+  /** Generated files (CV and guide PDFs), included in backups. */
+  filesDir: string;
   backupsDir: string;
   logsDir: string;
   migrationsDir: string;
@@ -69,6 +71,7 @@ export function loadConfig(
   return {
     dataDir,
     databaseFile: path.join(dataDir, 'careerly.db'),
+    filesDir: path.join(dataDir, 'files'),
     backupsDir: path.join(dataDir, 'backups'),
     logsDir: path.join(dataDir, 'logs'),
     migrationsDir: path.resolve(
