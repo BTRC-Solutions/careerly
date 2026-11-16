@@ -18,6 +18,7 @@ const EnvSchema = z.object({
   CAREERLY_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   CAREERLY_LOG_TO_STDOUT: booleanString,
   CAREERLY_MIGRATIONS_DIR: z.string().min(1).optional(),
+  CAREERLY_AI_BASE_URL: z.url().default('https://api.anthropic.com'),
 });
 
 export interface AppConfig {
@@ -38,6 +39,8 @@ export interface AppConfig {
   appVersion: string;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   logToStdout: boolean;
+  /** Base URL of the AI provider's API. Only overridden by tests (a local fake provider). */
+  aiBaseUrl: string;
 }
 
 export class ConfigError extends Error {
@@ -84,5 +87,6 @@ export function loadConfig(
     appVersion: parsed.CAREERLY_APP_VERSION,
     logLevel: parsed.CAREERLY_LOG_LEVEL,
     logToStdout: parsed.CAREERLY_LOG_TO_STDOUT,
+    aiBaseUrl: parsed.CAREERLY_AI_BASE_URL.replace(/\/+$/, ''),
   };
 }

@@ -6,6 +6,8 @@ import { APP_CONFIG, type AppConfig } from './platform/config/app-config.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { HealthController } from './platform/health/health.controller.js';
 import { ApiExceptionFilter } from './platform/http/api-exception.filter.js';
+import type { AiKeyStore } from './platform/secrets/ai-key-store.js';
+import { SecretsModule } from './platform/secrets/secrets.module.js';
 
 /** Makes the validated configuration injectable everywhere. */
 @Global()
@@ -22,10 +24,16 @@ class ConfigModule {
 
 @Module({})
 export class AppModule {
-  static register(config: AppConfig): DynamicModule {
+  static register(config: AppConfig, aiKeyStore: AiKeyStore): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.register(config), DatabaseModule, SettingsModule, ProfileModule],
+      imports: [
+        ConfigModule.register(config),
+        SecretsModule.register(aiKeyStore),
+        DatabaseModule,
+        SettingsModule,
+        ProfileModule,
+      ],
       controllers: [HealthController],
       providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }],
     };

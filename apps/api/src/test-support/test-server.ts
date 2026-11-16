@@ -1,6 +1,7 @@
 import 'reflect-metadata';
-import { pino } from 'pino';
+import { type Logger, pino } from 'pino';
 import { type AppConfig, loadConfig } from '../platform/config/app-config.js';
+import type { AiKeyStore } from '../platform/secrets/ai-key-store.js';
 import { startServer, type RunningServer } from '../server.js';
 import { MIGRATIONS_DIR } from './temp-dir.js';
 
@@ -14,9 +15,15 @@ export function testConfig(dataDir: string, env: NodeJS.ProcessEnv = {}): AppCon
   );
 }
 
-/** Starts the real API on a free port with silent logs. Call `close()` in `afterEach`. */
-export function startTestServer(config: AppConfig): Promise<RunningServer> {
-  return startServer(config, pino({ level: 'silent' }));
+/**
+ * Starts the real API on a free port. Call `close()` in `afterEach`.
+ * Logs are silent unless a `logger` is given; `aiKeyStore` lets a test play Electron's main process.
+ */
+export function startTestServer(
+  config: AppConfig,
+  options: { aiKeyStore?: AiKeyStore; logger?: Logger } = {},
+): Promise<RunningServer> {
+  return startServer(config, options.logger ?? pino({ level: 'silent' }), options.aiKeyStore);
 }
 
 export type { RunningServer };

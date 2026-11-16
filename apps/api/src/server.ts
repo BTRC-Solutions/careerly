@@ -6,6 +6,7 @@ import { AppModule } from './app.module.js';
 import type { AppConfig } from './platform/config/app-config.js';
 import { localAccessMiddleware, type ServerAddress } from './platform/http/local-access.js';
 import { NestPinoLogger } from './platform/logging/logger.js';
+import { AiKeyStore } from './platform/secrets/ai-key-store.js';
 
 export interface RunningServer {
   app: INestApplication;
@@ -13,9 +14,16 @@ export interface RunningServer {
   close(): Promise<void>;
 }
 
-/** Creates the Nest app, applies the local security rules and starts listening on 127.0.0.1. */
-export async function startServer(config: AppConfig, logger: Logger): Promise<RunningServer> {
-  const app = await NestFactory.create(AppModule.register(config), {
+/**
+ * Creates the Nest app, applies the local security rules and starts listening on 127.0.0.1.
+ * `aiKeyStore` is owned by the caller, which fills it from Electron's messages.
+ */
+export async function startServer(
+  config: AppConfig,
+  logger: Logger,
+  aiKeyStore: AiKeyStore = new AiKeyStore(),
+): Promise<RunningServer> {
+  const app = await NestFactory.create(AppModule.register(config, aiKeyStore), {
     logger: new NestPinoLogger(logger),
   });
 

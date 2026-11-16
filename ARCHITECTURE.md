@@ -404,7 +404,7 @@ Todas las rutas exigen el token de sesión (RNF-19).
 ```
 GET    /settings | PATCH /settings
 GET    /settings/ai-usage?from=&to=
-POST   /settings/ai-key/verify                     # la key la gestiona main; el backend solo prueba la recibida
+POST   /settings/ai-key/verify                     # prueba la key en memoria (enviada por main) o una candidata del body; nunca la guarda
 POST   /backups | POST /backups/restore | DELETE /data
 
 GET    /profile
