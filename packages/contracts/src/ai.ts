@@ -73,3 +73,54 @@ export const AiGenerationStatusSchema = z.enum([
   'FAILED',
 ]);
 export type AiGenerationStatus = z.infer<typeof AiGenerationStatusSchema>;
+
+// ---------------------------------------------------------------------------
+// Model choice (RF-CONF-09, ADR-23)
+// ---------------------------------------------------------------------------
+
+/** Small model for extraction and scoring, large model for writing (ARCHITECTURE §7.3). */
+export const ModelTierSchema = z.enum(['small', 'large']);
+export type ModelTier = z.infer<typeof ModelTierSchema>;
+
+/** A provider's model id, e.g. `gemini-3.5-flash-lite`. */
+export const AiModelIdSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,79}$/, 'Invalid model id.');
+
+/** A model the active key can use, with what Careerly knows about it. */
+export const AiModelOptionSchema = z.object({
+  id: AiModelIdSchema,
+  /** `false` for a chosen model the provider no longer offers (calls fall back to the defaults). */
+  available: z.boolean(),
+  /** USD per million tokens; `null` when the price is not known. */
+  inputUsdPerMTok: z.number().nullable(),
+  outputUsdPerMTok: z.number().nullable(),
+  /** Tiers this model is recommended for. */
+  recommendedFor: z.array(ModelTierSchema),
+  /** Tried with Careerly's structured output. Models outside the catalog are not. */
+  tested: z.boolean(),
+});
+export type AiModelOption = z.infer<typeof AiModelOptionSchema>;
+
+export const AiModelTierSchema = z.object({
+  /** The user's choice, or `null` to use the defaults. */
+  selected: AiModelIdSchema.nullable(),
+  /** Default models in order of preference; also the fallbacks of the chosen one. */
+  defaults: z.array(AiModelIdSchema),
+});
+export type AiModelTier = z.infer<typeof AiModelTierSchema>;
+
+/** `GET /settings/ai-models`: models of the active provider and the choice per tier. */
+export const AiModelsResponseSchema = z.object({
+  provider: AiProviderSchema,
+  tiers: z.record(ModelTierSchema, AiModelTierSchema),
+  models: z.array(AiModelOptionSchema),
+});
+export type AiModelsResponse = z.infer<typeof AiModelsResponseSchema>;
+
+/**
+ * `PUT /settings/ai-models`: chooses the model of a tier (tested with a minimal call before saving)
+ * or, with `model: null`, goes back to the defaults.
+ */
+export const UpdateAiModelRequestSchema = z
+  .object({ tier: ModelTierSchema, model: AiModelIdSchema.nullable() })
+  .strict();
+export type UpdateAiModelRequest = z.infer<typeof UpdateAiModelRequestSchema>;

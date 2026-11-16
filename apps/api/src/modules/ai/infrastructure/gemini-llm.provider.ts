@@ -10,11 +10,12 @@ import {
 import { LlmProvider } from '../application/llm.ports.js';
 import type {
   LlmPart,
+  ModelFacts,
   ModelTier,
   ProviderRequest,
   ProviderResponse,
 } from '../application/llm.types.js';
-import { estimateGeminiCostUsd, hasGeminiPrice } from './gemini-pricing.js';
+import { estimateGeminiCostUsd, geminiModelFacts, isGeminiTextModel } from './gemini-models.js';
 
 /** Finish reasons that mean the model refused or was stopped, not that it answered. */
 const BLOCKING_FINISH_REASONS = new Set([
@@ -64,14 +65,18 @@ export class GeminiLlmProvider extends LlmProvider {
   }
 
   estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number {
-    if (!hasGeminiPrice(model) && !this.warnedUnpriced.has(model)) {
+    if (!geminiModelFacts(model) && !this.warnedUnpriced.has(model)) {
       this.warnedUnpriced.add(model);
       this.logger.warn(`No price known for ${model}: its cost is recorded as 0.`);
     }
     return estimateGeminiCostUsd(model, inputTokens, outputTokens);
   }
 
-  /** Models that support `generateContent` for this key, without the `models/` prefix. */
+  describeModel(model: string): ModelFacts | undefined {
+    return geminiModelFacts(model);
+  }
+
+  /** Text models that support `generateContent` for this key, without the `models/` prefix. */
   async listModels(apiKey: string): Promise<string[]> {
     const names: string[] = [];
     let pageToken: string | undefined;
@@ -92,8 +97,9 @@ export class GeminiLlmProvider extends LlmProvider {
         nextPageToken?: string;
       };
       for (const model of body.models ?? []) {
-        if (model.name && model.supportedGenerationMethods?.includes('generateContent')) {
-          names.push(model.name.replace(/^models\//, ''));
+        const name = model.name?.replace(/^models\//, '');
+        if (name && model.supportedGenerationMethods?.includes('generateContent')) {
+          if (isGeminiTextModel(name)) names.push(name);
         }
       }
       pageToken = body.nextPageToken;

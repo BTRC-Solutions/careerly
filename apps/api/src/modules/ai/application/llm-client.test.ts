@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { AiCredentialsStore } from './ai-credentials.store.js';
+import { AiModelChoiceStore } from './ai-model-choice.store.js';
 import { LlmClient } from './llm-client.js';
 import {
   AiInvalidOutputError,
@@ -34,6 +35,9 @@ class FakeProvider extends LlmProvider {
   estimateCostUsd(_model: string, input: number, output: number) {
     return (input + output) / 1000;
   }
+  describeModel() {
+    return undefined;
+  }
   listModels() {
     return Promise.resolve(['fake-small', 'fake-large']);
   }
@@ -63,7 +67,8 @@ function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | n
     }
   })();
   const generations = new MemoryGenerations();
-  const client = new LlmClient(credentials, registry, generations);
+  const choices = new AiModelChoiceStore();
+  const client = new LlmClient(credentials, registry, generations, choices);
   const call = () =>
     client.generateStructured({
       task: 'smoke-test',
@@ -72,7 +77,7 @@ function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | n
       input: [{ type: 'text', text: 'Extract the title.' }],
       schema: Schema,
     });
-  return { client, fake, generations, call };
+  return { client, fake, generations, choices, call };
 }
 
 describe('LlmClient', () => {
@@ -202,5 +207,42 @@ describe('LlmClient', () => {
 
     expect(setup([]).client.isAvailable()).toBe(true);
     expect(none.generations.entries).toHaveLength(0);
+  });
+  it("uses the user's model first and keeps the defaults as fallbacks (RF-CONF-09)", async () => {
+    const { fake, choices, call } = setup([
+      new AiModelUnavailableError('chosen-model', 'not found'),
+      '{"title":"Engineer","years":5}',
+    ]);
+    choices.useSource((provider) =>
+      Promise.resolve(provider === 'gemini' ? { small: 'chosen-model' } : {}),
+    );
+
+    const { usage } = await call();
+
+    expect(fake.requests.map((request) => request.model)).toEqual(['chosen-model', 'fake-small']);
+    expect(usage.model).toBe('fake-small');
+  });
+
+  it('does not repeat a chosen model that is also a default', async () => {
+    const { fake, choices, call } = setup([
+      new AiModelUnavailableError('fake-small-fallback', 'overloaded'),
+      new AiModelUnavailableError('fake-small', 'overloaded'),
+    ]);
+    choices.useSource(() => Promise.resolve({ small: 'fake-small-fallback' }));
+
+    await expect(call()).rejects.toBeInstanceOf(AiModelUnavailableError);
+    expect(fake.requests.map((request) => request.model)).toEqual([
+      'fake-small-fallback',
+      'fake-small',
+    ]);
+  });
+
+  it('uses the defaults when the choice cannot be read', async () => {
+    const { fake, choices, call } = setup(['{"title":"Engineer","years":5}']);
+    choices.useSource(() => Promise.reject(new Error('database is locked')));
+
+    await call();
+
+    expect(fake.requests[0]!.model).toBe('fake-small');
   });
 });

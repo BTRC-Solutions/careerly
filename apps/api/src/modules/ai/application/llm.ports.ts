@@ -1,5 +1,5 @@
 import type { AiGenerationStatus, AiProvider, AiTask } from '@careerly/contracts';
-import type { ModelTier, ProviderRequest, ProviderResponse } from './llm.types.js';
+import type { ModelFacts, ModelTier, ProviderRequest, ProviderResponse } from './llm.types.js';
 
 /**
  * Port: one AI provider (ADR-23). Adapters translate the request to the provider's API and map its
@@ -8,14 +8,16 @@ import type { ModelTier, ProviderRequest, ProviderResponse } from './llm.types.j
 export abstract class LlmProvider {
   abstract readonly id: AiProvider;
   /**
-   * Models for a tier, in order of preference (defaults in code, overridable by config). Later ones
-   * are fallbacks when a model is retired or overloaded.
+   * Default models for a tier, in order of preference (defaults in code, overridable by config).
+   * Later ones are fallbacks when a model is retired or overloaded; the user's choice goes first.
    */
   abstract modelsFor(tier: ModelTier): string[];
   /** Estimated cost from the provider's price table; 0 if the model's price is unknown. */
   abstract estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number;
+  /** Price, recommendation and testing from the catalog in code; `undefined` if unknown. */
+  abstract describeModel(model: string): ModelFacts | undefined;
   abstract generateJson(request: ProviderRequest): Promise<ProviderResponse>;
-  /** Models this key can use for generation (diagnostics; model choice is RF-CONF-09). */
+  /** Text models this key can use for generation (RF-CONF-09). */
   abstract listModels(apiKey: string): Promise<string[]>;
 }
 

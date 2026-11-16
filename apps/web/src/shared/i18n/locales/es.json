@@ -131,6 +131,41 @@
       "deleteConfirmTitle": "¿Borrar todos tus datos?",
       "deleteConfirmDescription": "Se borran tu perfil maestro, postulaciones, CVs generados, todas las copias de seguridad y tus API keys. No se puede deshacer. Si querés conservar algo, exportá una copia antes.",
       "deleteConfirm": "Sí, borrar todo"
+    },
+    "aiModels": {
+      "title": "Modelos de IA",
+      "description": "Elegí qué modelo usar en cada tarea. Si el elegido deja de existir, Careerly vuelve a los modelos por defecto.",
+      "loading": "Buscando los modelos disponibles para tu key…",
+      "retry": "Reintentar",
+      "tiers": {
+        "small": {
+          "label": "Modelo chico",
+          "hint": "Para extraer datos y puntuar (leer un CV, analizar una oferta). Conviene uno rápido y barato."
+        },
+        "large": {
+          "label": "Modelo grande",
+          "hint": "Para redactar el CV adaptado. Conviene el de mejor calidad."
+        }
+      },
+      "defaultOption": "Por defecto ({{model}})",
+      "recommended": "recomendado",
+      "price": "{{price}} por millón de tokens",
+      "unknownModel": "sin precio conocido, no probado",
+      "unavailable": "ya no disponible",
+      "selectedUnavailable": "El modelo elegido ({{model}}) ya no está disponible: se usan los modelos por defecto.",
+      "testAndSave": "Probar y guardar",
+      "useDefaults": "Volver al modelo por defecto",
+      "testing": "Probando el modelo…",
+      "saved": "Listo: las próximas llamadas usan {{model}}.",
+      "savedDefaults": "Listo: se usa el modelo por defecto ({{model}}).",
+      "errors": {
+        "AI_NOT_CONFIGURED": "Configurá una API key para elegir los modelos.",
+        "AI_KEY_REJECTED": "El proveedor rechazó la API key. Revisala en la sección de arriba.",
+        "AI_RATE_LIMITED": "Se alcanzó el límite de uso del proveedor. Probá de nuevo en unos minutos.",
+        "AI_UNAVAILABLE": "No se pudo conectar con el proveedor de IA. Revisá tu conexión.",
+        "AI_MODEL_UNAVAILABLE": "El modelo no está disponible para tu key (no existe o está saturado). No se guardó.",
+        "AI_FAILED": "El modelo no respondió con el formato que Careerly necesita. No se guardó."
+      }
     }
   },
   "common": {

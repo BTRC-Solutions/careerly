@@ -7,6 +7,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '../../../shared/api/client';
 import { getDesktopActions } from '../../../shared/desktop';
+import { AI_MODELS_QUERY_KEY } from './useAiModels';
 import { SETTINGS_QUERY_KEY } from './useSettings';
 
 /*
@@ -35,13 +36,17 @@ export function useVerifyAiKey() {
   });
 }
 
-/** Refreshes both views of the key state: main's (saved keys) and the backend's (`GET /settings`). */
+/**
+ * Refreshes both views of the key state, main's (saved keys) and the backend's (`GET /settings`),
+ * and the models, which depend on the active key.
+ */
 function useRefreshKeyState() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: AI_KEYS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: AI_MODELS_QUERY_KEY }),
     ]);
 }
 
