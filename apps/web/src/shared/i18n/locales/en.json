@@ -79,6 +79,10 @@
       "storedUnreachable": "{{provider}} could not be reached. Try again later.",
       "storedMissing": "The local service has not received the key yet. Try again in a few seconds.",
       "actionError": "The action could not be completed: {{message}}"
+    },
+    "about": {
+      "title": "About Careerly",
+      "version": "Version"
     }
   },
   "common": {
