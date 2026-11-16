@@ -1,4 +1,4 @@
-import type { AiProvider, ModelTier } from '@careerly/contracts';
+import type { LlmProviderId, ModelTier } from '@careerly/contracts';
 
 /** A piece of input for the model: text, or a document the provider reads natively (e.g. a PDF CV). */
 export type LlmPart =
@@ -53,7 +53,7 @@ export interface ProviderResponse {
 
 /** Usage of a successful structured call, summed over its attempts. */
 export interface LlmUsage {
-  provider: AiProvider;
+  provider: LlmProviderId;
   model: string;
   attempts: number;
   inputTokens: number;

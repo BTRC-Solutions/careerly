@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { ActiveAiCredentials } from './application/active-ai-credentials.js';
 import { AiCredentialsStore } from './application/ai-credentials.store.js';
 import { AiModelChoiceStore } from './application/ai-model-choice.store.js';
 import { AiModelsService } from './application/ai-models.service.js';
@@ -8,6 +9,10 @@ import { AiSmokeTestService } from './application/smoke-test.service.js';
 import { InternalAiCredentialsController } from './http/internal-ai-credentials.controller.js';
 import { InternalAiSmokeController } from './http/internal-ai-smoke.controller.js';
 import { DrizzleAiGenerationRepository } from './infrastructure/drizzle-ai-generation.repository.js';
+import { ClaudeCodeProbe } from './application/claude-code.port.js';
+import { AnthropicLlmProvider } from './infrastructure/anthropic-llm.provider.js';
+import { ClaudeCodeCli } from './infrastructure/claude-code-cli.js';
+import { ClaudeCodeLlmProvider } from './infrastructure/claude-code-llm.provider.js';
 import { GeminiLlmProvider } from './infrastructure/gemini-llm.provider.js';
 import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registry.js';
 
@@ -22,14 +27,26 @@ import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registr
   controllers: [InternalAiCredentialsController, InternalAiSmokeController],
   providers: [
     AiCredentialsStore,
+    ActiveAiCredentials,
     AiModelChoiceStore,
     AiModelsService,
     LlmClient,
     AiSmokeTestService,
     GeminiLlmProvider,
+    AnthropicLlmProvider,
+    ClaudeCodeCli,
+    ClaudeCodeLlmProvider,
+    { provide: ClaudeCodeProbe, useExisting: ClaudeCodeCli },
     { provide: LlmProviderRegistry, useClass: StaticLlmProviderRegistry },
     { provide: AiGenerationRepository, useClass: DrizzleAiGenerationRepository },
   ],
-  exports: [AiCredentialsStore, AiModelChoiceStore, AiModelsService, LlmClient],
+  exports: [
+    AiCredentialsStore,
+    ActiveAiCredentials,
+    ClaudeCodeProbe,
+    AiModelChoiceStore,
+    AiModelsService,
+    LlmClient,
+  ],
 })
 export class AiModule {}

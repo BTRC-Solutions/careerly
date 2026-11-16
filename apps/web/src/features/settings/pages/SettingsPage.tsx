@@ -4,10 +4,12 @@ import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
+import { useClaudeCode } from '../api/useClaudeCode';
 import { useSettings } from '../api/useSettings';
 import { AboutCard } from '../components/AboutCard';
 import { AiKeyCard } from '../components/AiKeyCard';
 import { AiModelsCard } from '../components/AiModelsCard';
+import { ClaudeCodeCard } from '../components/ClaudeCodeCard';
 import { BackupsCard } from '../components/BackupsCard';
 import { DataFolderCard } from '../components/DataFolderCard';
 import { LanguageSettingsCard } from '../components/LanguageSettingsCard';
@@ -15,6 +17,7 @@ import { LanguageSettingsCard } from '../components/LanguageSettingsCard';
 export function SettingsPage() {
   const { t } = useTranslation();
   const settings = useSettings();
+  const claudeCode = useClaudeCode();
 
   return (
     <div className="flex max-w-[45rem] flex-col gap-8">
@@ -39,7 +42,8 @@ export function SettingsPage() {
         <>
           <LanguageSettingsCard value={settings.data.preferences.uiLanguage} />
           <AiKeyCard backendStatus={settings.data.aiKey} />
-          {settings.data.aiKey.configured && <AiModelsCard />}
+          <ClaudeCodeCard />
+          {(settings.data.aiKey.configured || claudeCode.data?.enabled) && <AiModelsCard />}
           <DataFolderCard dataDir={settings.data.dataDir} />
           <BackupsCard />
           <PrivacyCard />

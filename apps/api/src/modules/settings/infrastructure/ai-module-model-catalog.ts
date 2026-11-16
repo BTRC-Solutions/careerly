@@ -1,4 +1,4 @@
-import type { AiModelsResponse, AiProvider } from '@careerly/contracts';
+import type { AiModelsResponse, LlmProviderId } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import {
   AiError,
@@ -28,9 +28,9 @@ export class AiModuleModelCatalog extends AiModelCatalog {
     super();
   }
 
-  activeProvider(): AiProvider {
+  async activeProvider(): Promise<LlmProviderId> {
     try {
-      return this.models.activeProvider();
+      return await this.models.activeProvider();
     } catch (error) {
       throw toModelError(error);
     }
@@ -52,7 +52,7 @@ export class AiModuleModelCatalog extends AiModelCatalog {
     }
   }
 
-  useChoiceSource(source: (provider: AiProvider) => Promise<StoredModelChoice>): void {
+  useChoiceSource(source: (provider: LlmProviderId) => Promise<StoredModelChoice>): void {
     this.choices.useSource(source);
   }
 }

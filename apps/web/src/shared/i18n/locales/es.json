@@ -166,6 +166,23 @@
         "AI_MODEL_UNAVAILABLE": "El modelo no está disponible para tu key (no existe o está saturado). No se guardó.",
         "AI_FAILED": "El modelo no respondió con el formato que Careerly necesita. No se guardó."
       }
+    },
+    "claudeCode": {
+      "title": "Claude con tu suscripción",
+      "experimental": "Experimental",
+      "description": "Usa el Claude Code instalado en esta computadora, con tu plan de Claude, en lugar de una API key. Es solo para uso personal: consume los límites de tu plan y cada llamada tarda unos segundos más, porque arranca Claude Code.",
+      "checking": "Revisando Claude Code…",
+      "loadError": "No se pudo revisar Claude Code: {{message}}",
+      "ready": "Claude Code {{version}} instalado, con sesión iniciada ({{authMethod}}).",
+      "problems": {
+        "NOT_INSTALLED": "No se encontró Claude Code en esta computadora. Instalalo desde claude.com/claude-code y volvé a revisar.",
+        "NOT_LOGGED_IN": "Claude Code {{version}} está instalado pero sin sesión iniciada. Abrí una terminal, ejecutá este comando, iniciá sesión con tu cuenta de Claude y volvé a revisar:",
+        "CHECK_FAILED": "Claude Code no respondió a la revisión. Probá de nuevo en un rato."
+      },
+      "use": "Usar Claude Code para la IA",
+      "enabledNote": "Mientras esté activo, la IA de Careerly usa Claude Code aunque tengas una API key guardada.",
+      "safety": "Corre aislado: sin herramientas salvo leer el archivo que se analiza, sin tus servidores MCP ni tu configuración, y sin guardar la sesión.",
+      "recheck": "Volver a revisar"
     }
   },
   "common": {
@@ -432,7 +449,8 @@
         "languages_other": "{{count}} idiomas"
       },
       "viewProfile": "Ver mi perfil",
-      "another": "Importar otro CV"
+      "another": "Importar otro CV",
+      "privacyClaudeCode": "El archivo lo lee Claude Code en esta computadora, con tu plan de Claude, en una carpeta temporal que se borra al terminar. Careerly no lo guarda: queda únicamente lo que confirmes."
     }
   },
   "onboarding": {

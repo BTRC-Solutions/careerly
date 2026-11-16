@@ -14,6 +14,7 @@ import { ChevronLeftIcon, UploadIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { useAiKeysStatus } from '../../settings/api/useAiKeys';
+import { useClaudeCode } from '../../settings/api/useClaudeCode';
 import { useConfirmCvImport, useReadCv } from '../api/cv-import-api';
 import { CvImportReview, type UpdateReview } from '../components/CvImportReview';
 import { WithProfile } from '../components/ProfileLayout';
@@ -106,12 +107,19 @@ function PickStep({
   const inputId = useId();
   const readCv = useReadCv();
   const aiKeys = useAiKeysStatus();
+  const claudeCode = useClaudeCode();
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  // Claude Code with the subscription (ADR-24) needs no API key.
+  const usesClaudeCode = claudeCode.data?.enabled === true;
   // Inside the desktop app we know up front whether there is a key; in the browser the API says.
-  const noAiKey = aiKeys.data !== undefined && aiKeys.data.activeProvider === null;
+  const noAiKey =
+    aiKeys.data !== undefined &&
+    aiKeys.data.activeProvider === null &&
+    !usesClaudeCode &&
+    !claudeCode.isPending;
   const hasContent =
     profile.positions.length + profile.projects.length + profile.education.length > 0;
 
@@ -213,7 +221,7 @@ function PickStep({
       )}
 
       <div className="flex flex-col gap-2 text-sm text-steel-text">
-        <p>{t('profile.import.privacy')}</p>
+        <p>{t(usesClaudeCode ? 'profile.import.privacyClaudeCode' : 'profile.import.privacy')}</p>
         {hasContent && <p>{t('profile.import.addsToProfile')}</p>}
       </div>
     </Card>

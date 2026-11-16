@@ -1,4 +1,4 @@
-import type { AiModelsResponse, AiProvider, ModelTier } from '@careerly/contracts';
+import type { AiModelsResponse, LlmProviderId, ModelTier } from '@careerly/contracts';
 
 /** Why listing or trying models failed, as reported to the interface (it is the API error code). */
 export type AiModelFailure =
@@ -27,10 +27,10 @@ export type StoredModelChoice = Partial<Record<ModelTier, string>>;
  * Declared as an abstract class so it can be used as a Nest DI token.
  */
 export abstract class AiModelCatalog {
-  abstract activeProvider(): AiProvider;
+  abstract activeProvider(): Promise<LlmProviderId>;
   abstract overview(): Promise<AiModelsResponse>;
   /** One minimal call with `model` only; resolves if it answered with valid structured output. */
   abstract tryModel(model: string): Promise<void>;
   /** Where AI calls read the choice from (plugged in once, at startup). */
-  abstract useChoiceSource(source: (provider: AiProvider) => Promise<StoredModelChoice>): void;
+  abstract useChoiceSource(source: (provider: LlmProviderId) => Promise<StoredModelChoice>): void;
 }

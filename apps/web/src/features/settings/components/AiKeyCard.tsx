@@ -42,7 +42,7 @@ const PROVIDERS: ProviderInfo[] = [
     id: 'anthropic',
     name: 'Claude (Anthropic)',
     keyUrl: 'https://console.anthropic.com/settings/keys',
-    available: false,
+    available: true,
   },
 ];
 

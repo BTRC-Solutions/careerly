@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { SMOKE_TEST_V1 } from './prompts/smoke-test.v1.js';
-import { AiCredentialsStore } from './ai-credentials.store.js';
+import { ActiveAiCredentials } from './active-ai-credentials.js';
 import { AiError, AiNotConfiguredError, AiProviderNotSupportedError } from './llm-errors.js';
 import { LlmProviderRegistry } from './llm.ports.js';
 import { LlmClient } from './llm-client.js';
@@ -28,13 +28,13 @@ export interface SmokeTestResult {
 export class AiSmokeTestService {
   constructor(
     private readonly llm: LlmClient,
-    private readonly credentials: AiCredentialsStore,
+    private readonly credentials: ActiveAiCredentials,
     private readonly providers: LlmProviderRegistry,
   ) {}
 
   /** Models the active key can use for generation (names only). */
   async availableModels(): Promise<{ provider: string; models: string[] }> {
-    const active = this.credentials.get();
+    const active = await this.credentials.get();
     if (!active) throw new AiNotConfiguredError();
     const provider = this.providers.get(active.provider);
     if (!provider) throw new AiProviderNotSupportedError(active.provider);

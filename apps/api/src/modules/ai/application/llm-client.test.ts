@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { ActiveAiCredentials } from './active-ai-credentials.js';
 import { AiCredentialsStore } from './ai-credentials.store.js';
 import { AiModelChoiceStore } from './ai-model-choice.store.js';
 import { LlmClient } from './llm-client.js';
@@ -68,7 +69,8 @@ function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | n
   })();
   const generations = new MemoryGenerations();
   const choices = new AiModelChoiceStore();
-  const client = new LlmClient(credentials, registry, generations, choices);
+  const active = new ActiveAiCredentials(credentials);
+  const client = new LlmClient(active, registry, generations, choices);
   const call = () =>
     client.generateStructured({
       task: 'smoke-test',
@@ -77,7 +79,7 @@ function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | n
       input: [{ type: 'text', text: 'Extract the title.' }],
       schema: Schema,
     });
-  return { client, fake, generations, choices, call };
+  return { client, active, fake, generations, choices, call };
 }
 
 describe('LlmClient', () => {
@@ -196,16 +198,25 @@ describe('LlmClient', () => {
     expect(fake.requests).toHaveLength(1);
   });
 
+  it('uses Claude Code when its switch is on, even with an API key saved', async () => {
+    const { active, call } = setup([]);
+    active.useClaudeCodeSource(() => Promise.resolve(true));
+    // No adapter for claude-code in this fake registry: proves the switch decided the provider.
+    await expect(call()).rejects.toBeInstanceOf(AiProviderNotSupportedError);
+    active.useClaudeCodeSource(() => Promise.reject(new Error('settings unreadable')));
+    expect((await active.get())?.provider).toBe('gemini');
+  });
+
   it('fails clearly without a key or with a provider that has no adapter yet', async () => {
     const none = setup([], null);
     await expect(none.call()).rejects.toBeInstanceOf(AiNotConfiguredError);
-    expect(none.client.isAvailable()).toBe(false);
+    expect(await none.client.isAvailable()).toBe(false);
 
     const claude = setup([], 'anthropic');
     await expect(claude.call()).rejects.toBeInstanceOf(AiProviderNotSupportedError);
-    expect(claude.client.isAvailable()).toBe(false);
+    expect(await claude.client.isAvailable()).toBe(false);
 
-    expect(setup([]).client.isAvailable()).toBe(true);
+    expect(await setup([]).client.isAvailable()).toBe(true);
     expect(none.generations.entries).toHaveLength(0);
   });
   it("uses the user's model first and keeps the defaults as fallbacks (RF-CONF-09)", async () => {
