@@ -5,9 +5,11 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import type { TemplateData } from '@careerly/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+import { PDFDocument } from 'pdf-lib';
 import { APP_CONFIG, type AppConfig } from '../../../platform/config/app-config.js';
 import {
   RenderError,
+  type RenderOutput,
   ResumeRenderer,
   type ResumeTemplate,
 } from '../application/documents.ports.js';
@@ -22,6 +24,9 @@ const MAX_DIAGNOSTICS = 4000;
  * temporary folder holding a copy of the template and `data.json`. That folder is Typst's `--root`, so a
  * template reads nothing else. Only the packaged fonts are available, the process is killed after
  * `renderTimeoutMs`, and the folder is deleted afterwards.
+ *
+ * Pages are counted on the resulting PDF (ADR-07): it works with any template, needs no second compilation
+ * (`typst query`) and counts exactly what the user gets.
  */
 @Injectable()
 export class TypstResumeRenderer extends ResumeRenderer {
@@ -29,14 +34,15 @@ export class TypstResumeRenderer extends ResumeRenderer {
     super();
   }
 
-  async render(template: ResumeTemplate, data: TemplateData): Promise<Uint8Array> {
+  async render(template: ResumeTemplate, data: TemplateData): Promise<RenderOutput> {
     const work = await fs.mkdtemp(path.join(os.tmpdir(), 'careerly-render-'));
     try {
       await fs.cp(template.dir, work, { recursive: true });
       // Data, not code: the template reads this file (RNF-05).
       await fs.writeFile(path.join(work, 'data.json'), JSON.stringify(data));
       await this.compile(work);
-      return new Uint8Array(await fs.readFile(path.join(work, 'resume.pdf')));
+      const pdf = new Uint8Array(await fs.readFile(path.join(work, 'resume.pdf')));
+      return { pdf, pageCount: await countPages(pdf) };
     } finally {
       await fs.rm(work, { recursive: true, force: true });
     }
@@ -71,6 +77,14 @@ export class TypstResumeRenderer extends ResumeRenderer {
     } catch (error) {
       throw toRenderError(error as ExecError, this.config.renderTimeoutMs);
     }
+  }
+}
+
+async function countPages(pdf: Uint8Array): Promise<number> {
+  try {
+    return (await PDFDocument.load(pdf, { updateMetadata: false })).getPageCount();
+  } catch {
+    throw new RenderError('COMPILE_ERROR', 'The renderer produced an unreadable PDF.');
   }
 }
 

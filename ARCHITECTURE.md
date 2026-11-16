@@ -368,9 +368,9 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 ```
 
 - Typst compila un CV en milisegundos, por lo que 10–20 iteraciones son aceptables.
-- **Conteo de páginas:** la plantilla expone la cantidad de páginas como metadata
-  (`#context metadata(counter(page).final())<page-count>`) y se lee con `typst query`, o se cuenta en el PDF
-  resultante. Se elegirá una de las dos en la Fase 3 del roadmap (ADR-07).
+- **Conteo de páginas (ADR-07):** se cuenta en el PDF resultante (pdf-lib), no con `typst query`. Funciona con
+  cualquier plantilla, incluidas las propias, sin pedirles metadata; no compila dos veces y cuenta exactamente
+  lo que recibe el usuario. Cada render devuelve el PDF y su `pageCount`.
 - `page-fitter.ts` es puro: recibe una función `measure(resume) → pageCount` (el puerto), así que se testea
   con un medidor falso.
 
@@ -659,7 +659,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-04 | Perfil maestro solo con afirmaciones; negaciones únicamente en el historial de sesión | Aceptada |
 | ADR-05 | Ajuste de páginas determinístico (render + recorte por score), no delegado al LLM | Aceptada |
 | ADR-06 | SQLite con `node:sqlite` (integrado en Node, sin módulo nativo) + Drizzle ORM vía `sqlite-proxy` (reemplaza PostgreSQL y `better-sqlite3`) | Aceptada (Fase 0) |
-| ADR-07 | Conteo de páginas: `typst query` vs. lectura del PDF | Pendiente (Fase 3) |
+| ADR-07 | Conteo de páginas leyendo el PDF resultante (no `typst query`) | Aceptada (Fase 3) |
 | ADR-08 | Puntuación de relevancia: LLM vs. embeddings (`sqlite-vec`) | Pendiente (post-MVP) |
 | ADR-09 | Requisitos de JD normalizados en tabla (`JobRequirement`) además del JSON | Aceptada (Fase 4) |
 | ADR-10 | Búsqueda web para el research de empresas con la herramienta del proveedor de LLM (D-06) | Aceptada (post-MVP) |

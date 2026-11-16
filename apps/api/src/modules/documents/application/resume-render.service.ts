@@ -8,6 +8,7 @@ export const DEFAULT_TEMPLATE_ID = 'classic';
 
 export interface RenderedResume {
   pdf: Uint8Array;
+  pageCount: number;
   templateId: string;
   templateVersion: number;
 }
@@ -25,7 +26,7 @@ export class ResumeRenderService {
     templateId: string = DEFAULT_TEMPLATE_ID,
   ): Promise<RenderedResume> {
     const template = await this.templates.get(templateId);
-    const pdf = await this.renderer.render(template, toTemplateData(document));
-    return { pdf, templateId: template.id, templateVersion: template.version };
+    const output = await this.renderer.render(template, toTemplateData(document));
+    return { ...output, templateId: template.id, templateVersion: template.version };
   }
 }
