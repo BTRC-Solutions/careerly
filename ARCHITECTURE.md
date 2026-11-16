@@ -321,6 +321,13 @@ devolvió la IA.
   (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7), con valores por defecto por proveedor en
   código y configurables (RF-CONF-09). Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador
   los aplica sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
+- **Claude Code local (ADR-24, opcional):** en lugar de una API key, un adaptador puede usar el `claude`
+  instalado y logueado en la computadora (`claude -p`, salida JSON), con el plan de Claude del usuario. Es
+  experimental y solo para uso personal: Anthropic no permite que apps de terceros ofrezcan el login de
+  claude.ai sin aprobación, así que nunca es el valor por defecto ni se promociona. Corre sin herramientas
+  salvo leer el archivo que recibe, en una carpeta temporal, porque el CV o la JD son contenido no confiable y
+  Claude Code es un agente. No hay salida estructurada garantizada: se pide JSON en el prompt y se valida con
+  Zod con el mismo reintento. Los tokens se registran en `AiGeneration` sin costo (los paga el plan).
 - **Salida estructurada:** *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
   reintento con el error; si vuelve a fallar, el paso queda en `FAILED`.
 - **Prompts versionados** como archivos en el repo (`ai/prompts/*.v3.md`). `promptVersion` se guarda en
@@ -644,6 +651,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
 | ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
+| ADR-24 | Proveedor opcional "Claude Code local": el `claude` instalado y logueado, invocado como proceso, con el plan del usuario en lugar de una API key; experimental, solo para uso personal y con herramientas limitadas a leer el archivo de entrada | Propuesta |
 
 ## 18. Extensiones post-MVP
 

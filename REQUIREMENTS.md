@@ -81,6 +81,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-CONF-11 | Exportar los datos en JSON legible (portabilidad). | Post |
 | RF-CONF-12 | Elegir el canal de actualizaciones: estable o beta. | Post |
 | RF-CONF-13 | Ver la versión instalada de la app en Configuración. | MVP |
+| RF-CONF-14 | Usar como proveedor de IA el Claude Code instalado y logueado en la computadora, con el plan de Claude del usuario en lugar de una API key. Opcional y experimental, solo para uso personal (ADR-24). | MVP |
 
 ### 5.2 Perfil maestro (PROF)
 
