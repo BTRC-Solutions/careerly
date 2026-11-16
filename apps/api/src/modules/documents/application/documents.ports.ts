@@ -38,8 +38,14 @@ export abstract class TemplateCatalog {
   abstract get(id: string): Promise<ResumeTemplate>;
 }
 
+/** A rendered PDF and its number of pages, which the page fitter works with (ARCHITECTURE.md §8). */
+export interface RenderOutput {
+  pdf: Uint8Array;
+  pageCount: number;
+}
+
 /** Port: turns template data into a PDF. The data is passed as JSON, never as template code (RNF-05). */
 export abstract class ResumeRenderer {
   /** Throws {@link RenderError}. */
-  abstract render(template: ResumeTemplate, data: TemplateData): Promise<Uint8Array>;
+  abstract render(template: ResumeTemplate, data: TemplateData): Promise<RenderOutput>;
 }

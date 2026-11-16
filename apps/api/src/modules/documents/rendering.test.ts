@@ -63,10 +63,30 @@ describe('documents: rendering', () => {
 
       const rendered = await service.render(DOCUMENT);
 
-      expect(rendered).toMatchObject({ templateId: 'classic', templateVersion: 1 });
+      expect(rendered).toMatchObject({ templateId: 'classic', templateVersion: 1, pageCount: 1 });
       const pdf = await PDFDocument.load(rendered.pdf);
       expect(pdf.getPageCount()).toBe(1);
       expect(pdf.getTitle()).toBe(`${DOCUMENT.basics.name} — CV`);
+    });
+
+    it('counts the pages: a long CV takes 2, a short one 1', async () => {
+      const service = await renderService();
+      const short: ResumeDocument = {
+        ...DOCUMENT,
+        summary: null,
+        experience: DOCUMENT.experience.slice(0, 1),
+        projects: [],
+      };
+      const long: ResumeDocument = {
+        ...DOCUMENT,
+        experience: [...DOCUMENT.experience, ...DOCUMENT.experience, ...DOCUMENT.experience],
+      };
+
+      const [shortCv, longCv] = await Promise.all([service.render(short), service.render(long)]);
+
+      expect(shortCv.pageCount).toBe(1);
+      expect(longCv.pageCount).toBe(2);
+      expect((await PDFDocument.load(longCv.pdf)).getPageCount()).toBe(2);
     });
 
     it('gives the template the data and the labels as JSON', async () => {
