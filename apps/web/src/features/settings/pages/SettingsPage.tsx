@@ -4,6 +4,7 @@ import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { useSettings } from '../api/useSettings';
+import { AiKeyCard } from '../components/AiKeyCard';
 import { DataFolderCard } from '../components/DataFolderCard';
 import { LanguageSettingsCard } from '../components/LanguageSettingsCard';
 
@@ -33,6 +34,7 @@ export function SettingsPage() {
       {settings.data && (
         <>
           <LanguageSettingsCard value={settings.data.preferences.uiLanguage} />
+          <AiKeyCard backendStatus={settings.data.aiKey} />
           <DataFolderCard dataDir={settings.data.dataDir} />
         </>
       )}
