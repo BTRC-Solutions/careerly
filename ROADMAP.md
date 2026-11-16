@@ -37,11 +37,11 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | 🟨 (desktop hecho en PR #14; falta la verificación del backend, PR #11, y el asistente) |
+| 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | 🟨 (almacén en desktop #14, verificación por proveedor #16 y tarjeta en Configuración #17/#19 hechos; falta el asistente) |
 | 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ✅ |
 | 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | 🟨 (backend hecho en PR #13; falta la pantalla) |
 | 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | 🟨 (instalador generado y probado en esta máquina; falta probarlo en una sin Node) |
-| 1.5 | **Telemetría (base):** módulo `telemetry`, esquema `TelemetryReportV1` estricto en `contracts`, ventana de consentimiento dentro del asistente de primer inicio (casillas activadas, "Aceptar" / "Rechazar todo" al mismo nivel, lista explícita de lo que nunca se envía), Configuración → Privacidad (métricas, vista previa del JSON, historial, regenerar ID) y la métrica "uso activo". Todavía **sin envío**: los reportes quedan en `PENDING`. `[RF-TEL-01 a 07, RN-18, RN-19]` | Tests: con "Rechazar todo" o sin elegir no se genera ID ni reporte; un campo fuera del esquema hace fallar el armado; la vista previa coincide con lo que se guardaría. | ⬜ |
+| 1.5 | **Telemetría (base):** módulo `telemetry`, esquema `TelemetryReportV1` estricto en `contracts`, ventana de consentimiento dentro del asistente de primer inicio (casillas activadas, "Aceptar" / "Rechazar todo" al mismo nivel, lista explícita de lo que nunca se envía), Configuración → Privacidad (métricas, vista previa del JSON, historial, regenerar ID) y la métrica "uso activo". Todavía **sin envío**: los reportes quedan en `PENDING`. `[RF-TEL-01 a 07, RN-18, RN-19]` | Tests: con "Rechazar todo" o sin elegir no se genera ID ni reporte; un campo fuera del esquema hace fallar el armado; la vista previa coincide con lo que se guardaría. | 🟨 (backend hecho en PR #15; falta la ventana de consentimiento y Configuración → Privacidad) |
 | 1.6 | **Versionado:** release-please (componente raíz para la app con `exclude-paths`, `extra-files` para los `package.json`), `CHANGELOG.md`, versión visible en Configuración y como `appVersion`. `[RF-CONF-13, ADR-19]` | Mergear el PR de release de prueba crea el tag `v0.0.1` y la versión aparece en la app. | ⬜ |
 
 ## Fase 2 — Perfil maestro · `v0.2.0`
@@ -54,8 +54,12 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 2.4 | Proyectos (personales, open source, cursos, freelance) con logros. `[RF-PROF-04]` | Ídem 2.3. | ✅ |
 | 2.5 | Educación, certificaciones e idiomas. `[RF-PROF-05]` | CRUD completo. | ✅ |
 | 2.6 | Origen de cada elemento (`MANUAL`, `IMPORT`, `GAP_ANSWER` + sesión) y registro de cambios mínimo para poder revertir. `[RF-PROF-07]` | Test de dominio: crear desde gap y revertir deja el perfil como estaba. | ⬜ |
-| 2.7 | Cargar el propio perfil maestro real como dato de prueba. | Un perfil completo y realista disponible para las fases siguientes. | ⬜ |
+| 2.7 | **Importar un CV** (PDF o DOCX) al perfil maestro: la IA arma un borrador (datos personales, experiencias con logros y herramientas, proyectos, educación, certificaciones e idiomas) que el usuario revisa y corrige en pantalla antes de guardar; todo se guarda con origen `IMPORT`. Las herramientas se resuelven contra el catálogo. El CV es un dato no confiable (prompt injection) y la salida se valida con Zod. Requiere el paso 4.1, que se adelanta. `[RF-PROF-09]` | Con 3 CVs reales (incluido el propio), el borrador trae todas las experiencias, fechas y títulos correctos, sin datos inventados; nada se guarda sin confirmación. | ⬜ |
+| 2.8 | Cargar el propio perfil maestro real como dato de prueba (importando el CV y completando a mano). | Un perfil completo y realista disponible para las fases siguientes. | ⬜ |
 
+> **Orden:** el paso 4.1 (módulo `ai` con el adaptador de Gemini) se adelanta y se hace antes de 2.7: la
+> importación de CV lo necesita, y 2.8 (cargar el perfil real) es lo que destraba la Fase 3 y los evals.
+>
 > RF-PROF-10 (sugerencias de redacción con IA) es MVP pero depende del módulo de IA: se implementa al final de
 > la Fase 4 (paso 4.8).
 
@@ -74,7 +78,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 4.1 | Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-23; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
+| 4.1 | *(Se adelanta: va antes de 2.7.)* Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-23; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
 | 4.2 | Pantalla de consumo de IA (tokens y costo por día, mes y tarea). Acciones de IA deshabilitadas sin conexión o sin key válida. `[RF-CONF-06, RNF-13]` | Sin red, la app sigue funcionando y las acciones de IA muestran por qué no están disponibles. | ⬜ |
 | 4.3 | Módulo `jobs`: cola persistida en SQLite, ejecutor con concurrencia y reintentos, reanudación al iniciar, progreso por SSE. | Cerrar la app a mitad de una tarea y volver a abrirla la completa. | ⬜ |
 | 4.4 | CRUD de JDs. `[RF-JD-01]` | Se crean y listan desde la app. | ⬜ |
@@ -146,7 +150,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | Prioridad | Funcionalidad | Requerimiento |
 |---|---|---|
-| 1 | Importar un CV existente (PDF/DOCX) al perfil maestro. Es clave para que cargar un perfil de 5–6 páginas no sea una barrera. | RF-PROF-09 |
+| 1 | ~~Importar un CV existente (PDF/DOCX) al perfil maestro.~~ Pasó al MVP: es el paso 2.7. | RF-PROF-09 |
 | 2 | Actualizaciones automáticas desde GitHub Releases, con elección de canal estable o beta. | RF-CONF-10, RF-CONF-12 |
 | 3 | Carta de presentación desde la sesión de adaptación. | RF-TAIL-16 |
 | 4 | Recordatorios de seguimiento y "requiere acción" en el dashboard. | RF-APP-09, RF-DASH-03 |
