@@ -88,7 +88,7 @@ const EXTRACTION = {
   ],
   certifications: [],
   languages: [
-    { language: 'Spanish', level: 'NATIVE', notes: null },
+    { language: 'español', level: 'NATIVE', notes: null },
     { language: 'English', level: 'C1', notes: null },
   ],
 };
@@ -210,6 +210,8 @@ describe('CV import (integration)', () => {
     expect(draft.projects[0]!.tools).toEqual([
       { name: 'MadeUpInternalTool', toolId: null, toolName: null },
     ]);
+    // Languages are labels: capitalized even when the CV writes them in lowercase.
+    expect(draft.languages.map((item) => item.language)).toEqual(['Español', 'English']);
 
     const saved = await profile();
     expect(saved.positions).toEqual([]);

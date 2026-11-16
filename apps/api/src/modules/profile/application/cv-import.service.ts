@@ -54,7 +54,8 @@ export class CvImportService {
       ),
       education: raw.education,
       certifications: raw.certifications,
-      languages: raw.languages,
+      // A language is a label in the profile: "español" (as Spanish writes it) shows as "Español".
+      languages: raw.languages.map((item) => ({ ...item, language: capitalize(item.language) })),
     };
   }
 
@@ -160,4 +161,9 @@ function dedupe(values: string[]): string[] {
     seen.add(key);
     return true;
   });
+}
+
+function capitalize(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.charAt(0).toLocaleUpperCase() + trimmed.slice(1);
 }
