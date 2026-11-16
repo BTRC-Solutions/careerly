@@ -5,3 +5,4 @@ export * from './backups.js';
 export * from './tools.js';
 export * from './profile.js';
 export * from './ai.js';
+export * from './telemetry.js';

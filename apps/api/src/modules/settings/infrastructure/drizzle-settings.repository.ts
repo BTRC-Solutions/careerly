@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { settings } from '../../../platform/database/schema.js';
 import { SettingsRepository, type StoredSetting } from '../application/settings.repository.js';
@@ -31,5 +31,10 @@ export class DrizzleSettingsRepository extends SettingsRepository {
         target: settings.key,
         set: { value: sql`excluded.value`, updatedAt: sql`excluded.updated_at` },
       });
+  }
+
+  async deleteMany(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    await this.database.db.delete(settings).where(inArray(settings.key, keys));
   }
 }
