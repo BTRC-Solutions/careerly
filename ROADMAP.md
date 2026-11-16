@@ -78,7 +78,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 4.1 | *(Se adelanta: va antes de 2.7.)* Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-23; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ⬜ |
+| 4.1 | *(Se adelanta: va antes de 2.7.)* Módulo `ai`: puerto `LlmClient`, adaptador de Gemini (ADR-23; Claude como segundo adaptador) con la API key del usuario, salida estructurada + validación con Zod, reintento ante salida inválida, registro en `AiGeneration`. `[RNF-06]` | Tests con *fake* + test manual con la key real. | ✅ (PR #25: smoke con la key real de Gemini; modelos por nivel con alternativas) |
 | 4.2 | Pantalla de consumo de IA (tokens y costo por día, mes y tarea). Acciones de IA deshabilitadas sin conexión o sin key válida. `[RF-CONF-06, RNF-13]` | Sin red, la app sigue funcionando y las acciones de IA muestran por qué no están disponibles. | ⬜ |
 | 4.3 | Módulo `jobs`: cola persistida en SQLite, ejecutor con concurrencia y reintentos, reanudación al iniciar, progreso por SSE. | Cerrar la app a mitad de una tarea y volver a abrirla la completa. | ⬜ |
 | 4.4 | CRUD de JDs. `[RF-JD-01]` | Se crean y listan desde la app. | ⬜ |
