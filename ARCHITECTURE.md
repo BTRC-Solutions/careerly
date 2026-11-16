@@ -1,6 +1,6 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.3 · Última actualización: 2026-11-16
+> Estado: borrador v0.4 · Última actualización: 2026-11-16
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
@@ -613,6 +613,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-19 | Versionado con release-please: una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
 | ADR-20 | GitHub Actions para CI, instaladores e imágenes (GHCR); Jenkins solo para desplegar la telemetría | Aceptada |
 | ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
+| ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
 
 ## 18. Extensiones post-MVP
 
@@ -730,7 +731,41 @@ flowchart LR
     WEB -->|red interna + secreto compartido| INGEST
     INGEST --> PG
     VISITANTE[Visitante] --> CADDY
+    subgraph OPS[Operación]
+        GHA[GitHub Actions<br/>CI + imágenes en GHCR]
+        JENKINS[Jenkins<br/>en el mismo VPS]
+        UPTIME[Uptime check externo]
+    end
+    GHA -->|buildWithParameters| JENKINS
+    JENKINS -->|SSH, usuario deploy| VPS
+    UPTIME -->|GET /health| CADDY
 ```
+
+La arquitectura tiene tres partes independientes:
+
+| Parte | Qué es | Dónde corre | Sección |
+|---|---|---|---|
+| **Cliente** | Módulo `telemetry` del backend local: consentimiento, armado y envío de reportes | Computadora del usuario | §19.2 |
+| **Servidor** | `telemetry-api` (ingesta + lectura interna), `stats-web` (página pública), Postgres, Caddy | VPS, en docker-compose | §19.4, §19.5 |
+| **Operación** | Despliegue (Actions → GHCR → Jenkins) y observabilidad del servidor | GitHub + VPS + servicio externo | §19.6, §19.7 |
+
+**Quién puede hablar con quién.** Cada componente tiene una sola puerta de entrada; lo que no figura en la
+tabla está bloqueado.
+
+| Origen | Destino | Cómo | Autenticación |
+|---|---|---|---|
+| App de escritorio | `telemetry-api` | `POST /v1/reports` vía Caddy (HTTPS) | Ninguna; protegida por esquema, topes y rate limit |
+| Navegador del visitante | `stats-web` | `GET /` y `GET /api/*` vía Caddy | Ninguna (datos públicos con k ≥ 5) |
+| `stats-web` | `telemetry-api` | `GET /internal/stats/*` por la red interna de Docker | Secreto compartido |
+| `telemetry-api` | Postgres | Red interna de Docker | Usuario y contraseña por entorno |
+| GitHub Actions | Jenkins | API remota vía Caddy | Token en los secrets del repo |
+| Jenkins | Host del VPS | SSH | Clave del usuario `deploy` |
+| Uptime check | `telemetry-api`, `stats-web` | `GET /health` vía Caddy | Ninguna (respuesta sin datos) |
+
+**Telemetría de producto, no observabilidad de la app.** Los reportes miden **uso** (postulaciones, fuentes,
+posiciones, funciones). La app **no** envía errores, trazas ni métricas de rendimiento (D-15): los problemas
+técnicos de la app se diagnostican con sus logs locales (RNF-03). La observabilidad técnica existe solo para el
+servidor propio (§19.7).
 
 ### 19.2 Cliente (módulo `telemetry` de la app)
 
@@ -867,3 +902,26 @@ desplegar una imagen que todavía no existe.
 
 **Backups.** `pg_dump` diario de prod (además del previo a cada deploy), con rotación, guardado en un volumen
 y, de ser posible, copiado fuera del VPS.
+
+### 19.7 Observabilidad del servidor (ADR-22)
+
+Objetivo: enterarse de que el receptor o la página están caídos, de que falló un backup o un deploy, o de que
+el VPS se está quedando sin recursos, **sin sumar servicios pesados** a un VPS de 4 GB que ya corre Jenkins y
+dos entornos. Nivel **liviano** para el MVP:
+
+| Señal | Cómo | Alerta |
+|---|---|---|
+| **Disponibilidad** | Uptime check externo (p. ej. UptimeRobot, plan gratuito) cada 5 min contra `https://telemetry.<dominio>/health` y `https://stats.<dominio>/health` | Mail o Telegram si falla 2 veces seguidas |
+| **Salud interna** | `/health` de cada servicio: proceso vivo + conexión a Postgres (`telemetry-api`) o a `telemetry-api` (`stats-web`). Healthchecks de Docker con `restart: unless-stopped` | Lo detecta el uptime check |
+| **Logs** | pino en JSON a stdout, driver `json-file` de Docker con rotación (`max-size`, `max-file`). Sin IPs ni contenido de los reportes (RNF-23): solo `installId` truncado, `schemaVersion`, resultado y motivo de rechazo | — |
+| **Ingesta** | Contadores en el log (aceptados, rechazados por esquema, por topes, por rate limit, `410` por versión vieja). Resumen diario: reportes recibidos por entorno | Si prod recibe 0 reportes en un día con instalaciones activas el día anterior |
+| **Backups** | El script de `pg_dump` diario verifica que el archivo exista y no esté vacío | Si falla o el archivo está vacío |
+| **Deploys** | Resultado del pipeline de Jenkins (incluido el rollback) | Si falla o hace rollback |
+| **Recursos del VPS** | Script diario con `df`, memoria y `docker stats` | Disco > 80 % o memoria sostenida > 90 % |
+
+- Las alertas salen por un único canal (bot de Telegram o mail), configurado con un secreto guardado en Jenkins
+  y en el `.env` del host. Staging no alerta, solo registra.
+- `/health` no expone versiones, datos ni detalles de la base: devuelve `200 { "status": "ok" }` o `503`.
+- **Siguiente nivel (post-MVP, si hace falta):** Prometheus + Grafana + Loki en el mismo docker-compose para
+  métricas de latencia y errores, dashboards y logs centralizados. Se descarta para el MVP por memoria: en un VPS
+  de 4 GB con Jenkins queda muy justo.
