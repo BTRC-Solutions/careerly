@@ -5,6 +5,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core';
@@ -222,4 +223,37 @@ export const telemetryReports = sqliteTable(
     sentAt: text('sent_at'),
   },
   (table) => [index('telemetry_reports_status_idx').on(table.status)],
+);
+
+// ---------------------------------------------------------------------------
+// AI usage (owned by the `ai` module; RNF-06, RF-CONF-06, ARCHITECTURE §7.3).
+// One row per call attempt. Never the prompt, the answer or the API key: only what is needed to
+// report usage and cost.
+// ---------------------------------------------------------------------------
+
+export const aiGenerations = sqliteTable(
+  'ai_generations',
+  {
+    id: text('id').primaryKey(),
+    /** `AiTask`, e.g. `cv-import`. */
+    task: text('task').notNull(),
+    /** `AiProvider`, e.g. `gemini`. */
+    provider: text('provider').notNull(),
+    model: text('model').notNull(),
+    /** Version of the prompt file used, e.g. `cv-import.v1`. */
+    promptVersion: text('prompt_version').notNull(),
+    /** 1 for the first try, 2 for the retry after an invalid answer. */
+    attempt: integer('attempt').notNull(),
+    /** `AiGenerationStatus`. */
+    status: text('status').notNull(),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    /** Estimated from the price table in code; informative only (D-02). */
+    costUsd: real('cost_usd').notNull().default(0),
+    latencyMs: integer('latency_ms').notNull(),
+    /** Error class when it failed (e.g. `AiRateLimitedError`); never provider messages. */
+    errorCode: text('error_code'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('ai_generations_created_at_idx').on(table.createdAt)],
 );

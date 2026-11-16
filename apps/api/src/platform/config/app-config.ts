@@ -10,6 +10,17 @@ const booleanString = z
   .default('false')
   .transform((value) => value === 'true');
 
+/** Comma-separated model names (at least one). */
+const modelList = z
+  .string()
+  .transform((value) =>
+    value
+      .split(',')
+      .map((model) => model.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.string().regex(/^[a-z0-9.-]{1,80}$/)).min(1));
+
 const EnvSchema = z.object({
   CAREERLY_DATA_DIR: z.string().min(1, 'CAREERLY_DATA_DIR is required'),
   CAREERLY_API_TOKEN: z.string().min(16, 'CAREERLY_API_TOKEN must have at least 16 characters'),
@@ -27,6 +38,18 @@ const EnvSchema = z.object({
   /** Base URL of each AI provider (ADR-23). Only overridden by tests, which use a local fake. */
   CAREERLY_GEMINI_BASE_URL: z.url().default('https://generativelanguage.googleapis.com'),
   CAREERLY_ANTHROPIC_BASE_URL: z.url().default('https://api.anthropic.com'),
+  /**
+   * Gemini models per tier, comma-separated, in order of preference: later ones are fallbacks when
+   * a model is retired (404) or overloaded (503). Checked against the API in November 2026: the 2.5
+   * family is gone for new keys and Pro models have no free-tier quota, so the defaults are Flash
+   * models. Choosing models in the UI is RF-CONF-09 (post-MVP).
+   */
+  CAREERLY_GEMINI_MODELS_SMALL: modelList.prefault(
+    'gemini-3.5-flash-lite,gemini-flash-lite-latest',
+  ),
+  CAREERLY_GEMINI_MODELS_LARGE: modelList.prefault(
+    'gemini-3.6-flash,gemini-flash-latest,gemini-3.5-flash-lite',
+  ),
 });
 
 export interface AppConfig {
@@ -56,6 +79,8 @@ export interface AppConfig {
   logToStdout: boolean;
   /** Base URL of each AI provider's API (ADR-23). Only overridden by tests (a local fake provider). */
   aiBaseUrls: Record<AiProvider, string>;
+  /** Gemini models for each tier, in order of preference: small (extraction, scoring), large (writing). */
+  geminiModels: { small: string[]; large: string[] };
 }
 
 export class ConfigError extends Error {
@@ -107,6 +132,10 @@ export function loadConfig(
     aiBaseUrls: {
       gemini: parsed.CAREERLY_GEMINI_BASE_URL.replace(/\/+$/, ''),
       anthropic: parsed.CAREERLY_ANTHROPIC_BASE_URL.replace(/\/+$/, ''),
+    },
+    geminiModels: {
+      small: parsed.CAREERLY_GEMINI_MODELS_SMALL,
+      large: parsed.CAREERLY_GEMINI_MODELS_LARGE,
     },
   };
 }

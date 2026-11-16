@@ -106,4 +106,18 @@ describe('AiKeyStore', () => {
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).not.toContain('payload');
   });
+
+  it('warns once per problem even if the file is read again and again', () => {
+    fs.writeFileSync(file, 'not an encrypted payload');
+    const keys = store();
+    for (let i = 0; i < 5; i++) keys.activeCredentials();
+    expect(warnings).toHaveLength(1);
+
+    // Saving again replaces the unreadable file; a new problem later is reported again.
+    keys.save('gemini', GEMINI_KEY);
+    expect(keys.activeCredentials()?.provider).toBe('gemini');
+    fs.writeFileSync(file, 'broken again');
+    keys.activeCredentials();
+    expect(warnings).toHaveLength(2);
+  });
 });
