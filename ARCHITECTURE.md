@@ -790,8 +790,11 @@ servidor propio (§19.7).
 - **Preferencias** en `Setting`: `installId` (UUID v4; se genera recién al aceptar), métricas activadas y
   `consentVersion`. Cada métrica del catálogo tiene la versión en la que se agregó; si hay métricas con una
   versión mayor que `consentVersion`, la interfaz vuelve a mostrar la ventana solo con esas (RF-TEL-04).
-- **Armado del reporte.** Una tarea diaria en la cola de `jobs` arma el reporte de cada día cerrado (en la
-  zona horaria local) con uso y todavía no enviado, hasta 30 días atrás. Cada métrica tiene su *collector*
+- **Uso del día.** Mientras la telemetría está aceptada, cada petición de la interfaz marca el día local en
+  `telemetry_activity_days` (una escritura por día como máximo). Sin aceptar, no se registra nada (RN-19).
+- **Armado del reporte.** Al iniciar y cada hora (más adelante, como tarea de la cola de `jobs`) se arma el
+  reporte de cada día cerrado (en la zona horaria local) con uso y todavía sin reporte, hasta 30 días atrás.
+  Cambiar las métricas borra los reportes no enviados y los vuelve a armar con la elección nueva (RF-TEL-05). Cada métrica tiene su *collector*
   (una función que consulta un servicio público y devuelve números o enums). El resultado se valida con el
   esquema `TelemetryReportV1` de `packages/contracts`, que es **estricto** (`.strict()`, sin campos libres
   salvo el título recortado); si no valida, el envío falla y se registra en el log (RN-18).

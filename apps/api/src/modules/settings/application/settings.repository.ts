@@ -14,4 +14,6 @@ export abstract class SettingsRepository {
 
   /** Inserts or replaces the given settings in a single statement (all or nothing). */
   abstract upsertMany(settings: StoredSetting[]): Promise<void>;
+
+  abstract deleteMany(keys: string[]): Promise<void>;
 }

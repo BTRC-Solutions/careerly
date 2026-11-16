@@ -36,6 +36,13 @@
       "when": 1794846728493,
       "tag": "0004_drop_full_name",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794850283816,
+      "tag": "0005_telemetry",
+      "breakpoints": true
     }
   ]
 }

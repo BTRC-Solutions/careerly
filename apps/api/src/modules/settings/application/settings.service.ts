@@ -51,4 +51,39 @@ export class SettingsService {
     await this.repository.upsertMany(changes);
     return this.getPreferences();
   }
+
+  /**
+   * Values another module keeps under its own `<namespace>.` prefix (e.g. `telemetry.`), keyed without
+   * the prefix. Only valid JSON values are returned; validating them is the caller's job.
+   */
+  async getNamespace(namespace: string): Promise<Map<string, unknown>> {
+    const prefix = namespacePrefix(namespace);
+    return new Map(
+      (await this.repository.findAll())
+        .filter((row) => row.key.startsWith(prefix))
+        .map((row) => [row.key.slice(prefix.length), row.value]),
+    );
+  }
+
+  /** Writes (`value` defined) or deletes (`undefined`) keys of a namespace, all at once. */
+  async updateNamespace(namespace: string, changes: Record<string, unknown>): Promise<void> {
+    const prefix = namespacePrefix(namespace);
+    const entries = Object.entries(changes);
+    await this.repository.upsertMany(
+      entries
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => ({ key: prefix + key, value })),
+    );
+    await this.repository.deleteMany(
+      entries.filter(([, value]) => value === undefined).map(([key]) => prefix + key),
+    );
+  }
+}
+
+/** Namespaces cannot touch the user preferences (`ui.*`). */
+function namespacePrefix(namespace: string): string {
+  if (!/^[a-z]+$/.test(namespace) || namespace === 'ui') {
+    throw new Error(`Invalid settings namespace "${namespace}".`);
+  }
+  return `${namespace}.`;
 }
