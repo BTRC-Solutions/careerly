@@ -200,6 +200,32 @@ export const languageSkills = sqliteTable('language_skills', {
   ...provenance(),
 });
 
+/**
+ * Writes a tailoring session made to the profile, so they can be undone (RF-PROF-07, RF-TAIL-06).
+ * `before`/`after` hold only the fields an update touched; a creation needs neither.
+ */
+export const profileChanges = sqliteTable(
+  'profile_changes',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    /** `position`, `project` or `achievement`. */
+    entity: text('entity').notNull(),
+    entityId: text('entity_id').notNull(),
+    /** `CREATE` or `UPDATE`. */
+    kind: text('kind').notNull(),
+    /** JSON object of field values. */
+    before: text('before'),
+    after: text('after'),
+    /** `updated_at` of the element before and after the update. */
+    previousUpdatedAt: text('previous_updated_at'),
+    resultUpdatedAt: text('result_updated_at'),
+    createdAt: text('created_at').notNull(),
+    revertedAt: text('reverted_at'),
+  },
+  (table) => [index('profile_changes_session_id_idx').on(table.sessionId, table.createdAt)],
+);
+
 // ---------------------------------------------------------------------------
 // Telemetry (owned by the `telemetry` module; RF-TEL-06, RF-TEL-08, ARCHITECTURE §19.2).
 // Preferences (install id, enabled metrics, consent version) live in `settings`.

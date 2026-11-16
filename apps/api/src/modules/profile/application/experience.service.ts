@@ -16,7 +16,9 @@ import { assertDateRange, assertIsPermutation } from '../domain/profile-rules.js
 import {
   type AchievementParent,
   type ContainerKind,
+  type ElementOrigin,
   ExperienceRepository,
+  MANUAL_ORIGIN,
   type NewElement,
 } from './profile.repositories.js';
 
@@ -35,10 +37,13 @@ export class ExperienceService {
     return position;
   }
 
-  async createPosition({ toolIds, ...fields }: CreatePositionRequest): Promise<Position> {
+  async createPosition(
+    { toolIds, ...fields }: CreatePositionRequest,
+    origin = MANUAL_ORIGIN,
+  ): Promise<Position> {
     assertDateRange(fields.startDate, fields.endDate);
     await this.assertToolsExist(toolIds);
-    const element = newElement();
+    const element = newElement(origin);
     await this.repository.insertPosition(element, fields, toolIds);
     return this.getPosition(element.id);
   }
@@ -65,10 +70,13 @@ export class ExperienceService {
     return project;
   }
 
-  async createProject({ toolIds, ...fields }: CreateProjectRequest): Promise<Project> {
+  async createProject(
+    { toolIds, ...fields }: CreateProjectRequest,
+    origin = MANUAL_ORIGIN,
+  ): Promise<Project> {
     assertDateRange(fields.startDate, fields.endDate);
     await this.assertToolsExist(toolIds);
-    const element = newElement();
+    const element = newElement(origin);
     await this.repository.insertProject(element, fields, toolIds);
     return this.getProject(element.id);
   }
@@ -97,10 +105,11 @@ export class ExperienceService {
   async createAchievement(
     parent: AchievementParent,
     { toolIds, ...fields }: CreateAchievementRequest,
+    origin = MANUAL_ORIGIN,
   ): Promise<Achievement> {
     await this.assertParentExists(parent);
     await this.assertToolsExist(toolIds);
-    const element = newElement();
+    const element = newElement(origin);
     await this.repository.insertAchievement(parent, element, fields, toolIds);
     return this.getAchievement(element.id);
   }
@@ -156,7 +165,7 @@ function now(): string {
   return new Date().toISOString();
 }
 
-/** Every element created through the HTTP API is MANUAL (RF-PROF-07). */
-function newElement(): NewElement {
-  return { id: randomUUID(), origin: 'MANUAL', originSessionId: null, now: now() };
+/** Elements from the HTTP API are `MANUAL`; tailoring passes `GAP_ANSWER` (RF-PROF-07). */
+function newElement(origin: ElementOrigin): NewElement {
+  return { id: randomUUID(), ...origin, now: now() };
 }
