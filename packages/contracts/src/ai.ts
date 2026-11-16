@@ -40,3 +40,36 @@ export const AiCredentialsSchema = z
   })
   .strict();
 export type AiCredentials = z.infer<typeof AiCredentialsSchema>;
+
+/**
+ * What an AI call was for (`AiGeneration.task`). Usage is reported per task (RF-CONF-06) and the
+ * model tier depends on it (ARCHITECTURE §7.3).
+ */
+export const AiTaskSchema = z.enum([
+  /** Internal check that the active provider answers with valid structured output. */
+  'smoke-test',
+  /** RF-PROF-09: CV → draft master profile. */
+  'cv-import',
+  /** RF-JD-02. */
+  'jd-analysis',
+  /** RF-TAIL-02: evidence for non-tool requirements. */
+  'evidence-match',
+  /** Relevance score of achievements and projects. */
+  'relevance-score',
+  /** RF-TAIL-10/11: bullets and summary. */
+  'resume-writing',
+  /** RF-PROF-10. */
+  'achievement-suggestion',
+]);
+export type AiTask = z.infer<typeof AiTaskSchema>;
+
+/** Outcome of one AI call (one row per attempt in `AiGeneration`). */
+export const AiGenerationStatusSchema = z.enum([
+  /** The answer was valid JSON matching the expected schema. */
+  'SUCCEEDED',
+  /** The provider answered, but not with what was asked (bad JSON or wrong shape). */
+  'INVALID_OUTPUT',
+  /** No usable answer: network, timeout, rejected key, rate limit, blocked content, provider error. */
+  'FAILED',
+]);
+export type AiGenerationStatus = z.infer<typeof AiGenerationStatusSchema>;

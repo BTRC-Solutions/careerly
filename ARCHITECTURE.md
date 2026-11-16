@@ -318,9 +318,13 @@ devolvió la IA.
 - **Proveedores (ADR-23):** varios, con la **API key del usuario** para cada uno y uno activo a la vez. Primer
   adaptador: **Google Gemini**; el de **Claude (Anthropic)** es el siguiente y OpenAI queda abierto. Cada
   adaptador implementa todo `LlmClient`, y el dominio no sabe cuál está activo. Modelo grande para la redacción
-  (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7), con valores por defecto por proveedor en
-  código y configurables (RF-CONF-09). Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador
-  los aplica sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
+  (paso 8) y modelo chico para extracción y puntuación (pasos 1, 4, 7). Cada nivel es una **lista de modelos en
+  orden de preferencia** (valores por defecto en código, configurables por entorno; elegirlos desde la interfaz es
+  RF-CONF-09): si un modelo fue retirado (404) o está sobrecargado (503), `LlmClient` pasa al siguiente y registra
+  cada intento. Los proveedores retiran modelos seguido (en noviembre de 2026 la familia Gemini 2.5 ya no sirve
+  para keys nuevas), así que los valores por defecto se revisan con `GET /internal/ai/models` y
+  `POST /internal/ai/smoke`. Los prompts son los mismos; si un proveedor necesita ajustes, el adaptador los aplica
+  sin cambiar la versión del prompt. Los evals (paso 4.7) se corren con cada proveedor soportado.
 - **Salida estructurada:** *tool use* / JSON schema del proveedor + validación con Zod. Si no valida, un
   reintento con el error; si vuelve a fallar, el paso queda en `FAILED`.
 - **Prompts versionados** como archivos en el repo (`ai/prompts/*.v3.md`). `promptVersion` se guarda en

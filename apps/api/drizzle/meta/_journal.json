@@ -43,6 +43,13 @@
       "when": 1794850283816,
       "tag": "0005_telemetry",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794852942329,
+      "tag": "0006_ai_generations",
+      "breakpoints": true
     }
   ]
 }

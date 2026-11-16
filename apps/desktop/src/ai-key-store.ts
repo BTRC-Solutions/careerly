@@ -115,17 +115,28 @@ export class AiKeyStore {
   private read(): Secrets {
     if (!fs.existsSync(this.file)) return EMPTY;
     if (!this.encryptor.isAvailable()) {
-      this.warn('Secure storage is not available; saved API keys cannot be read.');
+      this.warnOnce('Secure storage is not available; saved API keys cannot be read.');
       return EMPTY;
     }
     try {
       const decrypted = this.encryptor.decrypt(fs.readFileSync(this.file));
-      return SecretsSchema.parse(JSON.parse(decrypted));
+      const secrets = SecretsSchema.parse(JSON.parse(decrypted));
+      this.lastWarning = undefined;
+      return secrets;
     } catch {
-      // E.g. the file was copied from another OS user or machine. Never log its content.
-      this.warn('The saved API keys could not be read; they need to be entered again.');
+      // E.g. the file was encrypted in another OS user or Electron context. Never log its content.
+      // Saving a key again replaces the file and fixes it.
+      this.warnOnce('The saved API keys could not be read; they need to be entered again.');
       return EMPTY;
     }
+  }
+
+  /** The file is read often (e.g. every few seconds in development): report each problem once. */
+  private lastWarning: string | undefined;
+  private warnOnce(message: string) {
+    if (this.lastWarning === message) return;
+    this.lastWarning = message;
+    this.warn(message);
   }
 
   private write(secrets: Secrets) {
