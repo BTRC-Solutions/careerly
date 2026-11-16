@@ -32,7 +32,8 @@ function PersonalInfoForm({ info }: { info: PersonalInfo }) {
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(UpdatePersonalInfoRequestSchema),
     defaultValues: {
-      fullName: info.fullName ?? '',
+      firstNames: info.firstNames ?? '',
+      lastNames: info.lastNames ?? '',
       headline: info.headline ?? '',
       location: info.location ?? '',
       email: info.email ?? '',
@@ -61,13 +62,21 @@ function PersonalInfoForm({ info }: { info: PersonalInfo }) {
     <form onSubmit={(event) => void submit(event)} noValidate>
       <SectionCard title={t('profile.personal.title')}>
         <div className="grid grid-cols-2 gap-4">
-          <Field label={t('profile.personal.fullName')} error={fieldError(errors.fullName)}>
-            {(control) => <Input autoComplete="name" {...control} {...form.register('fullName')} />}
+          <Field label={t('profile.personal.firstNames')} error={fieldError(errors.firstNames)}>
+            {(control) => (
+              <Input autoComplete="given-name" {...control} {...form.register('firstNames')} />
+            )}
+          </Field>
+          <Field label={t('profile.personal.lastNames')} error={fieldError(errors.lastNames)}>
+            {(control) => (
+              <Input autoComplete="family-name" {...control} {...form.register('lastNames')} />
+            )}
           </Field>
           <Field
             label={t('profile.personal.headline')}
             hint={t('profile.personal.headlineHint')}
             error={fieldError(errors.headline)}
+            className="col-span-2"
           >
             {(control) => <Input {...control} {...form.register('headline')} />}
           </Field>

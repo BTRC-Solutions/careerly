@@ -77,7 +77,8 @@ describe('profile API (integration)', () => {
   it('GET /profile starts empty', async () => {
     expect(await getProfile()).toEqual({
       personalInfo: {
-        fullName: null,
+        firstNames: null,
+        lastNames: null,
         headline: null,
         location: null,
         email: null,
@@ -97,7 +98,8 @@ describe('profile API (integration)', () => {
   describe('personal information (2.2)', () => {
     it('is edited partially and persists across restarts', async () => {
       const first = await call('PATCH', '/profile/personal-info', {
-        fullName: 'Ada Lovelace',
+        firstNames: 'Augusta Ada',
+        lastNames: 'King Byron',
         headline: 'Senior Backend Engineer',
         email: 'ada@example.com',
         links: [{ kind: 'GITHUB', url: 'https://github.com/ada' }],
@@ -108,7 +110,8 @@ describe('profile API (integration)', () => {
       const second = await call('PATCH', '/profile/personal-info', { location: 'Buenos Aires' });
       const info = PersonalInfoSchema.parse(second.body);
       expect(info).toMatchObject({
-        fullName: 'Ada Lovelace',
+        firstNames: 'Augusta Ada',
+        lastNames: 'King Byron',
         location: 'Buenos Aires',
         links: [{ kind: 'GITHUB', url: 'https://github.com/ada', label: null }],
       });
@@ -117,6 +120,10 @@ describe('profile API (integration)', () => {
       await stop();
       await start();
       expect((await getProfile()).personalInfo).toEqual(info);
+    });
+
+    it('rejects the old fullName field', async () => {
+      expectValidationError(await call('PATCH', '/profile/personal-info', { fullName: 'Ada' }));
     });
 
     it('clears a field with null or an empty string', async () => {

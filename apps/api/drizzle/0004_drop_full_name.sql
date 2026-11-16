@@ -1,0 +1,1 @@
+ALTER TABLE `profile_personal_info` DROP COLUMN `full_name`;

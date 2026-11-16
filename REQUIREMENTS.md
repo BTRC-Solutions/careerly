@@ -85,7 +85,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 
 | ID | Requerimiento | Prioridad |
 |---|---|---|
-| RF-PROF-01 | Cargar y editar datos personales: nombre, titular profesional, ubicación, email, teléfono, links (LinkedIn, GitHub, portfolio). | MVP |
+| RF-PROF-01 | Cargar y editar datos personales: nombre(s) y apellido(s) por separado, titular profesional, ubicación, email, teléfono, links (LinkedIn, GitHub, portfolio). | MVP |
 | RF-PROF-02 | Cargar experiencias laborales: empresa, rol, fechas, ubicación/modalidad, descripción del contexto (producto, equipo, industria). | MVP |
 | RF-PROF-03 | Cargar **logros** dentro de cada experiencia, sin límite de cantidad: texto detallado, métricas opcionales y herramientas usadas. | MVP |
 | RF-PROF-04 | Cargar proyectos personales u open source, con logros y herramientas (misma estructura que las experiencias). | MVP |

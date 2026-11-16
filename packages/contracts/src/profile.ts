@@ -86,7 +86,10 @@ export const ProfileLinkSchema = z.object({
 export type ProfileLink = z.infer<typeof ProfileLinkSchema>;
 
 export const PersonalInfoSchema = z.object({
-  fullName: z.string().nullable(),
+  /** Given name(s), e.g. "María José". Kept apart from the surnames (compound names are common). */
+  firstNames: z.string().nullable(),
+  /** Surname(s), e.g. "García López". */
+  lastNames: z.string().nullable(),
   /** Professional headline, e.g. "Senior Backend Engineer". */
   headline: z.string().nullable(),
   location: z.string().nullable(),
@@ -103,7 +106,8 @@ export type PersonalInfo = z.infer<typeof PersonalInfoSchema>;
 /** `PATCH /profile/personal-info`. */
 export const UpdatePersonalInfoRequestSchema = nonEmptyPatch(
   z.object({
-    fullName: optionalText(120),
+    firstNames: optionalText(120),
+    lastNames: optionalText(120),
     headline: optionalText(160),
     location: optionalText(120),
     email: z
