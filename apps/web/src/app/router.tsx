@@ -1,5 +1,6 @@
 import { createHashRouter, Navigate } from 'react-router';
 import { HomePage } from '../features/home/pages/HomePage';
+import { WelcomePage } from '../features/onboarding/pages/WelcomePage';
 import { ProfileLayout } from '../features/profile/components/ProfileLayout';
 import { ContainerDetailPage } from '../features/profile/pages/ContainerDetailPage';
 import { ContainerListPage } from '../features/profile/pages/ContainerListPage';
@@ -11,6 +12,8 @@ import { AppLayout } from './layout/AppLayout';
 
 // Hash routing works the same in Vite dev, in the browser and from the packaged `app://` protocol.
 export const router = createHashRouter([
+  // First-run wizard: full screen, outside the app layout.
+  { path: 'welcome', element: <WelcomePage /> },
   {
     element: <AppLayout />,
     children: [

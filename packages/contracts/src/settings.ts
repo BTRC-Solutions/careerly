@@ -11,6 +11,8 @@ export type UiLanguage = z.infer<typeof UiLanguageSchema>;
  */
 export const PreferencesSchema = z.object({
   uiLanguage: UiLanguageSchema.nullable(),
+  /** When the first-run wizard was finished (RF-CONF-01); `null` shows it on the next start. */
+  onboardingCompletedAt: z.iso.datetime().nullable(),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 

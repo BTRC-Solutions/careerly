@@ -3,6 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
 import { useSettings } from '../api/useSettings';
 import { AboutCard } from '../components/AboutCard';
 import { AiKeyCard } from '../components/AiKeyCard';
@@ -37,6 +38,7 @@ export function SettingsPage() {
           <LanguageSettingsCard value={settings.data.preferences.uiLanguage} />
           <AiKeyCard backendStatus={settings.data.aiKey} />
           <DataFolderCard dataDir={settings.data.dataDir} />
+          <PrivacyCard />
           <AboutCard appVersion={settings.data.appVersion} />
         </>
       )}
