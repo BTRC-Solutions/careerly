@@ -57,6 +57,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 2.7 | **Importar un CV** (PDF o DOCX) al perfil maestro: la IA arma un borrador (datos personales, experiencias con logros y herramientas, proyectos, educación, certificaciones e idiomas) que el usuario revisa y corrige en pantalla antes de guardar; todo se guarda con origen `IMPORT`. Las herramientas se resuelven contra el catálogo. El CV es un dato no confiable (prompt injection) y la salida se valida con Zod. Requiere el paso 4.1, que se adelanta. `[RF-PROF-09]` | Con 3 CVs reales (incluido el propio), el borrador trae todas las experiencias, fechas y títulos correctos, sin datos inventados; nada se guarda sin confirmación. | ⬜ |
 | 2.8 | Cargar el propio perfil maestro real como dato de prueba (importando el CV y completando a mano). | Un perfil completo y realista disponible para las fases siguientes. | ⬜ |
 
+> **Orden:** el paso 4.10 (elegir los modelos de IA) también se adelanta y va justo después de 2.7.
+>
 > **Orden:** el paso 4.1 (módulo `ai` con el adaptador de Gemini) se adelanta y se hace antes de 2.7: la
 > importación de CV lo necesita, y 2.8 (cargar el perfil real) es lo que destraba la Fase 3 y los evals.
 >
@@ -87,6 +89,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.7 | Primer set de evals: 5–10 JDs con requisitos esperados. | Script de evals corre y reporta precisión de extracción. | ⬜ |
 | 4.8 | Sugerencias de redacción de logros con IA. `[RF-PROF-10]` | El usuario acepta o descarta cada sugerencia; nada cambia sin su confirmación. | ⬜ |
 | 4.9 | Telemetría: métrica "uso de funciones" (tokens de IA por día). `[RF-TEL-03h]` | Test: los tokens del reporte coinciden con `AiGeneration` del día. | ⬜ |
+| 4.10 | *(Se adelanta: va después de 2.7.)* **Elegir los modelos de IA** por nivel (chico y grande). La lista sale de la API del proveedor (los modelos que la key puede usar para generar) y se completa con un catálogo en código: precio, nivel recomendado y si fue probado con salida estructurada. La elección se guarda en `settings`, se prueba con una llamada mínima antes de guardarla y, si el modelo deja de existir, se vuelve a las alternativas por defecto. Un modelo fuera del catálogo se puede elegir con el aviso "sin precio conocido, no probado". `[RF-CONF-09, ADR-23]` | Con la key real se elige otro modelo para cada nivel, se guarda, sobrevive a un reinicio y las llamadas lo usan; un modelo retirado no rompe la app. | ⬜ |
 
 ## Fase 5 — Match y gaps · `v0.5.0`
 
@@ -154,7 +157,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 2 | Actualizaciones automáticas desde GitHub Releases, con elección de canal estable o beta. | RF-CONF-10, RF-CONF-12 |
 | 3 | Carta de presentación desde la sesión de adaptación. | RF-TAIL-16 |
 | 4 | Recordatorios de seguimiento y "requiere acción" en el dashboard. | RF-APP-09, RF-DASH-03 |
-| 5 | Presupuesto mensual de IA y elección de modelos por tarea. | RF-CONF-07, RF-CONF-09 |
+| 5 | Presupuesto mensual de IA. (La elección de modelos pasó al MVP: paso 4.10.) | RF-CONF-07 |
 | 6 | Más plantillas de CV. | RF-TAIL-09 |
 | 7 | Importar JD desde URL / extensión de navegador. | RF-JD-04, RF-JD-05 |
 | 8 | Ver el perfil maestro completo y exportarlo a PDF. | RF-PROF-08 |
