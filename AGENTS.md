@@ -28,12 +28,11 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 
 ## Estado actual
 
-- **Fase 0** cerrada. **Fase 1** en curso: 1.2 hecho; 1.1 con almacén, verificación y tarjeta en
-  Configuración hechos (falta el asistente); 1.3 y 1.5 con el backend hecho (faltan las pantallas); 1.4 con el
-  instalador generado (falta probarlo en una máquina limpia); 1.6 en curso. **Fase 2**: 2.1–2.5 hechos; faltan
-  2.6, 2.7 (importar un CV, pasó al MVP) y 2.8. El paso **4.1 se adelanta** y va antes de 2.7.
+- **Fases 0 y 1** cerradas (`v0.1.0`): configuración, API key por proveedor, backups, instalador de Windows,
+  telemetría base (sin envío) y versionado con release-please. **Fase 2**: 2.1–2.5 hechos; faltan 2.6,
+  2.7 (importar un CV, pasó al MVP) y 2.8. El paso **4.1 se adelanta** y va antes de 2.7.
 - Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
-  Fase 1 larga `v0.1.0`.
+  Fase 2 larga `v0.2.0`.
 - La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
   mergeado**, junto con la tarjeta de Trello ("En proceso" al abrir el PR, "Hecho" al mergear).
 

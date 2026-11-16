@@ -33,16 +33,16 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 0.6 | Reglas de límites entre módulos (ESLint) y setup de tests (unitarios + integración con SQLite temporal). | Un test de ejemplo de cada tipo corre en CI. | ✅ |
 | 0.7 | CI en GitHub Actions: formato, lint, typecheck, tests y build en cada PR (Windows + Ubuntu). | PR de prueba con checks en verde. | ✅ |
 
-## Fase 1 — Configuración y datos locales · `v0.1.0`
+## Fase 1 — Configuración y datos locales · `v0.1.0` · ✅ cerrada (2026-11-16)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
 | 1.1 | Asistente de primer inicio: elección del proveedor de IA y su API key, guardada con `safeStorage` por main (una por proveedor, una activa), enviada al backend en memoria y verificada con una llamada de prueba. `[RF-CONF-01, RF-CONF-02, RNF-03]` | La key no aparece en la base, en logs ni en archivos en texto plano; una key inválida muestra un error claro. | ✅ |
 | 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ✅ |
-| 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | 🟨 (backend hecho en PR #13; falta la pantalla) |
-| 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | 🟨 (instalador generado y probado en esta máquina; falta probarlo en una sin Node) |
+| 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | ✅ |
+| 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ✅ (instalador publicado automáticamente desde `v0.0.1`; la prueba en una máquina sin Node es parte del checklist de la release `0.1.0`) |
 | 1.5 | **Telemetría (base):** módulo `telemetry`, esquema `TelemetryReportV1` estricto en `contracts`, ventana de consentimiento dentro del asistente de primer inicio (casillas activadas, "Aceptar" / "Rechazar todo" al mismo nivel, lista explícita de lo que nunca se envía), Configuración → Privacidad (métricas, vista previa del JSON, historial, regenerar ID) y la métrica "uso activo". Todavía **sin envío**: los reportes quedan en `PENDING`. `[RF-TEL-01 a 07, RN-18, RN-19]` | Tests: con "Rechazar todo" o sin elegir no se genera ID ni reporte; un campo fuera del esquema hace fallar el armado; la vista previa coincide con lo que se guardaría. | ✅ |
-| 1.6 | **Versionado:** release-please (componente raíz para la app con `exclude-paths`, `extra-files` para los `package.json`), `CHANGELOG.md`, versión visible en Configuración y como `appVersion`. Al crearse la release, el instalador de Windows se construye y se adjunta solo (adelantado del 8.9). `[RF-CONF-13, ADR-19]` | Mergear el PR de release de prueba crea el tag `v0.0.1`, la Release tiene el instalador y la versión aparece en la app. | 🟨 (configuración lista; falta mergear el primer PR de release y ver el tag `v0.0.1`) |
+| 1.6 | **Versionado:** release-please (componente raíz para la app con `exclude-paths`, `extra-files` para los `package.json`), `CHANGELOG.md`, versión visible en Configuración y como `appVersion`. Al crearse la release, el instalador de Windows se construye y se adjunta solo (adelantado del 8.9). `[RF-CONF-13, ADR-19]` | Mergear el PR de release de prueba crea el tag `v0.0.1`, la Release tiene el instalador y la versión aparece en la app. | ✅ |
 
 ## Fase 2 — Perfil maestro · `v0.2.0`
 
