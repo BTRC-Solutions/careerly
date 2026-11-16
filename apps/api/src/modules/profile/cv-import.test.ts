@@ -134,7 +134,10 @@ describe('CV import (integration)', () => {
   let server: RunningServer;
   let logs: ReturnType<typeof capturingLogger>;
 
-  async function start(reply = geminiAnswer(EXTRACTION), withKey = true) {
+  async function start(
+    reply: { status: number; body: unknown } = geminiAnswer(EXTRACTION),
+    withKey = true,
+  ) {
     temp = createTempDir();
     gemini = await startFakeGemini(reply);
     logs = capturingLogger();
