@@ -449,7 +449,8 @@
         "languages_other": "{{count}} idiomas"
       },
       "viewProfile": "Ver mi perfil",
-      "another": "Importar otro CV"
+      "another": "Importar otro CV",
+      "privacyClaudeCode": "El archivo lo lee Claude Code en esta computadora, con tu plan de Claude, en una carpeta temporal que se borra al terminar. Careerly no lo guarda: queda únicamente lo que confirmes."
     }
   },
   "onboarding": {
