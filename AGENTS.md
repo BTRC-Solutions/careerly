@@ -23,6 +23,7 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario 
 | Qué paso toca ahora y su criterio de terminado | [ROADMAP.md](ROADMAP.md) |
 | Colores, tipografía, componentes de UI | [STYLES.md](STYLES.md) (tokens ya volcados en `apps/web/src/styles.css`) |
 | Comandos para correr, testear y generar migraciones | [README.md](README.md) |
+| Cómo se versiona y qué revisar antes de largar una versión | [VERSIONING.md](VERSIONING.md) |
 | Tablero de tareas | Trello, vía el conector de claude.ai (ver [Flujo de trabajo](#flujo-de-trabajo)) |
 
 ## Estado actual
@@ -92,7 +93,7 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 
 - Docs del proyecto en **español**; código, identificadores, comentarios y mensajes de commit en **inglés**.
 - Commits estilo Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`…). **Definen las versiones**:
-  release-please calcula el bump y el CHANGELOG a partir de ellos (ARCHITECTURE.md §16.1). No editar versiones
+  release-please calcula el bump y el CHANGELOG a partir de ellos ([VERSIONING.md](VERSIONING.md)). No editar versiones
   ni CHANGELOGs a mano.
 - Despliegue de la telemetría: Actions construye las imágenes en GHCR y Jenkins despliega en el VPS (staging
   automático, prod con aprobación). Ver ARCHITECTURE.md §19.6.

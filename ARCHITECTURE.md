@@ -554,6 +554,8 @@ careerly/
 
 ### 16.1 Versionado (ADR-19)
 
+Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING.md).
+
 **Qué se versiona y cómo:**
 
 | Componente | Incluye | Versión | Tag |
