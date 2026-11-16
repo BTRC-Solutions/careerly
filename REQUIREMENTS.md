@@ -1,6 +1,6 @@
 # Careerly — Requerimientos
 
-> Estado: borrador v0.1 · Última actualización: 2026-11-10
+> Estado: borrador v0.2 · Última actualización: 2026-11-16
 > Documentos relacionados: [ARCHITECTURE.md](ARCHITECTURE.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Visión
@@ -41,6 +41,8 @@ Perfil maestro (todo lo que hice) + Job description
 - **Usuario:** persona que busca trabajo. Es el único actor: la app no tiene cuentas ni login.
 - **Proveedor de IA:** servicio externo de LLM, usado con la API key propia del usuario (ver ARCHITECTURE.md).
 - **Proveedor de búsqueda web** *(post-MVP)*: para el research de empresas.
+- **Receptor de telemetría:** servidor propio del proyecto que recibe los reportes anónimos de uso de quienes
+  lo aceptan y publica estadísticas agregadas (ver sección 5.10).
 
 ## 4. Principios del producto (no negociables)
 
@@ -53,6 +55,9 @@ Perfil maestro (todo lo que hice) + Job description
    o regenerar CVs nunca altera lo que ya se envió.
 4. **El usuario tiene la última palabra.** Todo CV generado se puede revisar y editar antes de finalizarlo.
 5. **Estándar de la industria.** Los CVs generados ocupan 1 o 2 páginas y son compatibles con ATS.
+6. **La telemetría nunca incluye el CV ni datos personales.** Solo se envían métricas agregadas que el usuario
+   aceptó, y la app lo dice de forma explícita. El CV, el perfil maestro y los datos personales no salen de la
+   computadora por esta vía bajo ninguna circunstancia.
 
 ## 5. Requerimientos funcionales
 
@@ -73,6 +78,8 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | RF-CONF-09 | Elegir los modelos de IA por tipo de tarea (con valores por defecto). | Post |
 | RF-CONF-10 | En las versiones instaladas, avisar que hay una actualización disponible e instalarla. | Post |
 | RF-CONF-11 | Exportar los datos en JSON legible (portabilidad). | Post |
+| RF-CONF-12 | Elegir el canal de actualizaciones: estable o beta. | Post |
+| RF-CONF-13 | Ver la versión instalada de la app en Configuración. | MVP |
 
 ### 5.2 Perfil maestro (PROF)
 
@@ -95,7 +102,7 @@ Prioridad: **MVP** = necesario para la primera versión usable · **Post** = des
 | ID | Requerimiento | Prioridad |
 |---|---|---|
 | RF-JD-01 | Crear una JD pegando el texto, con empresa, puesto, URL, ubicación, modalidad y rango salarial opcionales. | MVP |
-| RF-JD-02 | Analizar la JD con IA y extraer requisitos estructurados: obligatorios, deseables, herramientas, seniority, años de experiencia, idioma de la JD y keywords. | MVP |
+| RF-JD-02 | Analizar la JD con IA y extraer requisitos estructurados: obligatorios, deseables, herramientas, seniority, años de experiencia, idioma de la JD, keywords, **categoría del rol** (enum, p. ej. `backend`, `frontend`, `data`), **modalidad** y **país** de la oferta (código ISO). | MVP |
 | RF-JD-03 | Ver y corregir el análisis (agregar/quitar requisitos) antes de continuar. | MVP |
 | RF-JD-04 | Importar la JD desde una URL. | Post |
 | RF-JD-05 | Extensión de navegador para guardar JDs desde portales de empleo. | Post |
@@ -216,6 +223,24 @@ saber antes de cada entrevista.
 | RF-PREP-12 | Práctica de entrevista simulada (chat con la IA haciendo de entrevistador) con devolución sobre las respuestas. | Post (a evaluar) |
 | RF-PREP-13 | Exportar la guía a PDF o verla en formato imprimible. | Post |
 
+### 5.10 Telemetría (TEL)
+
+Objetivo: saber si la app se usa y cómo le va a la gente con sus búsquedas, con datos anónimos y agregados,
+**sin enviar nunca el CV ni datos personales**, y publicar esas estadísticas en una página pública.
+
+| ID | Requerimiento | Prioridad |
+|---|---|---|
+| RF-TEL-01 | **Ventana de consentimiento** en el primer inicio (dentro del asistente de RF-CONF-01): lista de métricas, cada una con su casilla y una explicación breve. Las casillas vienen **activadas**; los botones "Aceptar" y "Rechazar todo" tienen la misma jerarquía visual. **No se envía nada hasta que el usuario elige**; cerrar la ventana sin elegir equivale a rechazar. | MVP |
+| RF-TEL-02 | La ventana y la pantalla de Privacidad dicen de forma explícita y visible lo que **nunca** se envía: CV, perfil maestro, datos personales, nombres de empresas, texto o URL completa de las JDs, contactos, notas, salarios, prompts, respuestas de la IA ni la API key. También informan que los reportes se guardan sin límite de tiempo. | MVP |
+| RF-TEL-03 | **Catálogo de métricas** (cada una se activa por separado): (a) uso activo (si la app se usó en el día); (b) cantidad de postulaciones creadas; (c) plataforma de origen (dominio de la URL de la JD normalizado contra una lista de portales conocidos; `other` si no está en la lista, `unknown` si no hay URL); (d) categoría y seniority de la posición; (e) título de la posición (texto de la JD, recortado); (f) embudo de estados (transiciones por estado); (g) modalidad y país de la oferta; (h) uso de funciones (CVs generados, idiomas de salida, gaps respondidos, tokens de IA). | MVP |
+| RF-TEL-04 | Si una versión nueva agrega métricas, la ventana vuelve a aparecer **solo para las nuevas** (versión de consentimiento). Las ya elegidas no cambian. | MVP |
+| RF-TEL-05 | Activar o desactivar cada métrica en cualquier momento desde Configuración → Privacidad. El cambio rige desde el próximo envío. | MVP |
+| RF-TEL-06 | Ver el **JSON exacto del próximo envío** y el **historial local** de los reportes enviados, tal cual salieron. | MVP |
+| RF-TEL-07 | **Regenerar el ID anónimo** de instalación: los reportes siguientes no se pueden vincular con los anteriores. | MVP |
+| RF-TEL-08 | Envío **diario y agregado**: un reporte por día con uso, con reintentos. Los días que no se pudieron enviar (sin conexión, app cerrada) se envían después, hasta 30 días hacia atrás. | MVP |
+| RF-TEL-09 | **Receptor:** recibe los reportes, los valida contra el mismo esquema que usa la app, descarta duplicados (instalación + día) y los guarda. | MVP |
+| RF-TEL-10 | **Página pública de estadísticas** con datos agregados de todas las instalaciones: usuarios activos (diarios, semanales, mensuales), postulaciones por semana, plataformas, categorías, seniority y títulos más frecuentes, embudo, modalidad y países. | MVP |
+
 ## 6. Reglas de negocio
 
 ### 6.1 Generación de CVs
@@ -279,11 +304,23 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
   a personas (p. ej. entrevistadores) más allá de los datos que el usuario cargue manualmente en los contactos.
 - **RN-13** Eliminar un elemento del perfil maestro no afecta a los snapshots existentes.
 
+### 6.5 Telemetría
+
+- **RN-18 — Lista de permitidos.** El reporte se arma solo con los campos de un esquema cerrado (enums, números,
+  dominios de la lista de portales y el título recortado). Un campo fuera del esquema hace **fallar** el
+  envío; nunca se recorta en silencio. Lo enumerado en RF-TEL-02 no tiene forma de llegar al reporte.
+- **RN-19 — Consentimiento.** Solo se incluyen las métricas activadas. Sin elección del usuario, o con "Rechazar
+  todo", no se genera ID ni se envía nada.
+- **RN-20 — Umbral de anonimato.** La página pública muestra un valor de una categoría (plataforma, título,
+  país, etc.) solo si proviene de al menos **5 instalaciones distintas**.
+- **RN-21 — Sin impacto en la app.** Un fallo de la telemetría nunca bloquea una función ni muestra errores al
+  usuario; solo queda en el log local.
+
 ## 7. Requerimientos no funcionales
 
 | ID | Categoría | Requerimiento |
 |---|---|---|
-| RNF-01 | Privacidad | Todos los datos se guardan localmente. Solo salen de la computadora los fragmentos necesarios hacia el proveedor de IA (y, post-MVP, las consultas de búsqueda web, que nunca incluyen datos personales). |
+| RNF-01 | Privacidad | Todos los datos se guardan localmente. Solo salen de la computadora los fragmentos necesarios hacia el proveedor de IA, los reportes de telemetría que el usuario aceptó (§5.10, sin datos personales) y, post-MVP, las consultas de búsqueda web, que nunca incluyen datos personales. |
 | RNF-02 | Privacidad | Los logs locales no incluyen el contenido del perfil, de las JDs ni de los prompts completos (salvo un modo de depuración que el usuario active explícitamente). |
 | RNF-03 | Seguridad | La API key se guarda cifrada con el almacén seguro del sistema operativo. Las comunicaciones con servicios externos usan TLS. El cifrado del disco queda a cargo del sistema operativo. |
 | RNF-04 | Seguridad | El texto de una JD se trata como datos no confiables (riesgo de *prompt injection*). Las salidas de la IA se validan contra un esquema antes de usarse. |
@@ -304,13 +341,16 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | RNF-19 | Seguridad | El backend local solo escucha en `127.0.0.1` y rechaza peticiones sin el token de la sesión de la app (ninguna otra aplicación ni sitio web puede usar su API). |
 | RNF-20 | Integridad de datos | Antes de aplicar migraciones de base de datos al actualizar la app, se crea un backup automático. Si una migración falla, se restaura. |
 | RNF-21 | Rendimiento | La app abre en menos de 3 s en un equipo de gama media. |
+| RNF-22 | Seguridad | El receptor de telemetría solo expone a internet el endpoint de ingesta (`POST`, HTTPS) y la página pública. Su API de lectura solo es accesible desde la red interna, por el servidor de la página. La ingesta tiene rate limit por IP, validación estricta y topes de plausibilidad. |
+| RNF-23 | Privacidad | El receptor no guarda direcciones IP: no se persisten en la base y los logs del proxy las omiten. |
 
 ## 8. Fuera de alcance (por ahora)
 
 - Postularse automáticamente en portales de empleo.
 - Funciones para reclutadores o empresas.
 - Cuentas de usuario, login y varios usuarios en la misma instalación.
-- Versión web o servidor en la nube.
+- Versión web o servidor en la nube. (Única excepción: el receptor de telemetría y su página pública, §5.10,
+  que no guardan datos del perfil.)
 - Sincronización automática entre dispositivos (se cubre con backups manuales, RF-CONF-04).
 - Aplicaciones móviles.
 - Facturación y planes pagos.
@@ -327,3 +367,9 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-06 | ¿Cómo se obtiene la información pública de las empresas (RF-PREP-02)? | Herramienta de búsqueda web del mismo proveedor de IA, para usar una sola API key. Se revisa si la calidad de las citas no alcanza. |
 | D-07 | ¿Las recomendaciones de capacitación incluyen cursos de plataformas? | No: solo documentación oficial, certificaciones y proyectos sugeridos, con enlaces verificados. |
 | D-08 | ¿Aplicación web o de escritorio? | **Escritorio** (Electron), con datos locales en SQLite. Ver ARCHITECTURE.md. |
+| D-09 | ¿Telemetría? | Sí, con consentimiento: casillas activadas por defecto, pero nada se envía sin "Aceptar". Reportes diarios agregados con ID anónimo regenerable. Sin observabilidad técnica (errores, rendimiento). |
+| D-10 | ¿Dónde vive el receptor? | VPS propio con Docker (ver ARCHITECTURE.md §19). Falta conseguir un dominio. |
+| D-11 | ¿Retención de los reportes? | Sin límite de tiempo. Se informa en la pantalla de Privacidad. |
+| D-12 | ¿Cómo se exponen los datos? | Una página pública con agregados. La API de lectura es privada: solo el servidor de la página habla con ella. |
+| D-13 | ¿Cómo se versiona? | SemVer con release-please: una versión para la app de escritorio y otras propias para cada servicio de telemetría; canales stable y beta. Ver ARCHITECTURE.md §16.1. |
+| D-14 | ¿Cómo se despliega la telemetría? | Jenkins en el mismo VPS, solo para desplegar: staging automático en cada merge a `main` y prod con aprobación al crear un tag. GitHub Actions sigue con la CI, los instaladores y las imágenes. Ver ARCHITECTURE.md §19.6. |

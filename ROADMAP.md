@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.2 · Última actualización: 2026-11-10
+> Estado: borrador v0.3 · Última actualización: 2026-11-16
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -35,6 +35,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 1.2 | Pantalla de configuración: idioma de la interfaz y carpeta de datos (ver y abrir). `[RF-CONF-03, RF-CONF-08]` | Cambiar el idioma se aplica sin reiniciar. | ⬜ |
 | 1.3 | Backup y restauración (base + PDFs en un único archivo) y borrado de todos los datos. `[RF-CONF-04, RF-CONF-05]` | Restaurar un backup en una instalación limpia deja todo igual. | ⬜ |
 | 1.4 | **Primer instalador** de Windows con electron-builder (API, migraciones y UI incluidas como recursos; resolver rutas desde `process.resourcesPath`). | El instalador funciona en una máquina sin Node ni herramientas de desarrollo. | ⬜ |
+| 1.5 | **Telemetría (base):** módulo `telemetry`, esquema `TelemetryReportV1` estricto en `contracts`, ventana de consentimiento dentro del asistente de primer inicio (casillas activadas, "Aceptar" / "Rechazar todo" al mismo nivel, lista explícita de lo que nunca se envía), Configuración → Privacidad (métricas, vista previa del JSON, historial, regenerar ID) y la métrica "uso activo". Todavía **sin envío**: los reportes quedan en `PENDING`. `[RF-TEL-01 a 07, RN-18, RN-19]` | Tests: con "Rechazar todo" o sin elegir no se genera ID ni reporte; un campo fuera del esquema hace fallar el armado; la vista previa coincide con lo que se guardaría. | ⬜ |
+| 1.6 | **Versionado:** release-please (componente raíz para la app con `exclude-paths`, `extra-files` para los `package.json`), `CHANGELOG.md`, versión visible en Configuración y como `appVersion`. `[RF-CONF-13, ADR-19]` | Mergear el PR de release de prueba crea el tag `v0.0.1` y la versión aparece en la app. | ⬜ |
 
 ## Fase 2 — Perfil maestro
 
@@ -70,10 +72,11 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.2 | Pantalla de consumo de IA (tokens y costo por día, mes y tarea). Acciones de IA deshabilitadas sin conexión o sin key válida. `[RF-CONF-06, RNF-13]` | Sin red, la app sigue funcionando y las acciones de IA muestran por qué no están disponibles. | ⬜ |
 | 4.3 | Módulo `jobs`: cola persistida en SQLite, ejecutor con concurrencia y reintentos, reanudación al iniciar, progreso por SSE. | Cerrar la app a mitad de una tarea y volver a abrirla la completa. | ⬜ |
 | 4.4 | CRUD de JDs. `[RF-JD-01]` | Se crean y listan desde la app. | ⬜ |
-| 4.5 | Análisis de JD (prompt v1, versionado) con normalización al catálogo de herramientas. Los requisitos se guardan también en la tabla `JobRequirement` (ADR-09), para poder agregarlos más adelante. `[RF-JD-02]` | Con 5 JDs reales, los requisitos extraídos son correctos. | ⬜ |
+| 4.5 | Análisis de JD (prompt v1, versionado) con normalización al catálogo de herramientas. Incluye categoría del rol, modalidad y país (ISO), que usa la telemetría. Los requisitos se guardan también en la tabla `JobRequirement` (ADR-09), para poder agregarlos más adelante. `[RF-JD-02]` | Con 5 JDs reales, los requisitos extraídos son correctos. | ⬜ |
 | 4.6 | Vista y corrección del análisis. `[RF-JD-03]` | El usuario puede agregar o quitar requisitos. | ⬜ |
 | 4.7 | Primer set de evals: 5–10 JDs con requisitos esperados. | Script de evals corre y reporta precisión de extracción. | ⬜ |
 | 4.8 | Sugerencias de redacción de logros con IA. `[RF-PROF-10]` | El usuario acepta o descarta cada sugerencia; nada cambia sin su confirmación. | ⬜ |
+| 4.9 | Telemetría: métrica "uso de funciones" (tokens de IA por día). `[RF-TEL-03h]` | Test: los tokens del reporte coinciden con `AiGeneration` del día. | ⬜ |
 
 ## Fase 5 — Match y gaps
 
@@ -99,6 +102,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | ⬜ |
 | 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | ⬜ |
 | 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ⬜ |
+| 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ⬜ |
 
 ## Fase 7 — Snapshots y postulaciones
 
@@ -110,6 +114,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 7.4 | Vista kanban con arrastrar para cambiar de estado + vista tabla con filtros y búsqueda. `[RF-APP-03, RF-APP-06]` | Usable con teclado (accesibilidad). | ⬜ |
 | 7.5 | Línea de tiempo: eventos automáticos de estado, notas y entrevistas. `[RF-APP-04]` | Los eventos aparecen en orden y no se pueden alterar. | ⬜ |
 | 7.6 | Contactos y datos adicionales (canal, prioridad, salarios). `[RF-APP-05, RF-APP-07]` | CRUD completo. | ⬜ |
+| 7.7 | Telemetría: métricas de postulaciones (cantidad, plataforma de origen con lista de portales, categoría y seniority, título recortado, embudo, modalidad y país). `[RF-TEL-03b–g]` | Test: ningún nombre de empresa, URL completa, contacto, nota ni salario llega al reporte. | ⬜ |
 
 ## Fase 8 — Dashboard, pulido y primer release
 
@@ -118,9 +123,13 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 8.1 | Dashboard: postulaciones por estado, tasa de respuesta, tiempo medio a la primera respuesta. `[RF-DASH-01, RF-DASH-02]` | Los números coinciden con los datos de prueba. | ⬜ |
 | 8.2 | Revisión de accesibilidad y de la ventana en distintos tamaños. `[RNF-11]` | axe sin errores críticos; la app es usable desde 1024 px de ancho. | ⬜ |
 | 8.3 | E2E con Playwright para Electron del flujo completo (LLM *fake*). | Corre en CI. | ⬜ |
-| 8.4 | Pantalla de "Privacidad" (qué datos salen hacia el proveedor de IA) y revisión de logs sin contenido sensible. `[RNF-01, RNF-02]` | Un flujo completo no deja datos del perfil en los logs. | ⬜ |
-| 8.5 | Releases: workflow de GitHub Actions con matriz Windows/macOS/Linux que publica en GitHub Releases al crear un tag. `[RNF-17, RNF-18]` | El tag `v0.1.0` produce instaladores que funcionan en las tres plataformas. | ⬜ |
-| 8.6 | README con instrucciones para instalar desde releases y para ejecutar desde el código (`npm start`). | Una instalación limpia siguiendo el README funciona. | ⬜ |
+| 8.4 | Pantalla de "Privacidad" (qué datos salen hacia el proveedor de IA y hacia la telemetría, retención sin límite) y revisión de logs sin contenido sensible. `[RNF-01, RNF-02, RF-TEL-02]` | Un flujo completo no deja datos del perfil en los logs. | ⬜ |
+| 8.5 | **Receptor de telemetría** `apps/telemetry-api`: NestJS + Drizzle + Postgres, `POST /v1/reports` con validación, idempotencia, topes y rate limit; API de lectura interna con umbral k ≥ 5. `[RF-TEL-09, RN-20, RNF-22, RNF-23]` | Tests de integración: duplicado reemplaza, campo extra rechazado, categoría con < 5 instalaciones no aparece. | ⬜ |
+| 8.6 | **Página pública** `apps/stats-web`: React + Vite con servidor Node intermediario hacia la API interna. `[RF-TEL-10, ADR-18]` | La página muestra los agregados y la API de lectura no responde desde fuera de la red interna. | ⬜ |
+| 8.7 | **Infraestructura del VPS:** dominio, Caddy compartido, docker-compose de staging y prod (Postgres separados), backups diarios y Jenkins en Docker configurado como código (`infra/jenkins/`: plugins, JCasC, usuario `deploy` por SSH). `[ADR-21, D-10]` | Recrear Jenkins desde cero con `docker compose up` deja todo configurado; los dos entornos responden en sus subdominios. | ⬜ |
+| 8.8 | **Pipeline de deploy:** Actions construye y publica las imágenes en GHCR y dispara a Jenkins; Jenkins despliega staging en cada merge y prod con aprobación al crear un tag (backup, migraciones, smoke test, rollback). Activación del envío en la app (cola, reintentos, 30 días atrás). `[RF-TEL-08, RN-21, ADR-20]` | Un deploy con smoke test fallido vuelve solo a la versión anterior; un reporte real enviado desde la app aparece en la página pública de prod. | ⬜ |
+| 8.9 | Releases: workflow de GitHub Actions con matriz Windows/macOS/Linux que publica en GitHub Releases al crear el tag de release-please; workflow manual para betas (`vX.Y.Z-beta.N`, *prerelease*). `[RNF-17, RNF-18]` | El tag `v0.1.0` produce instaladores que funcionan en las tres plataformas. | ⬜ |
+| 8.10 | README con instrucciones para instalar desde releases y para ejecutar desde el código (`npm start`). | Una instalación limpia siguiendo el README funciona. | ⬜ |
 
 **🎯 Hito: MVP (v0.1.0)** — la app de escritorio permite cargar el perfil maestro, generar CVs adaptados de
 1–2 páginas respondiendo gaps, finalizarlos y seguir las postulaciones, con todos los datos locales.
@@ -132,7 +141,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | Prioridad | Funcionalidad | Requerimiento |
 |---|---|---|
 | 1 | Importar un CV existente (PDF/DOCX) al perfil maestro. Es clave para que cargar un perfil de 5–6 páginas no sea una barrera. | RF-PROF-09 |
-| 2 | Actualizaciones automáticas desde GitHub Releases. | RF-CONF-10 |
+| 2 | Actualizaciones automáticas desde GitHub Releases, con elección de canal estable o beta. | RF-CONF-10, RF-CONF-12 |
 | 3 | Carta de presentación desde la sesión de adaptación. | RF-TAIL-16 |
 | 4 | Recordatorios de seguimiento y "requiere acción" en el dashboard. | RF-APP-09, RF-DASH-03 |
 | 5 | Presupuesto mensual de IA y elección de modelos por tarea. | RF-CONF-07, RF-CONF-09 |
