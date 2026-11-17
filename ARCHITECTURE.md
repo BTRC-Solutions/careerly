@@ -424,7 +424,7 @@ apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates
   leer otros archivos. Usa solo las fuentes empaquetadas (`--ignore-system-fonts`), tiene un timeout de 10 s
   (`CAREERLY_RENDER_TIMEOUT_MS`) y el directorio temporal se elimina al terminar. Los paquetes de Typst
   (`@preview/...`) van a `cache/typst-packages/` dentro del directorio de datos, nunca a carpetas del sistema.
-  Si se permiten en las plantillas propias se decide en la 3.7.
+  Si se permiten en las plantillas propias se decide en la 4.12.
 - **Puerto `ResumeRenderer` y catálogo de plantillas:** `ResumeRenderService.render(document, templateId)`
   agrega los `labels` del idioma, busca la plantilla (por defecto `classic`) y devuelve el PDF con el id y la
   versión de la plantilla. Los errores son `TemplateNotFoundError` y `RenderError`, que puede ser
