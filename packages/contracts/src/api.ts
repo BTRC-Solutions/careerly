@@ -20,6 +20,12 @@ export const ApiErrorCode = z.enum([
   'AI_MODEL_UNAVAILABLE',
   /** The AI answered something unusable (invalid structure or blocked content). */
   'AI_FAILED',
+  /** A CV template does not compile (its Typst diagnostics are in the message). */
+  'TEMPLATE_INVALID',
+  /** A CV template took longer than the render timeout. */
+  'TEMPLATE_TIMEOUT',
+  /** The Typst CLI that renders the CVs was not found. */
+  'RENDERER_UNAVAILABLE',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 
