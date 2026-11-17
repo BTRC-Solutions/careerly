@@ -64,6 +64,13 @@
       "when": 1794923025204,
       "tag": "0008_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794923659296,
+      "tag": "0009_job_postings",
+      "breakpoints": true
     }
   ]
 }

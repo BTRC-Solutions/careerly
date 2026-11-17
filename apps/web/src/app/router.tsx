@@ -1,6 +1,11 @@
 import { createHashRouter, Navigate } from 'react-router';
 import { AiUsagePage } from '../features/ai/pages/AiUsagePage';
 import { HomePage } from '../features/home/pages/HomePage';
+import {
+  JobPostingPage,
+  NewJobPostingPage,
+} from '../features/job-postings/pages/JobPostingEditorPage';
+import { JobPostingsPage } from '../features/job-postings/pages/JobPostingsPage';
 import { WelcomePage } from '../features/onboarding/pages/WelcomePage';
 import { ProfileLayout } from '../features/profile/components/ProfileLayout';
 import { ContainerDetailPage } from '../features/profile/pages/ContainerDetailPage';
@@ -36,6 +41,9 @@ export const router = createHashRouter([
           { path: 'languages', element: <LanguagesPage /> },
         ],
       },
+      { path: 'job-postings', element: <JobPostingsPage /> },
+      { path: 'job-postings/new', element: <NewJobPostingPage /> },
+      { path: 'job-postings/:id', element: <JobPostingPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/ai-usage', element: <AiUsagePage /> },
     ],

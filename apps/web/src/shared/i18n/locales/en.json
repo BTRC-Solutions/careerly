@@ -3,7 +3,8 @@
     "label": "Main navigation",
     "home": "Home",
     "settings": "Settings",
-    "profile": "Master profile"
+    "profile": "Master profile",
+    "jobPostings": "Job postings"
   },
   "home": {
     "title": "Welcome to Careerly",
@@ -207,7 +208,10 @@
     "invalidFormat": "The format is not valid.",
     "invalidValue": "The value is not valid.",
     "invalidUrl": "Enter a URL starting with http:// or https://.",
-    "endBeforeStart": "The end date cannot be before the start date."
+    "endBeforeStart": "The end date cannot be before the start date.",
+    "wholeNumber": "Enter a whole number, without separators or symbols.",
+    "currency": "Use the 3-letter currency code (USD, ARS, EUR…).",
+    "salaryRange": "The maximum cannot be lower than the minimum."
   },
   "profile": {
     "title": "Master profile",
@@ -567,6 +571,42 @@
       "relevance-score": "Relevance",
       "resume-writing": "CV writing",
       "achievement-suggestion": "Achievement suggestions"
+    }
+  },
+  "jobPostings": {
+    "title": "Job postings",
+    "subtitle": "The job descriptions you want to tailor your CV to.",
+    "new": "New job posting",
+    "loading": "Loading job postings…",
+    "loadError": "Could not load the job postings.",
+    "emptyTitle": "No job postings yet",
+    "emptyDescription": "Paste the text of a job description to analyze it and tailor your CV to it.",
+    "untitled": "Untitled job posting",
+    "back": "Job postings",
+    "newTitle": "New job posting",
+    "newSubtitle": "Paste the full text of the posting. Everything else is optional.",
+    "save": "Save job posting",
+    "notFound": "The job posting was not found.",
+    "deleteTitle": "Delete this job posting?",
+    "deleteDescription": "Its text and details are deleted. This cannot be undone.",
+    "form": {
+      "text": "Job description",
+      "textHint": "Copy and paste the full job description, as published.",
+      "title": "Job title",
+      "company": "Company",
+      "location": "Location",
+      "workMode": "Work mode",
+      "url": "Posting URL",
+      "salary": "Salary range (optional)",
+      "salaryMin": "Minimum",
+      "salaryMax": "Maximum",
+      "salaryCurrency": "Currency",
+      "salaryPeriod": "Period"
+    },
+    "salaryPeriod": {
+      "YEAR": "Per year",
+      "MONTH": "Per month",
+      "HOUR": "Per hour"
     }
   }
 }

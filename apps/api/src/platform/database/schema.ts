@@ -286,6 +286,34 @@ export const aiGenerations = sqliteTable(
 );
 
 // ---------------------------------------------------------------------------
+// Job descriptions (owned by the `job-postings` module; RF-JD-01).
+// ---------------------------------------------------------------------------
+
+export const jobPostings = sqliteTable(
+  'job_postings',
+  {
+    id: text('id').primaryKey(),
+    title: text('title'),
+    company: text('company'),
+    url: text('url'),
+    location: text('location'),
+    /** `WorkMode`. */
+    workMode: text('work_mode'),
+    salaryMin: integer('salary_min'),
+    salaryMax: integer('salary_max'),
+    /** ISO 4217. */
+    salaryCurrency: text('salary_currency'),
+    /** `SalaryPeriod`. */
+    salaryPeriod: text('salary_period'),
+    /** The job description as pasted (untrusted for the AI). */
+    text: text('text').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [index('job_postings_created_at_idx').on(table.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
 // Background jobs (owned by the `jobs` module; ARCHITECTURE §10).
 // ---------------------------------------------------------------------------
 

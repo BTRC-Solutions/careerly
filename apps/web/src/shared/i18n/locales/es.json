@@ -3,7 +3,8 @@
     "label": "Navegación principal",
     "home": "Inicio",
     "settings": "Configuración",
-    "profile": "Perfil maestro"
+    "profile": "Perfil maestro",
+    "jobPostings": "Ofertas"
   },
   "home": {
     "title": "Bienvenido a Careerly",
@@ -207,7 +208,10 @@
     "invalidFormat": "El formato no es válido.",
     "invalidValue": "El valor no es válido.",
     "invalidUrl": "Ingresá una URL que empiece con http:// o https://.",
-    "endBeforeStart": "La fecha de fin no puede ser anterior a la de inicio."
+    "endBeforeStart": "La fecha de fin no puede ser anterior a la de inicio.",
+    "wholeNumber": "Ingresá un número entero, sin puntos ni símbolos.",
+    "currency": "Usá el código de 3 letras de la moneda (USD, ARS, EUR…).",
+    "salaryRange": "El máximo no puede ser menor que el mínimo."
   },
   "profile": {
     "title": "Perfil maestro",
@@ -567,6 +571,42 @@
       "relevance-score": "Relevancia",
       "resume-writing": "Redacción del CV",
       "achievement-suggestion": "Sugerencias de logros"
+    }
+  },
+  "jobPostings": {
+    "title": "Ofertas",
+    "subtitle": "Las job descriptions a las que querés adaptar tu CV.",
+    "new": "Nueva oferta",
+    "loading": "Cargando ofertas…",
+    "loadError": "No se pudieron cargar las ofertas.",
+    "emptyTitle": "Todavía no cargaste ofertas",
+    "emptyDescription": "Pegá el texto de una job description para analizarla y adaptar tu CV a ella.",
+    "untitled": "Oferta sin título",
+    "back": "Ofertas",
+    "newTitle": "Nueva oferta",
+    "newSubtitle": "Pegá el texto completo de la oferta. El resto de los datos es opcional.",
+    "save": "Guardar oferta",
+    "notFound": "No se encontró la oferta.",
+    "deleteTitle": "¿Eliminar esta oferta?",
+    "deleteDescription": "Se borra el texto y sus datos. No se puede deshacer.",
+    "form": {
+      "text": "Texto de la oferta",
+      "textHint": "Copiá y pegá la job description completa, tal como está publicada.",
+      "title": "Puesto",
+      "company": "Empresa",
+      "location": "Ubicación",
+      "workMode": "Modalidad",
+      "url": "URL de la publicación",
+      "salary": "Rango salarial (opcional)",
+      "salaryMin": "Mínimo",
+      "salaryMax": "Máximo",
+      "salaryCurrency": "Moneda",
+      "salaryPeriod": "Período"
+    },
+    "salaryPeriod": {
+      "YEAR": "Por año",
+      "MONTH": "Por mes",
+      "HOUR": "Por hora"
     }
   }
 }
