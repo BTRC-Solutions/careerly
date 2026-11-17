@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monthOf, summarizeUsage, usageReportStart } from './ai-usage.js';
+import { dayStart, monthOf, summarizeUsage, tokensOnDay, usageReportStart } from './ai-usage.js';
 import type { AiGenerationUsage } from './llm.ports.js';
 
 /** An attempt made at a local date and time. */
@@ -89,5 +89,19 @@ describe('summarizeUsage', () => {
   it('starts the report 11 months before the month, in local time', () => {
     expect(usageReportStart('2026-11')).toEqual(new Date(2025, 11, 1));
     expect(monthOf(new Date(2026, 0, 31, 23, 59))).toBe('2026-01');
+  });
+});
+
+describe('tokensOnDay', () => {
+  it('adds input and output tokens of the local day, from its first to its last hour', () => {
+    const rows = [
+      row([2026, 11, 17, 0], 'jd-analysis', 1000, 200, 0.001),
+      row([2026, 11, 17, 23], 'cv-import', 3000, 600, 0.003),
+      row([2026, 11, 16, 23], 'cv-import', 50, 50, 0),
+      row([2026, 11, 18, 0], 'cv-import', 70, 70, 0),
+    ];
+    expect(tokensOnDay(rows, '2026-11-17')).toBe(4800);
+    expect(tokensOnDay(rows, '2026-11-15')).toBe(0);
+    expect(dayStart('2026-11-17')).toEqual(new Date(2026, 10, 17));
   });
 });

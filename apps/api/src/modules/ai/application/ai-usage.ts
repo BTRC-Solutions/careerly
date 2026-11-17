@@ -17,6 +17,24 @@ export function monthOf(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 }
 
+/** "2026-11-17" → the first instant of that day in local time. */
+export function dayStart(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  return new Date(year, month - 1, date);
+}
+
+/** The day of a date in local time, "2026-11-17". */
+export function dayOf(date: Date): string {
+  return `${monthOf(date)}-${pad(date.getDate())}`;
+}
+
+/** Input plus output tokens of the attempts made on `day` (local time), failed ones included. */
+export function tokensOnDay(rows: AiGenerationUsage[], day: string): number {
+  return rows
+    .filter((row) => dayOf(new Date(row.createdAt)) === day)
+    .reduce((total, row) => total + row.inputTokens + row.outputTokens, 0);
+}
+
 /** The first instant of the oldest month in a 12-month report ending with `month`. */
 export function usageReportStart(month: string): Date {
   const start = monthStart(month);

@@ -945,7 +945,7 @@ servidor propio (§19.7).
 | Título | Título de la JD, recortado a 80 caracteres | `positionTitles: ["…"]` |
 | Embudo | Eventos `STATUS_CHANGE` de `applications` | `funnel: { "SCREENING": n, … }` |
 | Modalidad y país | Análisis de la JD | `workMode: {…}`, `countries: { "AR": n }` |
-| Uso de funciones | `tailoring`, `ai` (`AiGeneration`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }` |
+| Uso de funciones | `tailoring`, `ai` (`AiGeneration`, vía `AiUsageService.tokensOn`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }`. `aiTokens` suma los tokens de entrada y salida de todos los intentos del día local, incluidos los fallidos (4.9). Hasta la Fase 6 los demás campos van en 0, y un día sin uso de IA no incluye la métrica. |
 
 ### 19.3 Formato del reporte
 

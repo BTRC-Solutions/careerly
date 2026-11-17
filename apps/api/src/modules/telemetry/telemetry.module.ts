@@ -12,6 +12,7 @@ import { TelemetryService } from './application/telemetry.service.js';
 import { TelemetryActivityInterceptor } from './http/telemetry-activity.interceptor.js';
 import { TelemetryController } from './http/telemetry.controller.js';
 import { ActiveUsageCollector } from './infrastructure/active-usage.collector.js';
+import { FeatureUsageCollector } from './infrastructure/feature-usage.collector.js';
 import {
   DrizzleTelemetryActivityRepository,
   DrizzleTelemetryReportRepository,
@@ -22,7 +23,8 @@ import { TelemetryScheduler } from './infrastructure/telemetry-scheduler.js';
 
 /**
  * Usage telemetry with per-metric consent (ARCHITECTURE §19.2). Never the CV, the profile or personal
- * data. Step 1.5: consent, anonymous id, "active usage" and local reports; sending comes in step 8.8.
+ * data. Step 1.5: consent, anonymous id, "active usage" and local reports; step 4.9: AI tokens in
+ * "uso de funciones"; sending comes in step 8.8.
  */
 @Module({
   imports: [SettingsModule],
@@ -31,14 +33,18 @@ import { TelemetryScheduler } from './infrastructure/telemetry-scheduler.js';
     TelemetryService,
     TelemetryScheduler,
     ActiveUsageCollector,
+    FeatureUsageCollector,
     { provide: TelemetryPreferencesStore, useClass: SettingsTelemetryPreferencesStore },
     { provide: TelemetryReportRepository, useClass: DrizzleTelemetryReportRepository },
     { provide: TelemetryActivityRepository, useClass: DrizzleTelemetryActivityRepository },
     { provide: TelemetryEnvironment, useClass: SystemTelemetryEnvironment },
     {
       provide: TELEMETRY_COLLECTORS,
-      useFactory: (activeUsage: ActiveUsageCollector) => [activeUsage],
-      inject: [ActiveUsageCollector],
+      useFactory: (activeUsage: ActiveUsageCollector, features: FeatureUsageCollector) => [
+        activeUsage,
+        features,
+      ],
+      inject: [ActiveUsageCollector, FeatureUsageCollector],
     },
     { provide: APP_INTERCEPTOR, useClass: TelemetryActivityInterceptor },
   ],
