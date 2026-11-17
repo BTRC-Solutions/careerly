@@ -623,8 +623,29 @@ careerly/
 | Casos de uso | Flujos completos con adaptadores *fake* (LLM, renderer, repos) | Vitest |
 | Integración | Repositorios Drizzle sobre SQLite temporal, migraciones, render Typst real, cola de tareas | Vitest + archivo SQLite temporal |
 | UI (componentes) | Pantallas con la API simulada: qué se muestra, qué se pide a la API, errores, diálogos | Vitest + jsdom + Testing Library + MSW (`apps/web/src/test-support/`) |
-| Evaluación de IA | Conjunto fijo de perfiles + JDs: requisitos extraídos, cero bullets inventados, CVs dentro del límite de páginas | Script de evals propio, corrido manualmente al cambiar prompts o modelos |
+| Evaluación de IA | Conjunto fijo de perfiles + JDs: requisitos extraídos, cero bullets inventados, CVs dentro del límite de páginas | Script de evals propio, corrido manualmente al cambiar prompts o modelos (§15.1) |
 | E2E | Flujo completo en la app de escritorio: perfil → JD → gaps → CV → postulación | Playwright para Electron, con el LLM *fake* |
+
+### 15.1 Evals de IA
+
+`npm run evals:jd` corre el análisis real de JDs (4.7) sobre los casos de `apps/api/evals/jd-analysis/`, con
+la key del proveedor en `CAREERLY_EVAL_API_KEY` y la API levantada sobre una carpeta de datos temporal.
+
+- **Casos:** un JSON por JD con el texto y lo esperado: requisitos obligatorios y deseables (cada uno con una o
+  varias redacciones aceptadas), extras aceptables que no penalizan y los datos a comprobar (idioma,
+  categoría, seniority, modalidad, país, años). Hay ofertas en español e inglés, de distintos roles, y una con
+  instrucciones inyectadas.
+- **Puntaje** (`job-postings/domain/analysis-eval.ts`, puro): cada requisito esperado se empareja con uno
+  extraído si coinciden las palabras (sin mayúsculas, acentos ni plurales) o la herramienta del catálogo.
+  - **Precisión:** extraídos correctos sobre extraídos.
+  - **Recall:** esperados encontrados sobre esperados.
+  - **Importancia:** emparejados con la importancia correcta.
+  - **Datos:** campos que coinciden.
+- **Salida:** un resumen por caso en la consola (faltantes, extras, importancia y datos errados) y un reporte JSON
+  en `.data/evals/` con el modelo y la versión del prompt, para comparar corridas. `--fail-under 0.8` hace
+  fallar el script si la precisión o el recall quedan por debajo.
+- Se corre a mano al cambiar un prompt o un modelo (cuesta tokens), no en CI. En la Fase 6 se suman casos de
+  perfiles para medir bullets inventados y el límite de páginas.
 
 ## 16. Distribución y actualizaciones
 

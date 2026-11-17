@@ -1,0 +1,26 @@
+{
+  "title": "Desarrollador/a Full Stack Junior",
+  "company": "Agencia Pixel",
+  "location": "Córdoba",
+  "text": "En Agencia Pixel buscamos un/a desarrollador/a Full Stack Junior para sumarse a proyectos de clientes.\n\nTrabajamos de forma presencial en nuestra oficina de Córdoba capital.\n\nBuscamos a alguien con:\n- Estudios en curso o completos en carreras de sistemas.\n- Conocimientos de JavaScript, HTML y CSS.\n- Experiencia (aunque sea en proyectos personales) con React.\n- Nociones de bases de datos SQL (MySQL).\n- Ganas de aprender y trabajar en equipo.\n\nVas a sumar puntos si conocés PHP o Laravel, o si tenés experiencia con WordPress.\n\nNo es necesaria experiencia laboral previa.",
+  "expected": {
+    "required": [
+      ["carrera", "estudios", "sistemas"],
+      "JavaScript",
+      "HTML",
+      "CSS",
+      "React",
+      ["MySQL", "SQL"]
+    ],
+    "niceToHave": ["PHP", "Laravel", "WordPress"],
+    "acceptable": ["aprender", "equipo", "SQL", "bases de datos"],
+    "facts": {
+      "language": "es",
+      "roleCategory": "fullstack",
+      "seniority": "junior",
+      "workMode": "onsite",
+      "country": "AR",
+      "yearsOfExperience": 0
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "title": "SRE / DevOps Sr",
+  "company": "Clínica Digital",
+  "location": "Remoto desde Argentina",
+  "text": "Buscamos un/a SRE con experiencia para cuidar la plataforma de turnos online de una red de clínicas.\n\nTrabajo 100% remoto desde cualquier lugar de Argentina, contratación en relación de dependencia.\n\nResponsabilidades\n- Administrar clusters de Kubernetes en GCP.\n- Automatizar la infraestructura con Terraform.\n- Definir alertas y tableros (Prometheus, Grafana).\n- Participar de guardias rotativas.\n\nRequisitos excluyentes\n- 5 años o más en roles de DevOps/SRE.\n- Kubernetes y Helm.\n- Terraform.\n- Google Cloud Platform.\n- Linux y scripting en Bash.\n- CI/CD con GitHub Actions o GitLab CI.\n- Disponibilidad para guardias.\n\nPlus\n- Certificación CKA.\n- Python.\n- Experiencia en el sector salud.",
+  "expected": {
+    "required": [
+      "Kubernetes",
+      "Helm",
+      "Terraform",
+      ["Google Cloud", "GCP"],
+      "Linux",
+      "Bash",
+      ["CI/CD", "GitHub Actions", "GitLab CI"],
+      ["guardias", "on-call"]
+    ],
+    "niceToHave": ["CKA", "Python", ["salud", "health"]],
+    "acceptable": [
+      "Prometheus",
+      "Grafana",
+      "GitHub Actions",
+      "GitLab CI",
+      "alertas",
+      "DevOps",
+      "SRE",
+      "Argentina"
+    ],
+    "facts": {
+      "language": "es",
+      "roleCategory": "devops",
+      "seniority": "senior",
+      "workMode": "remote",
+      "country": "AR",
+      "yearsOfExperience": 5
+    }
+  }
+}
