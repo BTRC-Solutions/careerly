@@ -98,7 +98,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 5.1 | Agregado `TailoringSession` con su máquina de estados (dominio puro + tests). | Todas las transiciones válidas e inválidas cubiertas por tests. | ⬜ |
+| 5.1 | Agregado `TailoringSession` con su máquina de estados (dominio puro + tests). | Todas las transiciones válidas e inválidas cubiertas por tests. | ✅ (tabla estado × evento en `tailoring-session.test.ts`) |
 | 5.2 | Match determinístico de herramientas (con alias) + match semántico de requisitos no-herramienta con evidencia por id. `[RF-TAIL-02, RF-GAP-02]` | Con el perfil real y las JDs de evals, el match es razonable y toda la evidencia apunta a ids existentes. | ⬜ |
 | 5.3 | Pantalla de resumen del match. `[RF-TAIL-03]` | Muestra cubiertos (con evidencia), parciales y faltantes. | ⬜ |
 | 5.4 | Generación de preguntas de gaps (faltantes, parciales, no-herramienta). `[RF-TAIL-04, RF-GAP-03, RF-GAP-04]` | Las preguntas se generan sin LLM, desde plantillas. | ⬜ |

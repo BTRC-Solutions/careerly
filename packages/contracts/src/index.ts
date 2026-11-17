@@ -11,3 +11,4 @@ export * from './resume.js';
 export * from './templates.js';
 export * from './jobs.js';
 export * from './job-postings.js';
+export * from './tailoring.js';
