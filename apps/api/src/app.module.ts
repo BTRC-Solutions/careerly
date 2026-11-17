@@ -6,6 +6,7 @@ import { JobPostingsModule } from './modules/job-postings/index.js';
 import { JobsModule } from './modules/jobs/index.js';
 import { ProfileModule } from './modules/profile/index.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
+import { TailoringModule } from './modules/tailoring/index.js';
 import { TelemetryModule } from './modules/telemetry/index.js';
 import { APP_CONFIG, type AppConfig } from './platform/config/app-config.js';
 import { DatabaseModule } from './platform/database/database.module.js';
@@ -39,6 +40,7 @@ export class AppModule {
         JobPostingsModule,
         AiModule,
         DocumentsModule,
+        TailoringModule,
         TelemetryModule,
       ],
       controllers: [HealthController],

@@ -10,18 +10,20 @@
  *   ANALYZING | GENERATING ──FAIL──▶ FAILED ──RETRY──▶ the step that failed
  *
  * Rules the diagram leaves open, decided here:
- * - The match says how many gaps there are; with gaps the session must go through the questions, without them
+ * - The match decides whether there are gaps (`countGaps`); with gaps the session must go through the questions, without them
  *   there is nothing to ask (also from REVIEW). Skipping questions happens inside AWAITING_ANSWERS (RF-GAP-01).
  * - FAILED remembers the step that failed, so a retry goes back to that step and not to the other one.
  * - FINALIZED is terminal: what was sent does not change (RNF-10).
  */
 
 import type {
+  MatchResult,
   PageBudget,
   ResumeLanguage,
   TailoringFailedStep,
   TailoringSessionStatus,
 } from '@careerly/contracts';
+import { countGaps } from './match.js';
 
 export interface TailoringSession {
   id: string;
@@ -31,15 +33,15 @@ export interface TailoringSession {
   pageBudget: PageBudget;
   templateId: string;
   status: TailoringSessionStatus;
-  /** Gaps found by the last match; `null` until there is one. */
-  gapCount: number | null;
+  /** The last match (RF-TAIL-02); `null` until there is one. */
+  match: MatchResult | null;
   /** Set only while `FAILED`. */
   failedStep: TailoringFailedStep | null;
 }
 
 export type TailoringSessionEvent =
   /** The match finished (RF-TAIL-02). */
-  | { type: 'MATCH_READY'; gapCount: number }
+  | { type: 'MATCH_READY'; match: MatchResult }
   /** Go to the gap questions: after the match, or back from the review. */
   | { type: 'ASK_GAPS' }
   /** Generate the CVs: without gaps, after answering them, or again from the review. */
@@ -108,7 +110,7 @@ export function startTailoringSession(input: NewTailoringSession): TailoringSess
     ...input,
     languages: [...input.languages],
     status: 'ANALYZING',
-    gapCount: null,
+    match: null,
     failedStep: null,
   };
 }
@@ -128,15 +130,12 @@ export function applySessionEvent(
     status: next,
     failedStep: null,
   });
-  const hasGaps = (session.gapCount ?? 0) > 0;
+  const hasGaps = session.match !== null && countGaps(session.match) > 0;
 
   switch (event.type) {
     case 'MATCH_READY':
       if (status !== 'ANALYZING') return reject();
-      if (!Number.isInteger(event.gapCount) || event.gapCount < 0) {
-        throw new TailoringSessionValidationError('The gap count must be a non-negative integer.');
-      }
-      return to('MATCHED', { gapCount: event.gapCount });
+      return to('MATCHED', { match: event.match });
 
     case 'ASK_GAPS':
       if (status !== 'MATCHED' && status !== 'REVIEW') return reject();
