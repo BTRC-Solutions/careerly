@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0](https://github.com/BTRC-Solutions/careerly/compare/v0.3.0...v0.4.0) (2026-11-17)
+
+
+### Features
+
+* **ai:** AI usage screen and AI actions disabled when unavailable (F4.2) ([f6b4cfe](https://github.com/BTRC-Solutions/careerly/commit/f6b4cfebf33f0078687079a7cd43964d9dd89086))
+* **api:** user CV templates (roadmap 4.12) ([f41260e](https://github.com/BTRC-Solutions/careerly/commit/f41260eeb292684415b8eda1060ab5296d12070f))
+* **evals:** first AI eval set for the job description analysis (F4.7) ([be76462](https://github.com/BTRC-Solutions/careerly/commit/be76462b3cd3989e0cd4509891a6ae8cff5a661f))
+* **job-postings:** AI analysis of job descriptions in the background (F4.5) ([c45427a](https://github.com/BTRC-Solutions/careerly/commit/c45427acdec67d41fdf8542e79a8752fe5f26f2e))
+* **job-postings:** create, list, edit and delete job descriptions (F4.4) ([5d3fefc](https://github.com/BTRC-Solutions/careerly/commit/5d3fefc2dcd389e2d5f98e34d11b92091e48add6))
+* **job-postings:** review and correct the job description analysis (F4.6) ([d45e76a](https://github.com/BTRC-Solutions/careerly/commit/d45e76a5ce1babc432ca29aaa7913a4eb91cbf2d))
+* **jobs:** persisted background job queue with retries and resumption (F4.3) ([2de3e96](https://github.com/BTRC-Solutions/careerly/commit/2de3e96dd24821b34f8eeceac80f24efb474851e))
+* **profile:** AI wording suggestions for achievements (F4.8) ([aa55497](https://github.com/BTRC-Solutions/careerly/commit/aa55497f179d7fa8ed4d6f1d871174e1b0675016))
+* **telemetry:** AI tokens per day in the "uso de funciones" metric (F4.9) ([b9579de](https://github.com/BTRC-Solutions/careerly/commit/b9579deae82bc1d533e22427b425ca16389c30c4))
+* **web:** CV templates screen (roadmap 4.13) ([7cd8675](https://github.com/BTRC-Solutions/careerly/commit/7cd867571cf23f7de47458d01d85640a5265ef0f))
+
+
+### Bug Fixes
+
+* **api:** strip the render folder from Typst errors on Windows runners ([a567dd9](https://github.com/BTRC-Solutions/careerly/commit/a567dd9faf087f0b90681735d643137f1a973339))
+
+
+### Miscellaneous Chores
+
+* close phase 4 ([4327319](https://github.com/BTRC-Solutions/careerly/commit/4327319f9a4f62b507e37a11a1bfd184e00a793a))
+
 ## [0.3.0](https://github.com/BTRC-Solutions/careerly/compare/v0.2.0...v0.3.0) (2026-11-17)
 
 
