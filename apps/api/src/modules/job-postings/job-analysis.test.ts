@@ -1,4 +1,6 @@
 import {
+  type JobAnalysis,
+  JobAnalysisSchema,
   type JobAnalysisState,
   JobAnalysisStateSchema,
   JobPostingSchema,
@@ -52,10 +54,14 @@ interface GeminiCall {
 
 function startFakeGemini(answer: unknown, status = 200) {
   const calls: GeminiCall[] = [];
+  /** While set, answers wait for it: keeps an analysis running. */
+  let hold: Promise<void> | undefined;
+  let release = () => {};
   const server = http.createServer((request, response) => {
     let raw = '';
     request.on('data', (chunk) => (raw += chunk));
-    request.on('end', () => {
+    request.on('end', async () => {
+      await hold;
       calls.push((JSON.parse(raw) as { contents: GeminiCall[] }).contents[0]!);
       response.writeHead(status, { 'Content-Type': 'application/json' });
       response.end(
@@ -74,13 +80,29 @@ function startFakeGemini(answer: unknown, status = 200) {
       );
     });
   });
-  return new Promise<{ url: string; calls: GeminiCall[]; close(): Promise<void> }>((resolve) => {
+  return new Promise<{
+    url: string;
+    calls: GeminiCall[];
+    pause(): void;
+    resume(): void;
+    close(): Promise<void>;
+  }>((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address() as AddressInfo;
       resolve({
         url: `http://127.0.0.1:${port}`,
         calls,
-        close: () => new Promise((done) => server.close(() => done())),
+        pause: () => {
+          hold = new Promise((done) => (release = done));
+        },
+        resume: () => {
+          hold = undefined;
+          release();
+        },
+        close: () => {
+          release();
+          return new Promise((done) => server.close(() => done()));
+        },
       });
     });
   });
@@ -175,6 +197,7 @@ describe('job description analysis (integration)', () => {
       country: 'AR',
       yearsOfExperience: 5,
       promptVersion: 'jd-analysis.v1',
+      editedAt: null,
     });
     const requirements = done.analysis!.requirements.map((r) => [
       r.label,
@@ -237,5 +260,126 @@ describe('job description analysis (integration)', () => {
     expect((await api('DELETE', `/job-postings/${posting.id}`)).status).toBe(204);
     expect((await api('GET', `/job-postings/${posting.id}/analysis`)).status).toBe(404);
     expect((await api('POST', `/job-postings/${posting.id}/analyze`)).status).toBe(404);
+  });
+
+  describe('corrections (RF-JD-03)', () => {
+    const correct = (id: string, body: unknown) =>
+      api('PATCH', `/job-postings/${id}/analysis`, body);
+
+    async function analyzed() {
+      const posting = await createPosting();
+      const analysis = await server!.app.get(JobAnalysisService).run(posting.id);
+      return { posting, analysis };
+    }
+
+    const editable = (analysis: JobAnalysis) => ({
+      roleCategory: analysis.roleCategory,
+      seniority: analysis.seniority,
+      workMode: analysis.workMode,
+      country: analysis.country,
+      yearsOfExperience: analysis.yearsOfExperience,
+      keywords: analysis.keywords,
+      requirements: analysis.requirements.map(({ id, label, kind, importance }) => ({
+        id,
+        label,
+        kind,
+        importance,
+      })),
+    });
+
+    it('needs an analysis first', async () => {
+      await start();
+      const posting = await createPosting();
+      const response = await correct(posting.id, {
+        roleCategory: 'backend',
+        seniority: 'senior',
+        workMode: 'hybrid',
+        country: null,
+        yearsOfExperience: null,
+        keywords: [],
+        requirements: [],
+      });
+      expect(response.status).toBe(404);
+    });
+
+    it('adds, removes and edits requirements, matching tools again', async () => {
+      await start();
+      const { posting, analysis } = await analyzed();
+      const [node, postgres, , fooBar] = analysis.requirements;
+      const body = editable(analysis);
+
+      const response = await correct(posting.id, {
+        ...body,
+        seniority: 'semi-senior',
+        country: 'es',
+        keywords: [...body.keywords, 'Microservices'],
+        requirements: [
+          // Kept as is, and turned nice to have.
+          { ...body.requirements[0], importance: 'NICE_TO_HAVE' },
+          body.requirements[1],
+          // Renamed: the catalog match follows the new label.
+          { ...body.requirements[3], label: 'Docker' },
+          // New ones; an id the server does not know is replaced.
+          { label: 'English (advanced)', kind: 'LANGUAGE', importance: 'REQUIRED' },
+          { id: 'made-up', label: 'k8s', kind: 'TOOL', importance: 'REQUIRED' },
+          // A duplicate collapses into the first.
+          { label: '  Node.js ', kind: 'TOOL', importance: 'REQUIRED' },
+        ],
+      });
+      expect(response.status).toBe(200);
+      const saved = JobAnalysisSchema.parse(await response.json());
+
+      expect(saved).toMatchObject({
+        seniority: 'semi-senior',
+        country: 'ES',
+        keywords: ['APIs', 'Backend', 'Microservices'],
+        promptVersion: 'jd-analysis.v1',
+        analyzedAt: analysis.analyzedAt,
+      });
+      expect(saved.editedAt).not.toBeNull();
+      expect(saved.requirements.map((r) => [r.label, r.importance, r.tool?.name])).toEqual([
+        // The duplicate is required, so the requirement is again (REQUIRED wins).
+        ['Node.js', 'REQUIRED', 'Node.js'],
+        ['Postgres', 'REQUIRED', 'PostgreSQL'],
+        ['Docker', 'NICE_TO_HAVE', 'Docker'],
+        ['English (advanced)', 'REQUIRED', undefined],
+        ['k8s', 'REQUIRED', 'Kubernetes'],
+      ]);
+      const ids = saved.requirements.map((r) => r.id);
+      expect(ids.slice(0, 3)).toEqual([node!.id, postgres!.id, fooBar!.id]);
+      expect(ids).not.toContain('made-up');
+      expect(new Set(ids).size).toBe(ids.length);
+
+      // Stored: the analysis reads back the same, and analyzing again would replace it.
+      expect((await state(posting.id)).analysis).toEqual(saved);
+    });
+
+    it('rejects invalid corrections', async () => {
+      await start();
+      const { posting, analysis } = await analyzed();
+      const body = editable(analysis);
+      for (const invalid of [
+        { ...body, country: 'ARG' },
+        { ...body, yearsOfExperience: 99 },
+        { ...body, requirements: [{ label: ' ', kind: 'TOOL', importance: 'REQUIRED' }] },
+        { ...body, requirements: [{ label: 'Go', kind: 'FRAMEWORK', importance: 'REQUIRED' }] },
+      ]) {
+        expect((await correct(posting.id, invalid)).status).toBe(400);
+      }
+      expect((await state(posting.id)).analysis).toEqual(analysis);
+    });
+
+    it('refuses corrections while the posting is being analyzed', async () => {
+      await start();
+      const { posting, analysis } = await analyzed();
+      gemini!.pause();
+      await api('POST', `/job-postings/${posting.id}/analyze`);
+      await waitFor(async () => (await state(posting.id)).job?.status === 'RUNNING');
+
+      expect((await correct(posting.id, editable(analysis))).status).toBe(409);
+      gemini!.resume();
+      await waitFor(finished(posting.id));
+      expect((await correct(posting.id, editable(analysis))).status).toBe(200);
+    });
   });
 });

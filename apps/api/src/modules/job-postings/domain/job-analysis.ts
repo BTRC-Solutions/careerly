@@ -13,8 +13,11 @@ export interface RawRequirement {
   importance: RequirementImportance;
 }
 
-/** The AI's analysis of a job description, already validated against its schema (RF-JD-02). */
-export interface RawJobAnalysis {
+/**
+ * The AI's analysis of a job description, already validated against its schema (RF-JD-02), or the user's
+ * corrections to it (RF-JD-03), whose requirements carry extra fields such as their id.
+ */
+export interface RawJobAnalysis<R extends RawRequirement = RawRequirement> {
   language: string;
   roleCategory: RoleCategory;
   seniority: Seniority;
@@ -22,7 +25,7 @@ export interface RawJobAnalysis {
   country: string | null;
   yearsOfExperience: number | null;
   keywords: string[];
-  requirements: RawRequirement[];
+  requirements: R[];
 }
 
 export const MAX_REQUIREMENTS = 60;
@@ -34,20 +37,23 @@ const MAX_LABEL = 200;
  * codes, drops duplicates (a requirement listed as required and nice-to-have stays required) and caps the
  * lists. Nothing is invented: a value that does not fit becomes `null` or is dropped.
  */
-export function normalizeAnalysis(raw: RawJobAnalysis): RawJobAnalysis {
+export function normalizeAnalysis<R extends RawRequirement>(
+  raw: RawJobAnalysis<R>,
+): RawJobAnalysis<R> {
   const language = raw.language.trim().toLowerCase();
   const country = raw.country?.trim().toUpperCase() ?? null;
   const years = raw.yearsOfExperience;
 
-  const byLabel = new Map<string, RawRequirement>();
+  const byLabel = new Map<string, R>();
   for (const requirement of raw.requirements) {
     const label = clean(requirement.label);
     if (!label) continue;
     const key = `${requirement.kind}:${label.toLowerCase()}`;
     const seen = byLabel.get(key);
-    if (!seen || (seen.importance === 'NICE_TO_HAVE' && requirement.importance === 'REQUIRED')) {
-      byLabel.set(key, { ...requirement, label });
-    }
+    // The first one stays (with its id, if any); a required duplicate makes it required.
+    if (!seen) byLabel.set(key, { ...requirement, label });
+    else if (requirement.importance === 'REQUIRED')
+      byLabel.set(key, { ...seen, importance: 'REQUIRED' });
   }
 
   const keywords = new Map<string, string>();

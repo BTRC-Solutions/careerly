@@ -28,8 +28,8 @@ describe('normalizeAnalysis', () => {
       yearsOfExperience: 5,
       keywords: ['APIs', 'Payments'],
       requirements: [
-        // Listed as nice-to-have and required: it is required.
-        { label: 'node.js', kind: 'TOOL', importance: 'REQUIRED' },
+        // Listed as nice-to-have and required: the first one stays, and it is required.
+        { label: 'Node.js', kind: 'TOOL', importance: 'REQUIRED' },
         { label: 'English', kind: 'LANGUAGE', importance: 'REQUIRED' },
       ],
     });
