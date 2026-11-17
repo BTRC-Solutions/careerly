@@ -9,6 +9,7 @@ import { cn } from '../../shared/lib/cn';
 const NAV_ITEMS = [
   { to: '/', labelKey: 'nav.home', end: true },
   { to: '/profile', labelKey: 'nav.profile', end: false },
+  { to: '/job-postings', labelKey: 'nav.jobPostings', end: false },
   { to: '/settings', labelKey: 'nav.settings', end: true },
 ] as const;
 

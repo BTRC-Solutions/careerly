@@ -2,6 +2,7 @@ import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AiModule } from './modules/ai/index.js';
 import { DocumentsModule } from './modules/documents/index.js';
+import { JobPostingsModule } from './modules/job-postings/index.js';
 import { JobsModule } from './modules/jobs/index.js';
 import { ProfileModule } from './modules/profile/index.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
@@ -35,6 +36,7 @@ export class AppModule {
         JobsModule,
         SettingsModule,
         ProfileModule,
+        JobPostingsModule,
         AiModule,
         DocumentsModule,
         TelemetryModule,
