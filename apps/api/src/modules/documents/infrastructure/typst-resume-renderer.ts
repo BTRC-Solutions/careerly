@@ -35,7 +35,9 @@ export class TypstResumeRenderer extends ResumeRenderer {
   }
 
   async render(template: ResumeTemplate, data: TemplateData): Promise<RenderOutput> {
-    const work = await fs.mkdtemp(path.join(os.tmpdir(), 'careerly-render-'));
+    // The real path: Typst reports files by it, and on Windows the temp folder may come as an 8.3 short
+    // name (`C:\Users\RUNNER~1\…`) or through a junction, which Typst would print expanded.
+    const work = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'careerly-render-')));
     try {
       await fs.cp(template.dir, work, { recursive: true });
       // Data, not code: the template reads this file (RNF-05).
@@ -75,7 +77,7 @@ export class TypstResumeRenderer extends ResumeRenderer {
         },
       );
     } catch (error) {
-      throw toRenderError(error as ExecError, this.config.renderTimeoutMs);
+      throw toRenderError(error as ExecError, this.config.renderTimeoutMs, work);
     }
   }
 }
@@ -90,13 +92,28 @@ async function countPages(pdf: Uint8Array): Promise<number> {
 
 type ExecError = NodeJS.ErrnoException & { killed?: boolean; stderr?: string };
 
-function toRenderError(error: ExecError, timeoutMs: number): RenderError {
+function toRenderError(error: ExecError, timeoutMs: number, work: string): RenderError {
   if (error.code === 'ENOENT') {
     return new RenderError('RENDERER_UNAVAILABLE', 'The Typst CLI was not found.');
   }
   if (error.killed) {
     return new RenderError('TIMEOUT', `The template took more than ${timeoutMs} ms to render.`);
   }
-  const diagnostics = (error.stderr ?? '').trim().slice(0, MAX_DIAGNOSTICS) || null;
+  const stderr = withoutWorkFolder(error.stderr ?? '', work);
+  const diagnostics = stderr.trim().slice(0, MAX_DIAGNOSTICS) || null;
   return new RenderError('COMPILE_ERROR', 'The template could not be rendered.', diagnostics);
+}
+
+/**
+ * Typst names files by their absolute path (on Windows with the `\\?\` prefix). The temporary folder means
+ * nothing to the template's author, so `…/careerly-render-x/template.typ` becomes `template.typ`. Should the
+ * path still be spelled differently, the location lines (`┌─ <path>:line:col`) are cut at the folder's name.
+ */
+function withoutWorkFolder(text: string, work: string): string {
+  const folder = `${work}${path.sep}`;
+  const name = path.basename(work).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text
+    .replaceAll(`\\\\?\\${folder}`, '')
+    .replaceAll(folder, '')
+    .replace(new RegExp(`(─ )[^\\n]*?${name}[\\\\/]`, 'g'), '$1');
 }

@@ -109,7 +109,9 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 - Ramas `feat/<fase-o-paso>-<descripcion>` → PR a `main`. CI (Windows + Ubuntu) debe quedar en verde.
 - Textos de UI siempre por i18n (`apps/web/src/shared/i18n/locales/{es,en}.json`), nunca hardcodeados.
 - Tests: dominio y casos de uso con fakes en memoria; integración con SQLite temporal
-  (`apps/api/src/test-support/temp-dir.ts`).
+  (`apps/api/src/test-support/temp-dir.ts`). En la web, la lógica pura corre en Node; las pantallas, con
+  `// @vitest-environment jsdom` al principio del archivo, `renderScreen` y la API simulada con MSW
+  (`apps/web/src/test-support/`; ejemplo: `TemplatesPage.test.tsx`).
 
 ## Flujo de trabajo
 

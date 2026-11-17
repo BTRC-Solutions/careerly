@@ -6,6 +6,8 @@ export interface ResumeTemplate {
   name: string;
   /** Goes up with every change to the template; snapshots keep it (RNF-10). */
   version: number;
+  /** `true` for the templates that ship with the app; the user's own ones can be renamed and deleted. */
+  builtIn: boolean;
   dir: string;
 }
 
@@ -13,6 +15,19 @@ export class TemplateNotFoundError extends Error {
   constructor(readonly templateId: string) {
     super(`Template "${templateId}" does not exist.`);
     this.name = 'TemplateNotFoundError';
+  }
+}
+
+/** Why a change to the user's templates was refused. */
+export type UserTemplateFailure = 'INVALID_FILE' | 'BUILT_IN' | 'IN_USE';
+
+export class UserTemplateError extends Error {
+  constructor(
+    readonly reason: UserTemplateFailure,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'UserTemplateError';
   }
 }
 
@@ -33,9 +48,45 @@ export class RenderError extends Error {
 
 /** Port: the templates that can be rendered. Abstract classes so they can be used as Nest DI tokens. */
 export abstract class TemplateCatalog {
+  /** Built-in templates first, then the user's own, by name. */
   abstract list(): Promise<ResumeTemplate[]>;
   /** Throws {@link TemplateNotFoundError}. */
   abstract get(id: string): Promise<ResumeTemplate>;
+  /** The shared examples, one per language: every template must render all of them (roadmap 4.12). */
+  abstract examples(): Promise<TemplateData[]>;
+}
+
+/** Port: the user's own templates, stored as versioned folders under `files/templates/` (ADR-24). */
+export abstract class UserTemplateStore {
+  /** Only the complete ones: a folder without its metadata is ignored. */
+  abstract list(): Promise<ResumeTemplate[]>;
+  /**
+   * Writes version 1 of a new template without listing it yet, so it can be validated first. Then
+   * {@link publish} makes it available, or {@link delete} discards it.
+   */
+  abstract stage(id: string, name: string, source: string): Promise<ResumeTemplate>;
+  /** Makes a staged template available. */
+  abstract publish(template: ResumeTemplate): Promise<void>;
+  abstract rename(id: string, name: string): Promise<void>;
+  /** Removes the template with all its versions. */
+  abstract delete(id: string): Promise<void>;
+}
+
+/**
+ * Port: the starting point for writing a template (roadmap 4.13): the default template's source and the
+ * shared examples, packed as a single file to download.
+ */
+export abstract class TemplateStarterKit {
+  /** A `.zip` with `template.typ` and `examples/example.<language>.json`. */
+  abstract build(): Promise<Uint8Array>;
+}
+
+/**
+ * Port: whether a saved snapshot uses a template version. Those templates are kept (roadmap 4.12).
+ * Snapshots arrive in phase 7; until then nothing uses a template.
+ */
+export abstract class TemplateUsage {
+  abstract isUsed(templateId: string): Promise<boolean>;
 }
 
 /** A rendered PDF and its number of pages, which the page fitter works with (ARCHITECTURE.md §8). */

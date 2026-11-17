@@ -487,6 +487,11 @@ CRUD   /profile/positions, /profile/positions/:id/achievements
 CRUD   /profile/projects, /profile/education, /profile/certifications, /profile/languages
 GET    /tools?query=                               # catálogo con alias
 
+GET    /templates | POST /templates                # incluidas + propias; subir un .typ (multipart) lo valida con los ejemplos
+PATCH  /templates/:id | DELETE /templates/:id      # solo las propias; no se borra una usada por un snapshot
+GET    /templates/:id/preview/:lang                # PDF de la plantilla con el ejemplo de ese idioma
+GET    /templates/starter-kit                      # .zip con classic y los ejemplos, para escribir una propia
+
 CRUD   /job-postings
 POST   /job-postings/:id/analyze                   # encola el análisis (tarea `jd-analysis`, una por JD; volver a pedirlo la reinicia) y devuelve la tarea
 GET    /job-postings/:id/analysis                  # último análisis + estado de la tarea
@@ -616,6 +621,7 @@ careerly/
 | Dominio | Máquinas de estado, match, gaps, guardia de veracidad, `page-fitter` | Vitest, sin I/O |
 | Casos de uso | Flujos completos con adaptadores *fake* (LLM, renderer, repos) | Vitest |
 | Integración | Repositorios Drizzle sobre SQLite temporal, migraciones, render Typst real, cola de tareas | Vitest + archivo SQLite temporal |
+| UI (componentes) | Pantallas con la API simulada: qué se muestra, qué se pide a la API, errores, diálogos | Vitest + jsdom + Testing Library + MSW (`apps/web/src/test-support/`) |
 | Evaluación de IA | Conjunto fijo de perfiles + JDs: requisitos extraídos, cero bullets inventados, CVs dentro del límite de páginas | Script de evals propio, corrido manualmente al cambiar prompts o modelos |
 | E2E | Flujo completo en la app de escritorio: perfil → JD → gaps → CV → postulación | Playwright para Electron, con el LLM *fake* |
 

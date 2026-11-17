@@ -8,5 +8,6 @@ export * from './ai.js';
 export * from './telemetry.js';
 export * from './cv-import.js';
 export * from './resume.js';
+export * from './templates.js';
 export * from './jobs.js';
 export * from './job-postings.js';
