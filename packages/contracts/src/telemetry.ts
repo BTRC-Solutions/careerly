@@ -72,6 +72,7 @@ export const RoleCategorySchema = z.enum([
   'management',
   'other',
 ]);
+export type RoleCategory = z.infer<typeof RoleCategorySchema>;
 export const SenioritySchema = z.enum([
   'intern',
   'junior',
@@ -81,6 +82,7 @@ export const SenioritySchema = z.enum([
   'principal',
   'unknown',
 ]);
+export type Seniority = z.infer<typeof SenioritySchema>;
 export const ApplicationStatusSchema = z.enum([
   'SAVED',
   'APPLIED',
@@ -93,6 +95,7 @@ export const ApplicationStatusSchema = z.enum([
   'GHOSTED',
 ]);
 export const TelemetryWorkModeSchema = z.enum(['remote', 'hybrid', 'onsite', 'unknown']);
+export type TelemetryWorkMode = z.infer<typeof TelemetryWorkModeSchema>;
 export const OutputLanguageSchema = z.enum(['es', 'en']);
 
 /** Maximum length of a reported position title (RF-TEL-03e). */

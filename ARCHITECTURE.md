@@ -247,8 +247,8 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `Achievement` | text, metrics?, toolIds[], origin, originSessionId? | Unidad mínima. Puede ser muy detallado: es material de base, no texto final. |
 | `Tool` | canonicalName, category, isCustom | Catálogo inicial incluido en la app (*seed*) + herramientas creadas por el usuario. |
 | `ToolAlias` | alias → toolId | Resuelve sinónimos ("Postgres" → PostgreSQL). |
-| `JobAnalysis` | requirements (JSON), language, seniority, promptVersion | Salida validada de la IA, editable por el usuario. |
-| `JobRequirement` | jobPostingId, toolId?, label, kind, importance | Requisitos normalizados para poder agregarlos entre JDs (ADR-09, §18.1). |
+| `JobAnalysis` | language, roleCategory, seniority, workMode, country, yearsOfExperience, keywords, promptVersion, model | Salida validada de la IA, una por JD (se reemplaza al volver a analizar). Los requisitos viven en `JobRequirement`. |
+| `JobRequirement` | jobPostingId, position, label, kind, importance, toolId?, toolName? | Requisitos normalizados para poder agregarlos entre JDs (ADR-09, §18.1). `toolId` apunta al catálogo de `profile` sin clave foránea. |
 | `TailoringSession` | status, jobPostingId, languages[], pageBudget, templateId, matchResult (JSON) | Agregado principal del módulo `tailoring`. |
 | `GapQuestion` | requirement, kind (`MISSING`, `PARTIAL`), relatedEvidence, answer (`USED_AT_WORK`, `USED_ELSEWHERE`, `NOT_USED`, `SKIPPED`), answerDetail, includeInResume, createdEntityIds[] | El "No" vive **solo acá**, nunca en el perfil (RN-11, RN-12). |
 | `TailoredResume` | sessionId, language, data (JSON), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
@@ -488,7 +488,8 @@ CRUD   /profile/projects, /profile/education, /profile/certifications, /profile/
 GET    /tools?query=                               # catálogo con alias
 
 CRUD   /job-postings
-POST   /job-postings/:id/analyze
+POST   /job-postings/:id/analyze                   # encola el análisis (tarea `jd-analysis`, una por JD; volver a pedirlo la reinicia) y devuelve la tarea
+GET    /job-postings/:id/analysis                  # último análisis + estado de la tarea
 PATCH  /job-postings/:id/analysis                  # correcciones del usuario
 
 POST   /tailoring-sessions                         # { jobPostingId, languages[], pageBudget, templateId }

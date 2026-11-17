@@ -313,6 +313,57 @@ export const jobPostings = sqliteTable(
   (table) => [index('job_postings_created_at_idx').on(table.createdAt)],
 );
 
+/** The AI analysis of a job description (RF-JD-02); one per posting, replaced when analyzed again. */
+export const jobAnalyses = sqliteTable('job_analyses', {
+  jobPostingId: text('job_posting_id')
+    .primaryKey()
+    .references(() => jobPostings.id, { onDelete: 'cascade' }),
+  /** ISO 639-1. */
+  language: text('language').notNull(),
+  /** `RoleCategory`. */
+  roleCategory: text('role_category').notNull(),
+  /** `Seniority`. */
+  seniority: text('seniority').notNull(),
+  /** `remote`, `hybrid`, `onsite` or `unknown`. */
+  workMode: text('work_mode').notNull(),
+  /** ISO 3166-1 alpha-2. */
+  country: text('country'),
+  yearsOfExperience: integer('years_of_experience'),
+  /** JSON array of strings. */
+  keywords: text('keywords').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  model: text('model').notNull(),
+  analyzedAt: text('analyzed_at').notNull(),
+});
+
+/**
+ * Requirements of a job description, normalized so they can be aggregated across postings (ADR-09).
+ * `tool_id` points to the profile module's catalog without a foreign key (modules do not share tables);
+ * `tool_name` keeps the name it had when matched.
+ */
+export const jobRequirements = sqliteTable(
+  'job_requirements',
+  {
+    id: text('id').primaryKey(),
+    jobPostingId: text('job_posting_id')
+      .notNull()
+      .references(() => jobPostings.id, { onDelete: 'cascade' }),
+    /** Order in the analysis. */
+    position: integer('position').notNull(),
+    label: text('label').notNull(),
+    /** `RequirementKind`. */
+    kind: text('kind').notNull(),
+    /** `RequirementImportance`. */
+    importance: text('importance').notNull(),
+    toolId: text('tool_id'),
+    toolName: text('tool_name'),
+  },
+  (table) => [
+    index('job_requirements_posting_idx').on(table.jobPostingId, table.position),
+    index('job_requirements_tool_idx').on(table.toolId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Background jobs (owned by the `jobs` module; ARCHITECTURE §10).
 // ---------------------------------------------------------------------------

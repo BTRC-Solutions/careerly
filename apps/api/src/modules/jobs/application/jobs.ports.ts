@@ -6,6 +6,8 @@ export interface NewJob {
   payload: unknown;
   dedupeKey: string | null;
   maxAttempts: number;
+  /** With a dedupe key: a succeeded job runs again (a failed one always does). */
+  restartFinished: boolean;
   now: string;
 }
 
@@ -15,9 +17,13 @@ export interface NewJob {
  * An abstract class so it can be used as a Nest DI token.
  */
 export abstract class JobRepository {
-  /** Inserts the job, or returns the one with the same `dedupeKey` (a failed one goes back to pending). */
+  /**
+   * Inserts the job, or returns the one with the same `dedupeKey`. A failed one (or a succeeded one with
+   * `restartFinished`) goes back to pending with the new payload.
+   */
   abstract enqueue(job: NewJob): JobRecord;
   abstract findById(id: string): JobRecord | null;
+  abstract findByDedupeKey(dedupeKey: string): JobRecord | null;
   /** Takes the next due pending job of one of these types: it becomes `RUNNING` with one more attempt. */
   abstract claimNext(types: string[], now: string): JobRecord | null;
   abstract markSucceeded(id: string, now: string): void;
