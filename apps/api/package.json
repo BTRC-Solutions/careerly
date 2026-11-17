@@ -1,6 +1,6 @@
 {
   "name": "@careerly/api",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Local NestJS backend for Careerly. Runs inside Electron (utilityProcess) or standalone in development.",
   "type": "module",
