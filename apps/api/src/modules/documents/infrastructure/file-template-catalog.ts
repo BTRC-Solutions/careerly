@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { type TemplateData, TemplateDataSchema } from '@careerly/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { APP_CONFIG, type AppConfig } from '../../../platform/config/app-config.js';
@@ -7,6 +8,7 @@ import {
   type ResumeTemplate,
   TemplateCatalog,
   TemplateNotFoundError,
+  UserTemplateStore,
 } from '../application/documents.ports.js';
 
 const TemplateManifestSchema = z.object({
@@ -15,27 +17,47 @@ const TemplateManifestSchema = z.object({
   version: z.number().int().positive(),
 });
 
-/** Built-in templates: each folder of `templatesDir` with a `template.json` next to its `template.typ`. */
+/**
+ * All the templates the user can pick: the built-in ones (each folder of `templatesDir` with a `template.json`
+ * next to its `template.typ`) and the user's own (see {@link UserTemplateStore}).
+ */
 @Injectable()
 export class FileTemplateCatalog extends TemplateCatalog {
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly userTemplates: UserTemplateStore,
+  ) {
     super();
   }
 
   async list(): Promise<ResumeTemplate[]> {
     const entries = await fs.readdir(this.config.templatesDir, { withFileTypes: true });
-    const templates = await Promise.all(
+    const builtIn = await Promise.all(
       entries.filter((entry) => entry.isDirectory()).map((entry) => this.read(entry.name)),
     );
-    return templates
-      .filter((template) => template !== null)
-      .sort((a, b) => a.id.localeCompare(b.id));
+    const templates = [
+      ...builtIn.filter((template) => template !== null),
+      ...(await this.userTemplates.list()),
+    ];
+    return templates.sort(
+      (a, b) => Number(b.builtIn) - Number(a.builtIn) || a.name.localeCompare(b.name),
+    );
   }
 
   async get(id: string): Promise<ResumeTemplate> {
-    const template = /^[a-z0-9-]{1,40}$/.test(id) ? await this.read(id) : null;
+    const template = (await this.list()).find((candidate) => candidate.id === id);
     if (!template) throw new TemplateNotFoundError(id);
     return template;
+  }
+
+  async examples(): Promise<TemplateData[]> {
+    const dir = path.join(this.config.templatesDir, 'examples');
+    const files = (await fs.readdir(dir)).filter((name) => name.endsWith('.json')).sort();
+    return Promise.all(
+      files.map(async (name) =>
+        TemplateDataSchema.parse(JSON.parse(await fs.readFile(path.join(dir, name), 'utf8'))),
+      ),
+    );
   }
 
   /** The template in `templatesDir/<folder>`, or `null` if the folder is not one (e.g. `fonts/`). */
@@ -52,6 +74,6 @@ export class FileTemplateCatalog extends TemplateCatalog {
     if (parsed.id !== folder) {
       throw new Error(`Template folder "${folder}" declares the id "${parsed.id}".`);
     }
-    return { ...parsed, dir };
+    return { ...parsed, builtIn: true, dir };
   }
 }
