@@ -2,7 +2,7 @@
 
 Plantillas Typst para el render de CVs (ARCHITECTURE.md §9, ADR-03 y ADR-24). Hay dos tipos: las **incluidas**
 en la app (por ahora `classic`, la que se usa por defecto) y las **propias**, que el usuario sube como un archivo
-`.typ` (Roadmap 3.7 y 3.8). Todas siguen el mismo contrato.
+`.typ` (Roadmap 4.12 y 4.13). Todas siguen el mismo contrato.
 
 ```
 templates/

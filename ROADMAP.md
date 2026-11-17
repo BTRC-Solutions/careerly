@@ -65,7 +65,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 > RF-PROF-10 (sugerencias de redacción con IA) es MVP pero depende del módulo de IA: se implementa al final de
 > la Fase 4 (paso 4.8).
 
-## Fase 3 — Render con Typst (reducir riesgo) · `v0.3.0`
+## Fase 3 — Render con Typst (reducir riesgo) · `v0.3.0` · ✅ cerrada (2026-11-16)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -74,9 +74,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 3.3 | Puerto `ResumeRenderer` + adaptador Typst (proceso hijo, directorio temporal, `--root`, fuentes empaquetadas, timeout). `[RNF-05]` | Test de integración renderiza un PDF real. | ✅ (PR #39) |
 | 3.4 | Conteo de páginas (decidir ADR-07). | Test: un CV largo devuelve 2 páginas, uno corto devuelve 1. | ✅ (PR #40; ADR-07: se cuenta en el PDF) |
 | 3.5 | `page-fitter` puro: reglas iniciales por sección + recorte por score + relleno. Tests con medidor falso. `[RN-04, RN-06, RN-07]` | Tests unitarios cubren: entra justo, sobra, falta y mínimo por puesto. | ✅ (PR #42) |
-| 3.6 | Prueba manual: con el perfil real y scores asignados a mano, generar CVs de 1 y 2 páginas. | El resultado es un CV presentable. **Validar la plantilla antes de seguir.** | 🟨 script `npm run fit:tryout` listo; falta la validación manual |
-| 3.7 | Plantillas propias (backend): subir un `.typ`, validarlo renderizando los ejemplos de ES y EN, guardarlo versionado en `files/templates/`, listar, renombrar y borrar (las usadas por un snapshot se conservan). `[RF-TAIL-09, ADR-24, RNF-10]` | Test de integración: una plantilla válida queda disponible; una que no compila o tarda más del timeout se rechaza con el error de Typst. | ⬜ |
-| 3.8 | Plantillas propias (UI): pantalla de plantillas con `classic` y las propias, subida con vista previa del ejemplo y descarga de `classic` + ejemplos como punto de partida. `[RF-TAIL-09]` | Subir una plantilla desde la app y ver su vista previa en ambos idiomas. | ⬜ |
+| 3.6 | Prueba manual: con el perfil real y scores asignados a mano, generar CVs de 1 y 2 páginas. | El resultado es un CV presentable. **Validar la plantilla antes de seguir.** | ✅ (PR #43: `npm run fit:tryout` con el perfil real, ES y EN; CVs presentables) |
 
 ## Fase 4 — Job descriptions + módulo de IA · `v0.4.0`
 
@@ -93,6 +91,8 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.9 | Telemetría: métrica "uso de funciones" (tokens de IA por día). `[RF-TEL-03h]` | Test: los tokens del reporte coinciden con `AiGeneration` del día. | ⬜ |
 | 4.10 | *(Se adelanta: va después de 2.7.)* **Elegir los modelos de IA** por nivel (chico y grande). La lista sale de la API del proveedor (los modelos que la key puede usar para generar) y se completa con un catálogo en código: precio, nivel recomendado y si fue probado con salida estructurada. La elección se guarda en `settings`, se prueba con una llamada mínima antes de guardarla y, si el modelo deja de existir, se vuelve a las alternativas por defecto. Un modelo fuera del catálogo se puede elegir con el aviso "sin precio conocido, no probado". `[RF-CONF-09, ADR-23]` | Con la key real se elige otro modelo para cada nivel, se guarda, sobrevive a un reinicio y las llamadas lo usan; un modelo retirado no rompe la app. | ✅ (PR #33; probado con la key real de Gemini) |
 | 4.11 | **Claude como proveedor** (ADR-23), con API key (adaptador con el SDK oficial: salida estructurada, PDF, fallbacks por rechazo) o, opcional y experimental, **con la suscripción** a través del Claude Code instalado y logueado (`claude -p`), sin API key: aislado en una carpeta temporal, sin herramientas salvo leer el archivo que se le pasa, sin MCP ni configuración del usuario; se activa en Configuración solo si `claude` está instalado y logueado. `[RF-CONF-14, ADR-25]` | Con Claude Code logueado se importa un CV usando el plan, sin API key; sin `claude` la opción aparece deshabilitada con el motivo; un CV con instrucciones no logra que el proceso use otras herramientas. | ✅ (PR #41; CVs de prueba importados con la suscripción real) |
+| 4.12 | *(Viene de la 3.7: se pasa para cerrar la Fase 3.)* Plantillas propias (backend): subir un `.typ`, validarlo renderizando los ejemplos de ES y EN, guardarlo versionado en `files/templates/`, listar, renombrar y borrar (las usadas por un snapshot se conservan). `[RF-TAIL-09, ADR-24, RNF-10]` | Test de integración: una plantilla válida queda disponible; una que no compila o tarda más del timeout se rechaza con el error de Typst. | ⬜ |
+| 4.13 | *(Viene de la 3.8.)* Plantillas propias (UI): pantalla de plantillas con `classic` y las propias, subida con vista previa del ejemplo y descarga de `classic` + ejemplos como punto de partida. `[RF-TAIL-09]` | Subir una plantilla desde la app y ver su vista previa en ambos idiomas. | ⬜ |
 
 ## Fase 5 — Match y gaps · `v0.5.0`
 
