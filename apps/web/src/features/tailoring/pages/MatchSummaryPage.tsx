@@ -227,7 +227,12 @@ function RequirementRow({
           {requirement.evidence.map((evidence) => {
             const described = profile ? describeEvidence(evidence, profile) : undefined;
             return (
-              <li key={`${evidence.kind}:${evidence.id}`} className="text-slate-ink">
+              <li
+                key={`${evidence.kind}:${evidence.id}`}
+                // Achievements are detailed source material: two lines are enough to recognize them.
+                className="line-clamp-2 text-slate-ink"
+                title={described ? described.text : undefined}
+              >
                 <span className="text-steel-text">
                   {t(`tailoring.evidence.kinds.${evidence.kind}`)}:{' '}
                 </span>
