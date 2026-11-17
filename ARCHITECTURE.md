@@ -446,15 +446,23 @@ apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates
 Sin Redis ni worker aparte: las tareas largas corren en el mismo proceso del backend, que de todos modos pasa
 la mayor parte del tiempo esperando respuestas de red (LLM) o procesos hijos (Typst).
 
-- **Cola persistida:** tabla `Job` (id, type, payload, status, attempts, runAt, lastError). Encolar una tarea es
-  un `INSERT` en la misma transacción que el cambio de estado de la sesión.
-- **Ejecutor:** bucle en el backend con concurrencia limitada (p. ej. 2 tareas a la vez), reintentos con
-  *backoff* exponencial y tareas idempotentes por `sessionId + step`.
+- **Cola persistida:** tabla `jobs` (id, type, payload, dedupeKey, status, attempts, maxAttempts, runAt,
+  lastError). Encolar una tarea (`JobQueue.enqueue`, sincrónico) es un `INSERT` en la misma transacción que el
+  cambio de estado de la sesión. El payload lleva solo ids: el handler lee el contenido de su módulo. `lastError`
+  guarda el código del error, nunca su mensaje. Volver a encolar con la misma `dedupeKey` devuelve la misma
+  tarea; si había fallado, vuelve a `PENDING`.
+- **Ejecutor (`JobRunner`):** cada módulo registra un handler por tipo de tarea. Corre hasta 2 tareas a la vez
+  y reintenta con *backoff* exponencial: 2 s, 4 s, 8 s… (`CAREERLY_JOB_RETRY_BASE_MS`), con tope de 5 min y
+  3 intentos por defecto. Un `PermanentJobError` corta los reintentos. Las tareas son idempotentes por
+  `dedupeKey` (`sessionId + step`).
 - **Reanudación:** al iniciar la app, las tareas que quedaron `RUNNING` (porque se cerró la app) vuelven a
-  `PENDING` y se reintentan (RNF-13).
-- **Progreso:** el ejecutor emite eventos en memoria (`step-started`, `step-done`, `failed`) que el backend
-  reenvía a la interfaz por **SSE** (`GET /tailoring-sessions/:id/events`). Si la interfaz se recarga, consulta
-  el estado persistido de la sesión.
+  `PENDING` y se reintentan (RNF-13). Al cerrar, el resultado de los intentos que siguen en curso no se escribe.
+- **Progreso:** el ejecutor emite eventos en memoria (`started`, `progress`, `retrying`, `succeeded`, `failed`)
+  que el backend reenvía a la interfaz por **SSE**. `GET /jobs/:id/events` manda primero el estado y termina
+  cuando la tarea termina; `GET /tailoring-sessions/:id/events` los agrupará por sesión. Si la interfaz se recarga,
+  consulta el estado persistido (`GET /jobs/:id`).
+  `EventSource` no permite mandar headers, así que la interfaz lee el SSE con `fetch` (stream) y el mismo
+  `Authorization: Bearer <token>` que el resto de la API: no hace falta un token en la URL.
 
 ## 11. API local (resumen)
 
@@ -464,6 +472,8 @@ Todas las rutas exigen el token de sesión (RNF-19).
 ```
 GET    /settings | PATCH /settings
 GET    /ai/usage?month=YYYY-MM                     # consumo de IA: total del mes, por día y por tarea, y los 12 meses hasta ese (hora local)
+GET    /jobs/:id                                   # estado de una tarea en segundo plano (+ progreso si está corriendo)
+GET    /jobs/:id/events                            # SSE: estado actual y eventos hasta que termina
 GET    /ai/status                                  # configurada (key o Claude Code) y si el proveedor rechazó la key desde que cambió
 POST   /settings/ai-key/verify                     # prueba la key activa en memoria o una candidata { provider, apiKey }; nunca la guarda
 GET    /settings/ai-models                         # modelos que la key puede usar + catálogo (precio, recomendado, probado) + elección por nivel
