@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { JobViewSchema } from './jobs.js';
 import { WorkModeSchema } from './profile.js';
+import { RoleCategorySchema, SenioritySchema, TelemetryWorkModeSchema } from './telemetry.js';
 
 /*
  * Job descriptions (RF-JD-01). The text is pasted by the user and is untrusted data for the AI (prompt
@@ -90,3 +92,54 @@ export const UpdateJobPostingRequestSchema = JobPostingFields.partial()
     message: 'At least one field must be provided.',
   });
 export type UpdateJobPostingRequest = z.infer<typeof UpdateJobPostingRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Analysis (RF-JD-02, ADR-09)
+// ---------------------------------------------------------------------------
+
+/** What a requirement is about. `TOOL`s are matched to the tool catalog when possible. */
+export const RequirementKindSchema = z.enum(['TOOL', 'SKILL', 'LANGUAGE', 'OTHER']);
+export type RequirementKind = z.infer<typeof RequirementKindSchema>;
+
+export const RequirementImportanceSchema = z.enum(['REQUIRED', 'NICE_TO_HAVE']);
+export type RequirementImportance = z.infer<typeof RequirementImportanceSchema>;
+
+export const JobRequirementSchema = z.object({
+  id: z.string(),
+  /** As the job description says it, e.g. "5+ years with Node.js" or "PostgreSQL". */
+  label: z.string(),
+  kind: RequirementKindSchema,
+  importance: RequirementImportanceSchema,
+  /** The catalog tool it was matched to (`TOOL` only), with its canonical name. */
+  tool: z.object({ id: z.string(), name: z.string() }).nullable(),
+});
+export type JobRequirement = z.infer<typeof JobRequirementSchema>;
+
+/** Structured analysis of a job description (RF-JD-02), produced by the AI and editable in step 4.6. */
+export const JobAnalysisSchema = z.object({
+  jobPostingId: z.string(),
+  /** ISO 639-1 code of the job description, e.g. `es` or `en`. */
+  language: z.string(),
+  roleCategory: RoleCategorySchema,
+  seniority: SenioritySchema,
+  workMode: TelemetryWorkModeSchema,
+  /** ISO 3166-1 alpha-2 country of the position, when stated. */
+  country: z.string().nullable(),
+  /** Minimum years of experience asked for, when stated. */
+  yearsOfExperience: z.number().int().nonnegative().nullable(),
+  keywords: z.array(z.string()),
+  requirements: z.array(JobRequirementSchema),
+  /** e.g. `jd-analysis.v1`. */
+  promptVersion: z.string(),
+  model: z.string(),
+  analyzedAt: z.iso.datetime(),
+});
+export type JobAnalysis = z.infer<typeof JobAnalysisSchema>;
+
+/** `GET /job-postings/:id/analysis`: the last analysis and the job of the one in progress, if any. */
+export const JobAnalysisStateSchema = z.object({
+  analysis: JobAnalysisSchema.nullable(),
+  /** The latest analysis job (pending, running, or finished with its outcome). */
+  job: JobViewSchema.nullable(),
+});
+export type JobAnalysisState = z.infer<typeof JobAnalysisStateSchema>;

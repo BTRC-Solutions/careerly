@@ -13,6 +13,7 @@ import {
   useJobPosting,
   useUpdateJobPosting,
 } from '../api/job-postings-api';
+import { JobAnalysisCard } from '../components/JobAnalysisCard';
 import { JobPostingForm } from '../components/JobPostingForm';
 
 function BackLink() {
@@ -91,6 +92,7 @@ export function JobPostingPage() {
               </Button>
             }
           />
+          <JobAnalysisCard jobPostingId={id} />
           <Card>
             <JobPostingForm
               // Remount after saving so the form starts from what was stored.

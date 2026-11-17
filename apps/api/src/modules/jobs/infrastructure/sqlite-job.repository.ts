@@ -35,8 +35,10 @@ export class SqliteJobRepository extends JobRepository {
     if (job.dedupeKey !== null) {
       const existing = db.prepare('SELECT * FROM jobs WHERE dedupe_key = ?').get(job.dedupeKey) as
         JobRow | undefined;
-      if (existing && existing.status === 'FAILED') {
-        // Asking again for something that failed means "try again".
+      const finished =
+        existing?.status === 'FAILED' || (existing?.status === 'SUCCEEDED' && job.restartFinished);
+      if (existing && finished) {
+        // Asking again for something that failed (or that should run again) means "run it again".
         db.prepare(
           `UPDATE jobs SET status = 'PENDING', attempts = 0, last_error = NULL, run_at = ?, updated_at = ?,
              finished_at = NULL, payload = ?, max_attempts = ? WHERE id = ?`,
@@ -59,6 +61,13 @@ export class SqliteJobRepository extends JobRepository {
       job.now,
     );
     return this.findById(job.id)!;
+  }
+
+  findByDedupeKey(dedupeKey: string): JobRecord | null {
+    const row = this.database.connection
+      .prepare('SELECT * FROM jobs WHERE dedupe_key = ?')
+      .get(dedupeKey) as JobRow | undefined;
+    return row ? toRecord(row) : null;
   }
 
   findById(id: string): JobRecord | null {

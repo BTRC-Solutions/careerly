@@ -607,6 +607,70 @@
       "YEAR": "Per year",
       "MONTH": "Per month",
       "HOUR": "Per hour"
+    },
+    "analysis": {
+      "title": "Analysis",
+      "description": "AI reads the posting and extracts its requirements. Tools are linked to your catalog.",
+      "start": "Analyze with AI",
+      "again": "Analyze again",
+      "running": "Analyzing the posting… You can keep using the app; if you close it, the analysis continues when you open it.",
+      "matching": "Linking the tools to your catalog…",
+      "retrying": "The AI provider did not answer; retrying in a few seconds…",
+      "errors": {
+        "NOT_CONFIGURED": "There is no API key set up. Add one in Settings.",
+        "KEY_REJECTED": "The AI provider rejected your API key. Check it in Settings.",
+        "BLOCKED": "The AI provider declined to process this posting.",
+        "RATE_LIMITED": "The AI provider is limiting requests. Try again in a while.",
+        "FAILED": "The posting could not be analyzed. Try again."
+      },
+      "roleCategory": "Category",
+      "seniority": "Seniority",
+      "workMode": "Work mode",
+      "country": "Country",
+      "years": "Experience asked",
+      "yearsValue_one": "{{count}} year",
+      "yearsValue_other": "{{count}} years",
+      "language": "Posting language",
+      "required": "Required",
+      "niceToHave": "Nice to have",
+      "keywords": "Keywords",
+      "footer": "Analyzed with {{model}} on {{date}}.",
+      "kinds": {
+        "TOOL": "Tool",
+        "SKILL": "Skill",
+        "LANGUAGE": "Language",
+        "OTHER": "Other"
+      },
+      "roleCategories": {
+        "backend": "Backend",
+        "frontend": "Frontend",
+        "fullstack": "Full stack",
+        "mobile": "Mobile",
+        "data": "Data",
+        "ml": "Machine learning",
+        "devops": "DevOps / infrastructure",
+        "qa": "QA",
+        "security": "Security",
+        "design": "Design",
+        "product": "Product",
+        "management": "Management",
+        "other": "Other"
+      },
+      "seniorities": {
+        "intern": "Intern",
+        "junior": "Junior",
+        "semi-senior": "Mid-level",
+        "senior": "Senior",
+        "lead": "Lead",
+        "principal": "Principal",
+        "unknown": "Not specified"
+      },
+      "workModes": {
+        "remote": "Remote",
+        "hybrid": "Hybrid",
+        "onsite": "On-site",
+        "unknown": "Not specified"
+      }
     }
   },
   "templates": {

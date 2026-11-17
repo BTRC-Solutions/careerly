@@ -12,6 +12,8 @@ export interface EnqueueRequest {
   /** Enqueueing again with the same key returns the same job (e.g. `<sessionId>:<step>`). */
   dedupeKey?: string;
   maxAttempts?: number;
+  /** With `dedupeKey`: run a job that already succeeded again (e.g. "analyze again"). */
+  restartFinished?: boolean;
 }
 
 /** Wakes the runner when a job is enqueued; set by `JobRunner`. */
@@ -41,6 +43,7 @@ export class JobQueue {
       payload: request.payload ?? null,
       dedupeKey: request.dedupeKey ?? null,
       maxAttempts: request.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+      restartFinished: request.restartFinished ?? false,
       now: new Date().toISOString(),
     });
     // After the caller's transaction commits: the runner reads the job on its next turn.
@@ -52,6 +55,12 @@ export class JobQueue {
     const job = this.jobs.findById(id);
     if (!job) throw new JobNotFoundError(id);
     return this.toView(job);
+  }
+
+  /** The job enqueued with this dedupe key, if any. */
+  findByDedupeKey(dedupeKey: string): JobView | null {
+    const job = this.jobs.findByDedupeKey(dedupeKey);
+    return job ? this.toView(job) : null;
   }
 
   toView(job: JobRecord): JobView {

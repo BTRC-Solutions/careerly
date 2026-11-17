@@ -607,6 +607,70 @@
       "YEAR": "Por año",
       "MONTH": "Por mes",
       "HOUR": "Por hora"
+    },
+    "analysis": {
+      "title": "Análisis",
+      "description": "La IA lee la oferta y extrae los requisitos. Las herramientas se vinculan con tu catálogo.",
+      "start": "Analizar con IA",
+      "again": "Volver a analizar",
+      "running": "Analizando la oferta… Podés seguir usando la app; si la cerrás, el análisis sigue al abrirla.",
+      "matching": "Vinculando las herramientas con tu catálogo…",
+      "retrying": "El proveedor de IA no respondió; se reintenta en unos segundos…",
+      "errors": {
+        "NOT_CONFIGURED": "No hay una API key configurada. Cargala en Configuración.",
+        "KEY_REJECTED": "El proveedor de IA rechazó tu API key. Revisala en Configuración.",
+        "BLOCKED": "El proveedor de IA no quiso procesar esta oferta.",
+        "RATE_LIMITED": "El proveedor de IA está limitando las solicitudes. Probá de nuevo en un rato.",
+        "FAILED": "No se pudo analizar la oferta. Probá de nuevo."
+      },
+      "roleCategory": "Categoría",
+      "seniority": "Seniority",
+      "workMode": "Modalidad",
+      "country": "País",
+      "years": "Experiencia pedida",
+      "yearsValue_one": "{{count}} año",
+      "yearsValue_other": "{{count}} años",
+      "language": "Idioma de la oferta",
+      "required": "Requisitos obligatorios",
+      "niceToHave": "Deseables",
+      "keywords": "Palabras clave",
+      "footer": "Analizado con {{model}} el {{date}}.",
+      "kinds": {
+        "TOOL": "Herramienta",
+        "SKILL": "Habilidad",
+        "LANGUAGE": "Idioma",
+        "OTHER": "Otro"
+      },
+      "roleCategories": {
+        "backend": "Backend",
+        "frontend": "Frontend",
+        "fullstack": "Full stack",
+        "mobile": "Mobile",
+        "data": "Datos",
+        "ml": "Machine learning",
+        "devops": "DevOps / infraestructura",
+        "qa": "QA",
+        "security": "Seguridad",
+        "design": "Diseño",
+        "product": "Producto",
+        "management": "Gestión",
+        "other": "Otra"
+      },
+      "seniorities": {
+        "intern": "Pasantía",
+        "junior": "Junior",
+        "semi-senior": "Semi senior",
+        "senior": "Senior",
+        "lead": "Lead",
+        "principal": "Principal",
+        "unknown": "Sin especificar"
+      },
+      "workModes": {
+        "remote": "Remoto",
+        "hybrid": "Híbrido",
+        "onsite": "Presencial",
+        "unknown": "Sin especificar"
+      }
     }
   },
   "templates": {

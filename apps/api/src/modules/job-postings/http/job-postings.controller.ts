@@ -1,8 +1,10 @@
 import {
   type CreateJobPostingRequest,
   CreateJobPostingRequestSchema,
+  type JobAnalysisState,
   type JobPosting,
   type JobPostingSummary,
+  type JobView,
   type UpdateJobPostingRequest,
   UpdateJobPostingRequestSchema,
 } from '@careerly/contracts';
@@ -24,6 +26,7 @@ import {
 } from '@nestjs/common';
 import { catchError, type Observable, throwError } from 'rxjs';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
+import { JobAnalysisService } from '../application/job-analysis.service.js';
 import { JobPostingNotFoundError } from '../application/job-postings.repository.js';
 import { JobPostingsService } from '../application/job-postings.service.js';
 
@@ -43,11 +46,14 @@ class JobPostingErrorsInterceptor implements NestInterceptor {
   }
 }
 
-/** Job descriptions (RF-JD-01). */
+/** Job descriptions (RF-JD-01) and their analysis (RF-JD-02). */
 @Controller('job-postings')
 @UseInterceptors(JobPostingErrorsInterceptor)
 export class JobPostingsController {
-  constructor(private readonly postings: JobPostingsService) {}
+  constructor(
+    private readonly postings: JobPostingsService,
+    private readonly analyses: JobAnalysisService,
+  ) {}
 
   @Get()
   list(): Promise<JobPostingSummary[]> {
@@ -72,6 +78,18 @@ export class JobPostingsController {
     @Body(new ZodValidationPipe(UpdateJobPostingRequestSchema)) body: UpdateJobPostingRequest,
   ): Promise<JobPosting> {
     return this.postings.update(id, body);
+  }
+
+  /** Starts (or restarts) the AI analysis in the background; follow it with `/jobs/:id`. */
+  @Post(':id/analyze')
+  @HttpCode(HttpStatus.ACCEPTED)
+  analyze(@Param('id') id: string): Promise<JobView> {
+    return this.analyses.request(id);
+  }
+
+  @Get(':id/analysis')
+  analysis(@Param('id') id: string): Promise<JobAnalysisState> {
+    return this.analyses.state(id);
   }
 
   @Delete(':id')
