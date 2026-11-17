@@ -27,7 +27,8 @@
     "package:win": "npm run build && npm run package -w @careerly/desktop",
     "typst:fetch": "node scripts/fetch-typst.mjs",
     "fit:tryout": "npm run build -w @careerly/contracts -w @careerly/api && node apps/api/scripts/try-fit.mjs",
-    "evals:jd": "npm run build -w @careerly/contracts -w @careerly/api && node apps/api/scripts/eval-jd.mjs"
+    "evals:jd": "npm run build -w @careerly/contracts -w @careerly/api && node apps/api/scripts/eval-jd.mjs",
+    "evals:match": "npm run build -w @careerly/contracts -w @careerly/api && node apps/api/scripts/eval-match.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

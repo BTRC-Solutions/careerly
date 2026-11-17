@@ -1,4 +1,4 @@
-import type { TailoringSessionStatus } from '@careerly/contracts';
+import type { MatchResult, MatchStatus, TailoringSessionStatus } from '@careerly/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   applySessionEvent,
@@ -6,7 +6,6 @@ import {
   InvalidSessionTransitionError,
   startTailoringSession,
   TAILORING_SESSION_EVENT_TYPES,
-  TailoringSessionValidationError,
   type NewTailoringSession,
   type TailoringSession,
   type TailoringSessionEvent,
@@ -25,8 +24,27 @@ const newSession = () =>
 const replay = (...events: TailoringSessionEvent[]): TailoringSession =>
   events.reduce(applySessionEvent, newSession());
 
-const withGaps: TailoringSessionEvent = { type: 'MATCH_READY', gapCount: 2 };
-const noGaps: TailoringSessionEvent = { type: 'MATCH_READY', gapCount: 0 };
+/** A match with one covered requirement and `gaps` missing ones. */
+const matchWith = (gaps: number): MatchResult => ({
+  requirements: (['COVERED', ...Array<MatchStatus>(gaps).fill('MISSING')] as MatchStatus[]).map(
+    (status, index) => ({
+      requirementId: `r${index}`,
+      label: `Requirement ${index}`,
+      kind: 'SKILL',
+      importance: 'REQUIRED',
+      tool: null,
+      status,
+      method: 'AI',
+      evidence: status === 'COVERED' ? [{ kind: 'ACHIEVEMENT', id: 'a1' }] : [],
+    }),
+  ),
+  promptVersion: 'evidence-match.v1',
+  model: 'fake',
+  matchedAt: '2026-11-17T10:00:00.000Z',
+});
+
+const withGaps: TailoringSessionEvent = { type: 'MATCH_READY', match: matchWith(2) };
+const noGaps: TailoringSessionEvent = { type: 'MATCH_READY', match: matchWith(0) };
 
 /** Every reachable situation, reached through valid events. */
 const situations: Record<string, TailoringSession> = {
@@ -71,7 +89,7 @@ const allowed: Record<
 };
 
 const eventOf = (type: TailoringSessionEventType): TailoringSessionEvent =>
-  type === 'MATCH_READY' ? { type, gapCount: 1 } : { type };
+  type === 'MATCH_READY' ? { type, match: matchWith(1) } : { type };
 
 const cases = Object.entries(situations).flatMap(([name, session]) =>
   TAILORING_SESSION_EVENT_TYPES.map((type) => ({
@@ -91,7 +109,7 @@ describe('TailoringSession state machine', () => {
       pageBudget: 1,
       templateId: 'classic',
       status: 'ANALYZING',
-      gapCount: null,
+      match: null,
       failedStep: null,
     });
   });
@@ -126,18 +144,17 @@ describe('TailoringSession state machine', () => {
     expect(error).toMatchObject({ from: 'FINALIZED', event: 'GENERATE' });
   });
 
-  it('keeps the gap count of the match', () => {
-    expect(situations['matched, with gaps']!.gapCount).toBe(2);
-    expect(situations['review, with gaps']!.gapCount).toBe(2);
-    expect(situations['matched, no gaps']!.gapCount).toBe(0);
+  it('keeps the match through the next steps', () => {
+    expect(situations['matched, with gaps']!.match).toEqual(matchWith(2));
+    expect(situations['review, with gaps']!.match).toEqual(matchWith(2));
+    expect(situations['matched, no gaps']!.match).toEqual(matchWith(0));
   });
 
-  it('rejects an invalid gap count', () => {
-    for (const gapCount of [-1, 1.5, Number.NaN]) {
-      expect(() => applySessionEvent(newSession(), { type: 'MATCH_READY', gapCount })).toThrow(
-        TailoringSessionValidationError,
-      );
-    }
+  it('counts partial requirements as gaps', () => {
+    const partial = matchWith(0);
+    partial.requirements[0]!.status = 'PARTIAL';
+    const session = applySessionEvent(newSession(), { type: 'MATCH_READY', match: partial });
+    expect(applySessionEvent(session, { type: 'ASK_GAPS' }).status).toBe('AWAITING_ANSWERS');
   });
 
   it('remembers the failed step until the retry', () => {
@@ -145,7 +162,7 @@ describe('TailoringSession state machine', () => {
     expect(situations['failed while generating']!.failedStep).toBe('GENERATING');
     const retried = applySessionEvent(situations['failed while generating']!, { type: 'RETRY' });
     expect(retried.failedStep).toBeNull();
-    expect(retried.gapCount).toBe(0);
+    expect(retried.match).toEqual(matchWith(0));
   });
 
   it('can fail and retry again after a regeneration', () => {

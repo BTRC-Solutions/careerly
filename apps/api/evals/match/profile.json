@@ -1,0 +1,90 @@
+{
+  "positions": [
+    {
+      "company": "Pagos Rápidos S.A.",
+      "title": "Backend Developer Sr",
+      "startDate": "2021-04",
+      "endDate": null,
+      "context": "Fintech de pagos con 2M de usuarios. Equipo de 6 personas en el squad de cobros.",
+      "tools": ["Node.js", "TypeScript", "PostgreSQL", "Docker", "AWS", "Git"],
+      "achievements": [
+        {
+          "text": "Diseñé y mantuve la API REST de cobros (Node.js + TypeScript) que procesa 50k transacciones diarias.",
+          "metrics": "50k transacciones/día",
+          "tools": ["Node.js", "TypeScript", "PostgreSQL"]
+        },
+        {
+          "text": "Migré los workers de conciliación a AWS Lambda con colas SQS, bajando los costos de infraestructura.",
+          "metrics": "-35% costo mensual",
+          "tools": ["AWS Lambda", "Amazon SQS"]
+        },
+        {
+          "text": "Lideré a 3 desarrolladores en la reescritura del módulo de reintentos, con code reviews y pair programming.",
+          "metrics": null,
+          "tools": []
+        },
+        {
+          "text": "Armé los dashboards de monitoreo y alertas de los servicios de cobros.",
+          "metrics": "MTTR de 2 h a 20 min",
+          "tools": ["Grafana", "Prometheus"]
+        }
+      ]
+    },
+    {
+      "company": "Agencia Web Sur",
+      "title": "Fullstack Developer",
+      "startDate": "2018-02",
+      "endDate": "2021-03",
+      "context": "Agencia que desarrolla sitios y apps para pymes.",
+      "tools": ["JavaScript", "React", "MySQL", "PHP"],
+      "achievements": [
+        {
+          "text": "Desarrollé el frontend en React de 5 e-commerce para clientes de retail.",
+          "metrics": null,
+          "tools": ["React", "JavaScript"]
+        },
+        {
+          "text": "Escribí tests end to end con Cypress para el flujo de checkout.",
+          "metrics": null,
+          "tools": ["Cypress"]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "feriados-api",
+      "kind": "OPEN_SOURCE",
+      "role": "Maintainer",
+      "description": "API pública de feriados de Argentina, usada por otros proyectos.",
+      "tools": ["Python", "FastAPI", "Redis"],
+      "achievements": [
+        {
+          "text": "Agregué caché con Redis y llevé la API a 1M de requests mensuales.",
+          "metrics": "1M requests/mes",
+          "tools": ["Redis", "Python"]
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universidad Tecnológica Nacional",
+      "title": "Ingeniería en Sistemas de Información",
+      "kind": "DEGREE",
+      "startDate": "2012-03",
+      "endDate": "2018-12"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Developer – Associate",
+      "issuer": "Amazon Web Services",
+      "issueDate": "2023-08"
+    }
+  ],
+  "languages": [
+    { "language": "Español", "level": "NATIVE" },
+    { "language": "Inglés", "level": "B2" }
+  ]
+}

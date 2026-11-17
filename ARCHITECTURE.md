@@ -296,11 +296,26 @@ stateDiagram-v2
 
 Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reglas que el diagrama no fija:
 
-- El match deja guardada la cantidad de gaps. Con gaps, de `MATCHED` solo se pasa a `AWAITING_ANSWERS`; sin gaps,
+- La sesión guarda el resultado del match, y de ahí salen los gaps (requisitos parciales o faltantes, `countGaps`).
+  Con gaps, de `MATCHED` solo se pasa a `AWAITING_ANSWERS`; sin gaps,
   solo a `GENERATING`. "Volver a gaps" desde `REVIEW` exige que haya gaps. Saltear preguntas pasa dentro de
   `AWAITING_ANSWERS` (RF-GAP-01).
 - `FAILED` recuerda el paso que falló (`failedStep`) y el reintento vuelve a ese paso.
 - `FINALIZED` es terminal. Cancelar o abandonar una sesión queda para el paso 6.8.
+
+**Match (paso 5.2, `tailoring/domain/match.ts`):** crear la sesión exige una JD analizada y encola la tarea
+`tailoring-match` (3 intentos; al rendirse, la sesión pasa a `FAILED` y se reintenta con
+`POST /tailoring-sessions/:id/retry`).
+
+- **Herramientas del catálogo** (pasos 2 y 3, sin IA): los alias ya se resolvieron al analizar la JD, y las que
+  quedaron sin resolver se vuelven a buscar en el catálogo. Un logro que usa la herramienta la **cubre**; una
+  experiencia o proyecto que solo la lista es evidencia **parcial**; si no aparece, **falta**.
+- **El resto** (habilidades, idiomas, otros requisitos y herramientas fuera del catálogo; paso 4) va al LLM
+  (`evidence-match.v1`, modelo chico). El perfil viaja con referencias cortas (`[W1]`, `[A3]`, `[E1]`…) en lugar
+  de ids, sin nombre ni datos de contacto; los requisitos van como dato no confiable. `semanticMatches` descarta la
+  evidencia que no existe en el perfil, y un requisito sin evidencia queda como faltante: toda la evidencia apunta a
+  ids reales.
+- El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
 
 ### 7.2 Pasos
 
@@ -506,8 +521,9 @@ POST   /job-postings/:id/analyze                   # encola el análisis (tarea 
 GET    /job-postings/:id/analysis                  # último análisis + estado de la tarea
 PATCH  /job-postings/:id/analysis                  # correcciones del usuario
 
-POST   /tailoring-sessions                         # { jobPostingId, languages[], pageBudget, templateId }
-GET    /tailoring-sessions/:id
+POST   /tailoring-sessions                         # { jobPostingId, languages[]?, pageBudget?, templateId? }; encola el match
+GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
+POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions/:id/events              # SSE
 GET    /tailoring-sessions/:id/gaps
 PUT    /tailoring-sessions/:id/gaps                # respuestas
@@ -654,6 +670,13 @@ la key del proveedor en `CAREERLY_EVAL_API_KEY` y la API levantada sobre una car
   fallar el script si la precisión o el recall quedan por debajo.
 - Se corre a mano al cambiar un prompt o un modelo (cuesta tokens), no en CI. En la Fase 6 se suman casos de
   perfiles para medir bullets inventados y el límite de páginas.
+
+`npm run evals:match` (5.2) analiza esas mismas JDs, abre una sesión para cada una y muestra el match contra un
+perfil: el de `apps/api/evals/match/profile.json` o, con `--profile-db <careerly.db>`, una copia de una base
+real (se copia con el *backup* de SQLite y sin las preferencias `ai.*`; la original no se escribe). Que el match
+sea razonable se juzga leyéndolo; lo que se verifica solo es que **toda la evidencia apunte a elementos que
+existen** en el perfil: si alguna no, o si un match falla, el script termina con 1. Deja el reporte en
+`.data/evals/match-*.json`.
 
 ## 16. Distribución y actualizaciones
 

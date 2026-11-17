@@ -397,3 +397,36 @@ export const jobs = sqliteTable(
     index('jobs_status_run_at_idx').on(table.status, table.runAt),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Tailoring sessions (owned by the `tailoring` module; ARCHITECTURE §6–7).
+// ---------------------------------------------------------------------------
+
+/**
+ * One CV adaptation for a job description (RF-TAIL-01). `job_posting_id` has no foreign key: the posting
+ * belongs to another module (modules do not share tables), and a session outlives its posting.
+ */
+export const tailoringSessions = sqliteTable(
+  'tailoring_sessions',
+  {
+    id: text('id').primaryKey(),
+    jobPostingId: text('job_posting_id').notNull(),
+    /** JSON array of `ResumeLanguage`. */
+    languages: text('languages').notNull(),
+    /** 1 or 2. */
+    pageBudget: integer('page_budget').notNull(),
+    templateId: text('template_id').notNull(),
+    /** `TailoringSessionStatus`. */
+    status: text('status').notNull(),
+    /** `TailoringFailedStep`, only while `FAILED`. */
+    failedStep: text('failed_step'),
+    /** JSON `MatchResult`: ids and requirement labels, no profile text. */
+    match: text('match'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('tailoring_sessions_posting_idx').on(table.jobPostingId),
+    index('tailoring_sessions_updated_at_idx').on(table.updatedAt),
+  ],
+);
