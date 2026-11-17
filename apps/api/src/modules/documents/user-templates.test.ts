@@ -122,7 +122,10 @@ describe('user templates (integration)', () => {
       server = await startTestServer(
         testConfig(path.join(temp.dir, 'data'), { CAREERLY_RENDER_TIMEOUT_MS: '500' }),
       );
-      const slow = '#let n = 0\n#for i in range(0, 2000000) { n = n + i }\n#n\n';
+      // 10^8 loop steps: many seconds on any machine, far over the 500 ms timeout. Two nested ranges, because
+      // one range that long would allocate gigabytes. (2 * 10^6 steps fit under 500 ms on the CI's Ubuntu.)
+      const slow =
+        '#let n = 0\n#for i in range(10000) { for j in range(10000) { n = n + 1 } }\n#n\n';
 
       const response = await upload(slow);
       expect(response.status).toBe(422);
