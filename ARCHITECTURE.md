@@ -574,6 +574,10 @@ apps/web/src/
 - **Primer inicio:** asistente para configurar la API key (RF-CONF-01) y el idioma de la interfaz.
 - **Flujo de adaptación como *wizard*:** JD → análisis → gaps → opciones (idiomas, páginas, plantilla) →
   generación con progreso → revisión con vista previa en paralelo → finalizar → crear o vincular postulación.
+  Desde el paso 5.3, "Adaptar mi CV" en la tarjeta del análisis abre la sesión en `#/tailoring/:id`: progreso
+  del match y, al terminar, el resumen (RF-TAIL-03). El resumen muestra un puntaje orientativo (los requisitos
+  obligatorios pesan el doble que los deseables y uno parcial cuenta la mitad) y los requisitos cubiertos,
+  parciales y faltantes, cada uno con su evidencia leída del perfil.
 
 ## 13. Monorepo y herramientas
 

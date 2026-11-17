@@ -708,7 +708,8 @@
         "remove": "Remove “{{label}}”",
         "add": "Add requirement",
         "keywordsHint": "Separated by commas."
-      }
+      },
+      "tailor": "Tailor my CV"
     }
   },
   "templates": {
@@ -775,6 +776,73 @@
       "test": "Try it with Typst from the unpacked folder:",
       "upload": "Upload it here. It is saved only if it builds both examples.",
       "ats": "For applicant tracking systems (ATS) to read the CV: a single column, standard section titles, selectable text, no letter spacing in titles and no text in images. The app cannot fully check this."
+    }
+  },
+  "tailoring": {
+    "loading": "Loading…",
+    "notFound": "This session was not found.",
+    "backToJobPosting": "Back to the job posting",
+    "match": {
+      "title": "Match with the job posting",
+      "running": "Comparing your profile with the job posting… You can keep using the app; if you close it, it continues when you open it.",
+      "matching": "The AI is looking for evidence in your profile for the requirements that are not tools…",
+      "retrying": "The AI provider did not answer; retrying in a few seconds…",
+      "errors": {
+        "NOT_CONFIGURED": "There is no API key set up. Add one in Settings and retry.",
+        "KEY_REJECTED": "The AI provider rejected your API key. Check it in Settings and retry.",
+        "BLOCKED": "The AI provider refused to process this comparison.",
+        "RATE_LIMITED": "The AI provider is limiting requests. Retry in a while.",
+        "JOB_POSTING_DELETED": "This session's job posting no longer exists.",
+        "FAILED": "Your profile could not be compared with the job posting. Retry."
+      },
+      "score": "Indicative score",
+      "scoreHint": "Required items weigh twice as much as nice-to-have ones, and a partial one counts half. It is a guide, not a grade.",
+      "counts": {
+        "COVERED_one": "{{count}} covered",
+        "COVERED_other": "{{count}} covered",
+        "PARTIAL_one": "{{count}} partial",
+        "PARTIAL_other": "{{count}} partial",
+        "MISSING_one": "{{count}} missing",
+        "MISSING_other": "{{count}} missing"
+      },
+      "statuses": {
+        "COVERED": "Covered",
+        "PARTIAL": "Partial",
+        "MISSING": "Missing"
+      },
+      "groups": {
+        "COVERED": {
+          "title": "Covered",
+          "description": "Your profile shows it. Under each requirement is where it comes from."
+        },
+        "PARTIAL": {
+          "title": "Partial",
+          "description": "There is something related, but less than asked: for example, a tool listed without an achievement that uses it."
+        },
+        "MISSING": {
+          "title": "Missing",
+          "description": "It is not in your profile. If you have it, you will be able to add it in the next step."
+        }
+      },
+      "importance": {
+        "REQUIRED": "Required",
+        "NICE_TO_HAVE": "Nice to have"
+      },
+      "byAi": "According to the AI; check that the evidence is right.",
+      "noRequirements": "The job posting analysis has no requirements to compare.",
+      "footer": "Compared with {{model}} on {{date}}.",
+      "footerNoAi": "Compared with your tool catalog on {{date}}."
+    },
+    "evidence": {
+      "kinds": {
+        "ACHIEVEMENT": "Achievement",
+        "POSITION": "Experience",
+        "PROJECT": "Project",
+        "EDUCATION": "Education",
+        "CERTIFICATION": "Certification",
+        "LANGUAGE": "Language"
+      },
+      "deleted": "no longer in your profile"
     }
   }
 }

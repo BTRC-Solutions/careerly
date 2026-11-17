@@ -708,7 +708,8 @@
         "remove": "Quitar «{{label}}»",
         "add": "Agregar requisito",
         "keywordsHint": "Separadas por comas."
-      }
+      },
+      "tailor": "Adaptar mi CV"
     }
   },
   "templates": {
@@ -775,6 +776,73 @@
       "test": "Probala con Typst desde la carpeta descomprimida:",
       "upload": "Subila acá. Se guarda solo si genera bien los dos ejemplos.",
       "ats": "Para que los sistemas de selección (ATS) lean bien el CV: una sola columna, títulos de sección estándar, texto seleccionable, sin espaciado entre letras en los títulos y nada de texto en imágenes. La app no lo puede comprobar del todo."
+    }
+  },
+  "tailoring": {
+    "loading": "Cargando…",
+    "notFound": "No se encontró esta sesión.",
+    "backToJobPosting": "Volver a la oferta",
+    "match": {
+      "title": "Match con la oferta",
+      "running": "Comparando tu perfil con la oferta… Podés seguir usando la app; si la cerrás, sigue al abrirla.",
+      "matching": "La IA está buscando evidencia en tu perfil para los requisitos que no son herramientas…",
+      "retrying": "El proveedor de IA no respondió; se reintenta en unos segundos…",
+      "errors": {
+        "NOT_CONFIGURED": "No hay una API key configurada. Cargala en Configuración y reintentá.",
+        "KEY_REJECTED": "El proveedor de IA rechazó tu API key. Revisala en Configuración y reintentá.",
+        "BLOCKED": "El proveedor de IA no quiso procesar esta comparación.",
+        "RATE_LIMITED": "El proveedor de IA está limitando las solicitudes. Reintentá en un rato.",
+        "JOB_POSTING_DELETED": "La oferta de esta sesión ya no existe.",
+        "FAILED": "No se pudo comparar tu perfil con la oferta. Reintentá."
+      },
+      "score": "Puntaje orientativo",
+      "scoreHint": "Los requisitos obligatorios pesan el doble que los deseables, y uno parcial cuenta la mitad. Es una guía, no una nota.",
+      "counts": {
+        "COVERED_one": "{{count}} cubierto",
+        "COVERED_other": "{{count}} cubiertos",
+        "PARTIAL_one": "{{count}} parcial",
+        "PARTIAL_other": "{{count}} parciales",
+        "MISSING_one": "{{count}} faltante",
+        "MISSING_other": "{{count}} faltantes"
+      },
+      "statuses": {
+        "COVERED": "Cubierto",
+        "PARTIAL": "Parcial",
+        "MISSING": "Faltante"
+      },
+      "groups": {
+        "COVERED": {
+          "title": "Cubiertos",
+          "description": "Tu perfil lo muestra. Debajo de cada requisito está de dónde sale."
+        },
+        "PARTIAL": {
+          "title": "Parciales",
+          "description": "Hay algo relacionado, pero menos de lo que piden: por ejemplo, una herramienta que figura sin un logro que la use."
+        },
+        "MISSING": {
+          "title": "Faltantes",
+          "description": "No aparece en tu perfil. Si lo tenés, vas a poder contarlo en el próximo paso."
+        }
+      },
+      "importance": {
+        "REQUIRED": "Obligatorio",
+        "NICE_TO_HAVE": "Deseable"
+      },
+      "byAi": "Según la IA; revisá que la evidencia sea correcta.",
+      "noRequirements": "El análisis de la oferta no tiene requisitos para comparar.",
+      "footer": "Comparado con {{model}} el {{date}}.",
+      "footerNoAi": "Comparado con tu catálogo de herramientas el {{date}}."
+    },
+    "evidence": {
+      "kinds": {
+        "ACHIEVEMENT": "Logro",
+        "POSITION": "Experiencia",
+        "PROJECT": "Proyecto",
+        "EDUCATION": "Estudios",
+        "CERTIFICATION": "Certificación",
+        "LANGUAGE": "Idioma"
+      },
+      "deleted": "ya no está en tu perfil"
     }
   }
 }
