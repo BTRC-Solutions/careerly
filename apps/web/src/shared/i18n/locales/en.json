@@ -392,7 +392,6 @@
       "addsToProfile": "Your profile already has data. What you import is added to it; nothing is replaced except the personal details you choose.",
       "reading": "Reading {{fileName}}…",
       "readingHint": "It can take up to a minute for a long CV.",
-      "noKey": "To import a CV you need to set up an AI API key. The AI is what reads the file.",
       "goToSettings": "Go to Settings",
       "errors": {
         "fileType": "That file is not a PDF or a DOCX.",
@@ -529,5 +528,45 @@
       "ai": "Prompts, AI responses or your API key."
     },
     "retention": "Reports are daily, carry an anonymous ID you can regenerate, and are kept with no time limit."
+  },
+  "ai": {
+    "offlineBanner": "You are offline: AI features are unavailable. Everything else keeps working.",
+    "offlineHint": "This needs an internet connection.",
+    "unavailable": {
+      "OFFLINE": "There is no internet connection, so AI is unavailable. You can keep editing your profile and using the rest of the app.",
+      "NOT_CONFIGURED": "To use AI, set up an API key (or Claude Code) in Settings.",
+      "KEY_REJECTED": "The AI provider rejected your API key. Check it or add another one in Settings.",
+      "goToSettings": "Go to Settings"
+    },
+    "usage": {
+      "cardTitle": "AI usage",
+      "cardDescription": "This month. The cost is an estimate.",
+      "seeDetail": "See detail",
+      "title": "AI usage",
+      "description": "Calls, tokens and estimated cost per task, day and month.",
+      "back": "Settings",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "cost": "Estimated cost",
+      "calls": "Calls",
+      "tokens": "Tokens",
+      "inputTokens": "Input tokens",
+      "outputTokens": "Output tokens",
+      "byTask": "By task",
+      "byDay": "By day",
+      "byMonth": "Last 12 months",
+      "empty": "No AI usage in this period.",
+      "loadError": "Could not load the AI usage.",
+      "estimateNote": "The cost is estimated from each model's price table; what the provider charges may differ. Each retry counts as a call."
+    },
+    "tasks": {
+      "smoke-test": "Connection test",
+      "cv-import": "CV import",
+      "jd-analysis": "Job description analysis",
+      "evidence-match": "Requirement evidence",
+      "relevance-score": "Relevance",
+      "resume-writing": "CV writing",
+      "achievement-suggestion": "Achievement suggestions"
+    }
   }
 }

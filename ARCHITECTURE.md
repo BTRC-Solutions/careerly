@@ -463,7 +463,8 @@ Todas las rutas exigen el token de sesión (RNF-19).
 
 ```
 GET    /settings | PATCH /settings
-GET    /settings/ai-usage?from=&to=
+GET    /ai/usage?month=YYYY-MM                     # consumo de IA: total del mes, por día y por tarea, y los 12 meses hasta ese (hora local)
+GET    /ai/status                                  # configurada (key o Claude Code) y si el proveedor rechazó la key desde que cambió
 POST   /settings/ai-key/verify                     # prueba la key activa en memoria o una candidata { provider, apiKey }; nunca la guarda
 GET    /settings/ai-models                         # modelos que la key puede usar + catálogo (precio, recomendado, probado) + elección por nivel
 PUT    /settings/ai-models                         # { tier, model | null }: prueba el modelo con una llamada mínima y lo guarda; null = por defecto

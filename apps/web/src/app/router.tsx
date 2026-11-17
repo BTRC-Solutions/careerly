@@ -1,4 +1,5 @@
 import { createHashRouter, Navigate } from 'react-router';
+import { AiUsagePage } from '../features/ai/pages/AiUsagePage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { WelcomePage } from '../features/onboarding/pages/WelcomePage';
 import { ProfileLayout } from '../features/profile/components/ProfileLayout';
@@ -36,6 +37,7 @@ export const router = createHashRouter([
         ],
       },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/ai-usage', element: <AiUsagePage /> },
     ],
   },
 ]);

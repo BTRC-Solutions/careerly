@@ -43,7 +43,17 @@ export interface AiGenerationEntry {
   createdAt: string;
 }
 
+/** What usage reports need from a recorded attempt. */
+export type AiGenerationUsage = Pick<
+  AiGenerationEntry,
+  'task' | 'inputTokens' | 'outputTokens' | 'costUsd' | 'createdAt'
+>;
+
 /** Port: usage log of AI calls (RNF-06). */
 export abstract class AiGenerationRepository {
   abstract record(entry: AiGenerationEntry): Promise<void>;
+  /** Attempts made at or after `from` (ISO), in no particular order. */
+  abstract listSince(from: string): Promise<AiGenerationUsage[]>;
+  /** The error of the latest attempt with `provider` made at or after `from`; `null` if it succeeded or none. */
+  abstract latestErrorSince(provider: LlmProviderId, from: string): Promise<string | null>;
 }

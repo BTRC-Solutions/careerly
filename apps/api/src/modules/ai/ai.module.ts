@@ -3,9 +3,11 @@ import { ActiveAiCredentials } from './application/active-ai-credentials.js';
 import { AiCredentialsStore } from './application/ai-credentials.store.js';
 import { AiModelChoiceStore } from './application/ai-model-choice.store.js';
 import { AiModelsService } from './application/ai-models.service.js';
+import { AiUsageService } from './application/ai-usage.service.js';
 import { LlmClient } from './application/llm-client.js';
 import { AiGenerationRepository, LlmProviderRegistry } from './application/llm.ports.js';
 import { AiSmokeTestService } from './application/smoke-test.service.js';
+import { AiController } from './http/ai.controller.js';
 import { InternalAiCredentialsController } from './http/internal-ai-credentials.controller.js';
 import { InternalAiSmokeController } from './http/internal-ai-smoke.controller.js';
 import { DrizzleAiGenerationRepository } from './infrastructure/drizzle-ai-generation.repository.js';
@@ -24,12 +26,13 @@ import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registr
  */
 @Global()
 @Module({
-  controllers: [InternalAiCredentialsController, InternalAiSmokeController],
+  controllers: [AiController, InternalAiCredentialsController, InternalAiSmokeController],
   providers: [
     AiCredentialsStore,
     ActiveAiCredentials,
     AiModelChoiceStore,
     AiModelsService,
+    AiUsageService,
     LlmClient,
     AiSmokeTestService,
     GeminiLlmProvider,

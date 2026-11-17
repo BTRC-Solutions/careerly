@@ -14,6 +14,7 @@ export type Credentials = NonNullable<AiCredentials['credentials']>;
 export class AiCredentialsStore {
   private readonly logger = new Logger(AiCredentialsStore.name);
   #credentials: Credentials | null = null;
+  #changedAt = new Date().toISOString();
 
   /** Replaces the credentials. Logs only the provider, and only when something changed. */
   set(credentials: Credentials | null): void {
@@ -24,6 +25,7 @@ export class AiCredentialsStore {
       ? { provider: credentials.provider, apiKey: credentials.apiKey }
       : null;
     if (changed) {
+      this.#changedAt = new Date().toISOString();
       this.logger.log(
         credentials
           ? `AI credentials updated (provider: ${credentials.provider}).`
@@ -35,6 +37,11 @@ export class AiCredentialsStore {
   /** For the AI adapters and the key check only. Never return this from an HTTP route. */
   get(): Credentials | null {
     return this.#credentials ? { ...this.#credentials } : null;
+  }
+
+  /** When the credentials last changed (or the backend started): older AI errors do not apply to them. */
+  changedAt(): string {
+    return this.#changedAt;
   }
 
   activeProvider(): AiProvider | null {

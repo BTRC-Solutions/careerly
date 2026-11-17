@@ -3,6 +3,7 @@ import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { AiUsageCard } from '../../ai/components/AiUsageCard';
 import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
 import { useClaudeCode } from '../api/useClaudeCode';
 import { useSettings } from '../api/useSettings';
@@ -44,6 +45,7 @@ export function SettingsPage() {
           <AiKeyCard backendStatus={settings.data.aiKey} />
           <ClaudeCodeCard />
           {(settings.data.aiKey.configured || claudeCode.data?.enabled) && <AiModelsCard />}
+          <AiUsageCard />
           <DataFolderCard dataDir={settings.data.dataDir} />
           <BackupsCard />
           <PrivacyCard />

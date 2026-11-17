@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
+import { OfflineBanner } from '../../features/ai/components/OfflineBanner';
 import { OnboardingGate } from '../../features/onboarding/components/OnboardingGate';
 import { UiLanguageSync } from '../../features/settings/components/UiLanguageSync';
 import logo from '../../shared/brand/careerly-horizontal-color.svg';
@@ -43,9 +44,12 @@ export function AppLayout() {
           </ul>
         </nav>
       </aside>
-      <main className="flex-1 overflow-y-auto px-10 py-10">
-        <Outlet />
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <OfflineBanner />
+        <main className="flex-1 overflow-y-auto px-10 py-10">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   CreateToolResponseSchema,
   CvImportDraftSchema,
 } from '@careerly/contracts';
+import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiPost, apiUpload } from '../../../shared/api/client';
 import { PROFILE_QUERY_KEY } from './profile-api';
@@ -15,8 +16,15 @@ import { PROFILE_QUERY_KEY } from './profile-api';
 
 /** `POST /profile/import`: reads the CV. It can take a while (the AI reads the whole file). */
 export function useReadCv() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => apiUpload('/profile/import', CvImportDraftSchema, file),
+    // A rejected key or new usage: keep the AI status and usage up to date.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: AI_STATUS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: AI_USAGE_QUERY_KEY }),
+      ]),
   });
 }
 

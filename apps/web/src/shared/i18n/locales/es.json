@@ -392,7 +392,6 @@
       "addsToProfile": "Tu perfil ya tiene datos. Lo que importes se agrega a lo que hay; no reemplaza nada, salvo los datos personales que elijas.",
       "reading": "Leyendo {{fileName}}…",
       "readingHint": "Puede tardar hasta un minuto si el CV es largo.",
-      "noKey": "Para importar un CV necesitás configurar una API key de IA. La IA es la que lee el archivo.",
       "goToSettings": "Ir a Configuración",
       "errors": {
         "fileType": "Ese archivo no es un PDF ni un DOCX.",
@@ -529,5 +528,45 @@
       "ai": "Prompts, respuestas de la IA ni tu API key."
     },
     "retention": "Los reportes son diarios, van con un ID anónimo que podés regenerar y se guardan sin límite de tiempo."
+  },
+  "ai": {
+    "offlineBanner": "Sin conexión: las funciones de IA no están disponibles. Todo lo demás sigue funcionando.",
+    "offlineHint": "Necesitás conexión a internet para esto.",
+    "unavailable": {
+      "OFFLINE": "No hay conexión a internet, así que la IA no está disponible. Podés seguir editando tu perfil y el resto de la app.",
+      "NOT_CONFIGURED": "Para usar la IA, configurá una API key (o Claude Code) en Configuración.",
+      "KEY_REJECTED": "El proveedor de IA rechazó tu API key. Revisala o cargá otra en Configuración.",
+      "goToSettings": "Ir a Configuración"
+    },
+    "usage": {
+      "cardTitle": "Consumo de IA",
+      "cardDescription": "Este mes. El costo es una estimación.",
+      "seeDetail": "Ver detalle",
+      "title": "Consumo de IA",
+      "description": "Llamadas, tokens y costo estimado por tarea, día y mes.",
+      "back": "Configuración",
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "cost": "Costo estimado",
+      "calls": "Llamadas",
+      "tokens": "Tokens",
+      "inputTokens": "Tokens de entrada",
+      "outputTokens": "Tokens de salida",
+      "byTask": "Por tarea",
+      "byDay": "Por día",
+      "byMonth": "Últimos 12 meses",
+      "empty": "Sin uso de IA en este período.",
+      "loadError": "No se pudo cargar el consumo de IA.",
+      "estimateNote": "El costo se estima con la tabla de precios de cada modelo; lo que cobra el proveedor puede variar. Cada reintento cuenta como una llamada."
+    },
+    "tasks": {
+      "smoke-test": "Prueba de conexión",
+      "cv-import": "Importar CV",
+      "jd-analysis": "Análisis de ofertas",
+      "evidence-match": "Evidencia de requisitos",
+      "relevance-score": "Relevancia",
+      "resume-writing": "Redacción del CV",
+      "achievement-suggestion": "Sugerencias de logros"
+    }
   }
 }

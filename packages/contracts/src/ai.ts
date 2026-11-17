@@ -163,3 +163,51 @@ export type ClaudeCodeStatus = z.infer<typeof ClaudeCodeStatusSchema>;
 /** `PUT /settings/claude-code`: turning it on is refused (not saved) unless it is ready. */
 export const UpdateClaudeCodeRequestSchema = z.object({ enabled: z.boolean() }).strict();
 export type UpdateClaudeCodeRequest = z.infer<typeof UpdateClaudeCodeRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Usage and availability (RF-CONF-06, RNF-13)
+// ---------------------------------------------------------------------------
+
+/** Calls (attempts), tokens and estimated cost of a group of AI calls. Cost is informative only (D-02). */
+export const AiUsageTotalsSchema = z.object({
+  calls: z.number().int().nonnegative(),
+  inputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+  costUsd: z.number().nonnegative(),
+});
+export type AiUsageTotals = z.infer<typeof AiUsageTotalsSchema>;
+
+/** `GET /ai/usage?month=YYYY-MM`: one month in detail plus the 12 months up to it, in local time. */
+export const AiUsageResponseSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  totals: AiUsageTotalsSchema,
+  /** Every day of the month, oldest first (days without calls are zero). */
+  byDay: z.array(AiUsageTotalsSchema.extend({ day: z.string() })),
+  /** Tasks with calls in the month, most expensive first. */
+  byTask: z.array(AiUsageTotalsSchema.extend({ task: AiTaskSchema })),
+  /** The 12 months ending with `month`, oldest first. */
+  byMonth: z.array(AiUsageTotalsSchema.extend({ month: z.string() })),
+});
+export type AiUsageResponse = z.infer<typeof AiUsageResponseSchema>;
+
+/**
+ * `GET /ai/status`: whether AI calls can be attempted. Connectivity is checked by the interface;
+ * `keyRejected` means the provider refused the current key on its last call.
+ */
+export const AiStatusSchema = z.object({
+  configured: z.boolean(),
+  provider: LlmProviderIdSchema.nullable(),
+  keyRejected: z.boolean(),
+});
+export type AiStatus = z.infer<typeof AiStatusSchema>;
+
+/** `GET /ai/usage` query: the month to detail; the current one when missing. */
+export const AiUsageQuerySchema = z
+  .object({
+    month: z
+      .string()
+      .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM.')
+      .optional(),
+  })
+  .strict();
+export type AiUsageQuery = z.infer<typeof AiUsageQuerySchema>;

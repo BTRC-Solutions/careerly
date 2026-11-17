@@ -24,9 +24,12 @@ export class AiProviderNotSupportedError extends AiError {
   }
 }
 
+/** `AiKeyRejectedError.code`, as recorded in `AiGeneration.errorCode`. */
+export const KEY_REJECTED_CODE = 'KEY_REJECTED';
+
 /** The provider rejected the key (wrong, revoked, restricted). */
 export class AiKeyRejectedError extends AiError {
-  readonly code = 'KEY_REJECTED';
+  readonly code = KEY_REJECTED_CODE;
   constructor() {
     super('The AI provider rejected the API key.');
     this.name = 'AiKeyRejectedError';
