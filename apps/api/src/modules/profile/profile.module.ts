@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AchievementSuggester } from './application/achievement-suggestion.ports.js';
+import { AchievementSuggestionService } from './application/achievement-suggestion.service.js';
 import { CvExtractor, ProfileImportRepository } from './application/cv-import.ports.js';
 import { CvImportService } from './application/cv-import.service.js';
 import { ExperienceService } from './application/experience.service.js';
@@ -12,6 +14,7 @@ import {
 import { ProfileService } from './application/profile.service.js';
 import { ToolCatalogService } from './application/tool-catalog.service.js';
 import { ToolRepository } from './application/tool.repository.js';
+import { AchievementSuggestionsController } from './http/achievement-suggestions.controller.js';
 import { CvImportController } from './http/cv-import.controller.js';
 import { ExperienceController } from './http/experience.controller.js';
 import { ProfileController } from './http/profile.controller.js';
@@ -19,6 +22,7 @@ import { ToolsController } from './http/tools.controller.js';
 import { DrizzleExperienceRepository } from './infrastructure/drizzle-experience.repository.js';
 import { DrizzleProfileChangeRepository } from './infrastructure/drizzle-profile-change.repository.js';
 import { DrizzleProfileImportRepository } from './infrastructure/drizzle-profile-import.repository.js';
+import { LlmAchievementSuggester } from './infrastructure/llm-achievement-suggester.js';
 import { LlmCvExtractor } from './infrastructure/llm-cv-extractor.js';
 import { DrizzlePersonalInfoRepository } from './infrastructure/drizzle-personal-info.repository.js';
 import { DrizzleSimpleSectionRepository } from './infrastructure/drizzle-simple-section.repository.js';
@@ -27,11 +31,17 @@ import { ToolCatalogSeeder } from './infrastructure/tool-catalog-seeder.js';
 
 /**
  * Master profile (ARCHITECTURE §4): tool catalog (F2.1), personal information, positions and
- * projects with achievements, education, certifications and languages (F2.2–2.5), CV import (F2.7)
- * and the per-session change log of gap answers (F2.6).
+ * projects with achievements, education, certifications and languages (F2.2–2.5), CV import (F2.7),
+ * the per-session change log of gap answers (F2.6) and wording suggestions for achievements (F4.8).
  */
 @Module({
-  controllers: [ToolsController, ProfileController, ExperienceController, CvImportController],
+  controllers: [
+    ToolsController,
+    ProfileController,
+    ExperienceController,
+    CvImportController,
+    AchievementSuggestionsController,
+  ],
   providers: [
     ToolCatalogService,
     ToolCatalogSeeder,
@@ -39,6 +49,8 @@ import { ToolCatalogSeeder } from './infrastructure/tool-catalog-seeder.js';
     ExperienceService,
     CvImportService,
     ProfileChangesService,
+    AchievementSuggestionService,
+    { provide: AchievementSuggester, useClass: LlmAchievementSuggester },
     { provide: CvExtractor, useClass: LlmCvExtractor },
     { provide: ProfileImportRepository, useClass: DrizzleProfileImportRepository },
     { provide: ToolRepository, useClass: DrizzleToolRepository },

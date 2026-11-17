@@ -19,6 +19,7 @@ import {
   useUpdateAchievement,
 } from '../api/profile-api';
 import { AchievementFormSchema, withToolIds } from '../lib/form-schemas';
+import { AchievementSuggestion } from './AchievementSuggestion';
 import { FormActions } from './FormActions';
 import { EmptyState, SectionCard } from './ProfileLayout';
 import { ToolPicker } from './ToolPicker';
@@ -221,6 +222,7 @@ function AchievementFields({
           )}
         </Field>
       </div>
+      <AchievementSuggestion form={form} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import {
   AchievementSchema,
+  AchievementSuggestionSchema,
   CertificationSchema,
   type CreateAchievementRequestSchema,
   type CreateCertificationRequestSchema,
@@ -22,6 +23,7 @@ import {
   type UpdatePersonalInfoRequestSchema,
   type UpdatePositionRequestSchema,
   type UpdateProjectRequestSchema,
+  type SuggestAchievementRequest,
 } from '@careerly/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
@@ -119,6 +121,14 @@ export function useUpdateAchievement() {
     ({ id, body }: { id: string; body: Body<typeof UpdateAchievementRequestSchema> }) =>
       apiPatch(`/profile/achievements/${id}`, AchievementSchema, body),
   );
+}
+
+/** A wording suggestion for an achievement (RF-PROF-10). Changes nothing: the form decides what to keep. */
+export function useSuggestAchievement() {
+  return useMutation({
+    mutationFn: (achievement: SuggestAchievementRequest) =>
+      apiPost('/profile/achievements/suggestions', AchievementSuggestionSchema, achievement),
+  });
 }
 
 export function useDeleteAchievement() {

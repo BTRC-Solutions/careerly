@@ -1,0 +1,36 @@
+{
+  "title": "Data Engineer",
+  "company": "Nordhavn Logistics",
+  "location": "Madrid, Spain (on-site)",
+  "text": "Nordhavn Logistics is looking for a Data Engineer to join our analytics platform team in Madrid. The role is on-site, five days a week.\n\nResponsibilities\n- Build and maintain batch and streaming pipelines.\n- Model data in our warehouse for the BI team.\n- Ensure data quality and documentation.\n\nRequirements\n- Bachelor's degree in Computer Science, Engineering or a related field.\n- 2+ years of experience as a data engineer.\n- Strong Python and SQL.\n- Experience with Apache Spark and Apache Airflow.\n- Experience with a cloud data warehouse such as Snowflake or BigQuery.\n- Spanish and English (B2 or higher).\n\nNice to have\n- Kafka.\n- dbt.\n- Experience with Terraform.",
+  "expected": {
+    "required": [
+      ["Bachelor", "degree"],
+      "Python",
+      "SQL",
+      ["Spark", "Apache Spark"],
+      ["Airflow", "Apache Airflow"],
+      ["Snowflake", "BigQuery", "data warehouse"],
+      "Spanish",
+      "English"
+    ],
+    "niceToHave": ["Kafka", "dbt", "Terraform"],
+    "acceptable": [
+      "Snowflake",
+      "BigQuery",
+      "pipeline",
+      "data quality",
+      "data model",
+      "documentation",
+      "on-site",
+      "Madrid"
+    ],
+    "facts": {
+      "language": "en",
+      "roleCategory": "data",
+      "workMode": "onsite",
+      "country": "ES",
+      "yearsOfExperience": 2
+    }
+  }
+}

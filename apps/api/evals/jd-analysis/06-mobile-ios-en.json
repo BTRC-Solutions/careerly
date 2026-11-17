@@ -1,0 +1,29 @@
+{
+  "title": "Mobile Developer (iOS)",
+  "company": "Pocket Health",
+  "location": "London, UK — hybrid",
+  "text": "Pocket Health is growing its mobile team. We're looking for an iOS developer to help build our patient app.\n\nWe work in a hybrid setup: three days a week at our London office.\n\nAbout you\n- Solid experience building iOS apps with Swift and SwiftUI.\n- You've shipped at least one app to the App Store.\n- Comfortable with REST APIs and Combine or async/await.\n- You care about automated testing (XCTest).\n- Right to work in the UK.\n\nNice to have\n- Kotlin / Android experience.\n- Experience in a regulated industry (healthcare, finance).",
+  "expected": {
+    "required": [
+      "Swift",
+      "SwiftUI",
+      ["App Store", "shipped"],
+      "REST API",
+      ["Combine", "async/await"],
+      "XCTest",
+      ["right to work", "UK"]
+    ],
+    "niceToHave": [
+      ["Kotlin", "Android"],
+      ["regulated", "healthcare"]
+    ],
+    "acceptable": ["iOS", "Combine", "async", "Android", "Kotlin", "testing"],
+    "facts": {
+      "language": "en",
+      "roleCategory": "mobile",
+      "workMode": "hybrid",
+      "country": "GB",
+      "yearsOfExperience": null
+    }
+  }
+}
