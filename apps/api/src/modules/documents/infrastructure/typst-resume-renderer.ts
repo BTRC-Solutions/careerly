@@ -35,7 +35,9 @@ export class TypstResumeRenderer extends ResumeRenderer {
   }
 
   async render(template: ResumeTemplate, data: TemplateData): Promise<RenderOutput> {
-    const work = await fs.mkdtemp(path.join(os.tmpdir(), 'careerly-render-'));
+    // The real path: Typst reports files by it, and on Windows the temp folder may come as an 8.3 short
+    // name (`C:\Users\RUNNER~1\…`) or through a junction, which Typst would print expanded.
+    const work = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'careerly-render-')));
     try {
       await fs.cp(template.dir, work, { recursive: true });
       // Data, not code: the template reads this file (RNF-05).
@@ -104,9 +106,14 @@ function toRenderError(error: ExecError, timeoutMs: number, work: string): Rende
 
 /**
  * Typst names files by their absolute path (on Windows with the `\\?\` prefix). The temporary folder means
- * nothing to the template's author, so `…/careerly-render-x/template.typ` becomes `template.typ`.
+ * nothing to the template's author, so `…/careerly-render-x/template.typ` becomes `template.typ`. Should the
+ * path still be spelled differently, the location lines (`┌─ <path>:line:col`) are cut at the folder's name.
  */
 function withoutWorkFolder(text: string, work: string): string {
   const folder = `${work}${path.sep}`;
-  return text.replaceAll(`\\\\?\\${folder}`, '').replaceAll(folder, '');
+  const name = path.basename(work).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text
+    .replaceAll(`\\\\?\\${folder}`, '')
+    .replaceAll(folder, '')
+    .replace(new RegExp(`(─ )[^\\n]*?${name}[\\\\/]`, 'g'), '$1');
 }
