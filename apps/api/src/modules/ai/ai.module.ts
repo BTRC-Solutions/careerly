@@ -49,6 +49,7 @@ import { StaticLlmProviderRegistry } from './infrastructure/llm-provider.registr
     ClaudeCodeProbe,
     AiModelChoiceStore,
     AiModelsService,
+    AiUsageService,
     LlmClient,
   ],
 })

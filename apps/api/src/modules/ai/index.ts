@@ -5,6 +5,7 @@ export { AiCredentialsStore } from './application/ai-credentials.store.js';
 export { ClaudeCodeProbe, type ClaudeCodeEnvironment } from './application/claude-code.port.js';
 export { AiModelChoiceStore, type ModelChoice } from './application/ai-model-choice.store.js';
 export { AiModelsService } from './application/ai-models.service.js';
+export { AiUsageService } from './application/ai-usage.service.js';
 export {
   LlmClient,
   type StructuredRequest,

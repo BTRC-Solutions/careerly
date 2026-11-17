@@ -51,6 +51,19 @@ describe('telemetry API (integration)', () => {
     }
   }
 
+  /** Tokens of the `ai_generations` rows created on a local day, straight from the table. */
+  function sumTokensOn(day: string): number {
+    return (
+      rows('SELECT input_tokens, output_tokens, created_at FROM ai_generations') as {
+        input_tokens: number;
+        output_tokens: number;
+        created_at: string;
+      }[]
+    )
+      .filter((row) => new Date(row.created_at).toLocaleDateString('sv-SE') === day)
+      .reduce((total, row) => total + row.input_tokens + row.output_tokens, 0);
+  }
+
   beforeEach(async () => {
     temp = createTempDir();
     await start();
@@ -140,6 +153,72 @@ describe('telemetry API (integration)', () => {
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ status: 'PENDING', attempts: 0, sentAt: null });
     expect(reports[0]!.payload.metrics).toEqual({ activeUsage: { active: true } });
+  });
+
+  it('reports the AI tokens of each day, as recorded in AiGeneration (RF-TEL-03h)', async () => {
+    await call('PATCH', '/telemetry/settings', { decision: 'ACCEPT' });
+    const now = new Date();
+    const at = (daysAgo: number, hour: number) =>
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, hour).toISOString();
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const db = openDatabase(config().databaseFile);
+    const insert = db.prepare(
+      `INSERT INTO ai_generations (id, task, provider, model, prompt_version, attempt, status,
+         input_tokens, output_tokens, cost_usd, latency_ms, error_code, created_at)
+       VALUES (?, ?, 'gemini', 'gemini-test', 'v1', 1, ?, ?, ?, 0, 100, NULL, ?)`,
+    );
+    insert.run('t1', 'jd-analysis', 'SUCCEEDED', 1200, 300, now.toISOString());
+    insert.run('t2', 'cv-import', 'INVALID_OUTPUT', 800, 100, now.toISOString());
+    insert.run('y1', 'jd-analysis', 'SUCCEEDED', 2000, 500, at(1, 0));
+    insert.run('y2', 'achievement-suggestion', 'SUCCEEDED', 100, 50, at(1, 23));
+    insert.run('o1', 'cv-import', 'SUCCEEDED', 9999, 9999, at(2, 12));
+    db.prepare('INSERT INTO telemetry_activity_days (day) VALUES (?)').run(
+      yesterday.toLocaleDateString('sv-SE'),
+    );
+    db.close();
+
+    // Today, so far: the preview adds both of today's attempts, failed ones included.
+    const { report } = TelemetryPreviewResponseSchema.parse(
+      (await call('GET', '/telemetry/preview')).body,
+    );
+    expect(report!.metrics.features).toEqual({
+      resumesGenerated: 0,
+      outputLanguages: {},
+      gapsAnswered: 0,
+      aiTokens: 1200 + 300 + 800 + 100,
+    });
+    expect(report!.metrics.features!.aiTokens).toBe(sumTokensOn(report!.day));
+
+    // Yesterday, once closed: its own attempts, from its first to its last hour.
+    await stop();
+    await start();
+    const { reports } = TelemetryReportsResponseSchema.parse(
+      (await call('GET', '/telemetry/reports')).body,
+    );
+    expect(reports).toHaveLength(1);
+    expect(reports[0]!.payload.metrics.features?.aiTokens).toBe(2000 + 500 + 100 + 50);
+    expect(reports[0]!.payload.metrics.features!.aiTokens).toBe(sumTokensOn(reports[0]!.day));
+  });
+
+  it('leaves the metric out on days without AI use, and when it is disabled', async () => {
+    await call('PATCH', '/telemetry/settings', {
+      decision: 'ACCEPT',
+      metrics: { features: false },
+    });
+    const db = openDatabase(config().databaseFile);
+    db.prepare(
+      `INSERT INTO ai_generations (id, task, provider, model, prompt_version, attempt, status,
+         input_tokens, output_tokens, cost_usd, latency_ms, error_code, created_at)
+       VALUES ('t1', 'jd-analysis', 'gemini', 'm', 'v1', 1, 'SUCCEEDED', 10, 10, 0, 1, NULL, ?)`,
+    ).run(new Date().toISOString());
+    db.close();
+    const preview = async () =>
+      TelemetryPreviewResponseSchema.parse((await call('GET', '/telemetry/preview')).body).report!
+        .metrics;
+    expect(await preview()).toEqual({ activeUsage: { active: true } });
+
+    await call('PATCH', '/telemetry/settings', { metrics: { features: true } });
+    expect((await preview()).features?.aiTokens).toBe(20);
   });
 
   it('regenerates the anonymous id', async () => {

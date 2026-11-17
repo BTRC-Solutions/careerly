@@ -2,11 +2,14 @@ import type { AiStatus, AiUsageResponse } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { ActiveAiCredentials } from './active-ai-credentials.js';
 import { AiCredentialsStore } from './ai-credentials.store.js';
-import { summarizeUsage, usageReportStart } from './ai-usage.js';
+import { dayStart, summarizeUsage, tokensOnDay, usageReportStart } from './ai-usage.js';
 import { KEY_REJECTED_CODE } from './llm-errors.js';
 import { AiGenerationRepository, LlmProviderRegistry } from './llm.ports.js';
 
-/** AI usage report (RF-CONF-06) and whether AI calls can be attempted (RNF-13). */
+/**
+ * AI usage report (RF-CONF-06), whether AI calls can be attempted (RNF-13) and the tokens of a day for
+ * telemetry (RF-TEL-03h).
+ */
 @Injectable()
 export class AiUsageService {
   constructor(
@@ -19,6 +22,11 @@ export class AiUsageService {
   async usage(month: string): Promise<AiUsageResponse> {
     const rows = await this.generations.listSince(usageReportStart(month).toISOString());
     return summarizeUsage(rows, month);
+  }
+
+  /** Tokens used on a local day, for the "uso de funciones" telemetry metric (RF-TEL-03h). */
+  async tokensOn(day: string): Promise<number> {
+    return tokensOnDay(await this.generations.listSince(dayStart(day).toISOString()), day);
   }
 
   async status(): Promise<AiStatus> {
