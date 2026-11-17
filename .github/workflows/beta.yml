@@ -1,0 +1,72 @@
+name: Beta
+
+# Publishes a beta of the next desktop version (VERSIONING.md §3): a snapshot of main with the version that
+# the open release PR proposes, plus `-beta.N`, as a GitHub prerelease with the Windows installer. It does
+# not touch the release PR, the CHANGELOG or the version files in the repository; merging the release PR
+# is still what makes the stable version.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: beta
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    name: Windows installer (beta)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Work out the beta version
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The open release PR is titled "chore: release X.Y.Z" (release-please-config.json).
+          title=$(gh pr list --state open --label "autorelease: pending" --json title --jq '.[0].title // ""')
+          next=$(sed -nE 's/^chore: release ([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' <<< "$title")
+          if [ -z "$next" ]; then
+            echo "::error::No open release PR with a version. Merge a feat/fix into main first."
+            exit 1
+          fi
+          # One more than the highest beta of that version.
+          last=$(git tag --list "v$next-beta.*" | sed -E 's/.*-beta\.([0-9]+)$/\1/' | sort -n | tail -1)
+          version="$next-beta.$(( ${last:-0} + 1 ))"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Beta: $version (main at $(git rev-parse --short HEAD))"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Only in this build: the app (Electron's app.getVersion()) and the installer name take it from here.
+      - name: Set the beta version in the desktop app
+        shell: bash
+        run: npm pkg set version=${{ steps.version.outputs.version }} -w @careerly/desktop
+
+      - run: npm run package:win
+
+      - name: Publish the prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            apps/desktop/release/installer/*.exe apps/desktop/release/installer/*.exe.blockmap \
+            --prerelease \
+            --target "$(git rev-parse HEAD)" \
+            --title "v$VERSION" \
+            --notes "Beta of the next version, built from main at $(git rev-parse --short HEAD). What it includes is in the open release PR. Install it by hand over the stable version; the data is kept, and a backup is made before any migration."

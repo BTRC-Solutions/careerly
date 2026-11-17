@@ -108,8 +108,10 @@ Una migración de base de datos **no** es por sí sola un cambio que rompe: se a
 **Cómo se saca una beta:**
 
 1. Mirá el PR de release abierto: ahí está la versión propuesta (por ejemplo, `0.4.0`).
-2. En GitHub Actions, corré a mano el workflow de beta. Toma esa versión, le agrega `-beta.N` y publica los
-   instaladores como *prerelease*.
+2. En GitHub Actions, corré a mano el workflow **Beta** (`.github/workflows/beta.yml`, botón *Run workflow*).
+   Toma esa versión, le agrega `-beta.N` (uno más que la última beta de esa versión), construye el instalador
+   de Windows desde `main` y lo publica como *prerelease* con el tag `v0.4.0-beta.N`. La versión con `-beta.N`
+   solo se aplica a ese build: no se commitea nada.
 3. Si aparece un problema, se corrige en `main` y se saca `-beta.N+1`.
 4. Cuando la beta está bien, se mergea el PR de release y sale la stable `0.4.0`.
 
