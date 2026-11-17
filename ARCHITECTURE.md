@@ -715,6 +715,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 | ADR-24 | Plantillas propias: el usuario sube un `.typ` con el mismo contrato que las incluidas (un JSON `TemplateData` con los textos fijos traducidos por la app). Se ejecuta con el mismo aislamiento de Typst (sin red, lectura solo dentro de `--root`, fuentes del sistema ignoradas, timeout) y se valida renderizando los ejemplos | Aceptada (Fase 3) |
 | ADR-25 | Proveedor opcional "Claude Code local": el `claude` instalado y logueado, invocado como proceso aislado (carpeta temporal, solo lectura de los archivos de entrada, sin MCP ni configuración del usuario), con el plan del usuario en lugar de una API key; experimental y solo para uso personal | Aceptada (Fase 4) |
+| ADR-26 | Envío de telemetría firmado por instalación (Ed25519, clave privada en `safeStorage`, pública registrada en el primer envío), una solicitud exitosa por instalación por día con el día de datos donde gana el primero, prueba de trabajo e instalaciones nuevas limitadas por IP, cuerpo de hasta 16 KB y rangos de plausibilidad por campo que rechazan el lote entero | Aceptada (diseño; se implementa en la Fase 8) |
 
 ## 18. Extensiones post-MVP
 
@@ -855,7 +856,7 @@ tabla está bloqueado.
 
 | Origen | Destino | Cómo | Autenticación |
 |---|---|---|---|
-| App de escritorio | `telemetry-api` | `POST /v1/reports` vía Caddy (HTTPS) | Ninguna; protegida por esquema, topes y rate limit |
+| App de escritorio | `telemetry-api` | `POST /v1/reports` vía Caddy (HTTPS) | Firma Ed25519 por instalación, más un envío por día, prueba de trabajo para instalaciones nuevas, esquema con rangos y rate limit (ADR-26) |
 | Navegador del visitante | `stats-web` | `GET /` y `GET /api/*` vía Caddy | Ninguna (datos públicos con k ≥ 5) |
 | `stats-web` | `telemetry-api` | `GET /internal/stats/*` por la red interna de Docker | Secreto compartido |
 | `telemetry-api` | Postgres | Red interna de Docker | Usuario y contraseña por entorno |
@@ -883,11 +884,33 @@ servidor propio (§19.7).
   (una función que consulta un servicio público y devuelve números o enums). El resultado se valida con el
   esquema `TelemetryReportV1` de `packages/contracts`, que es **estricto** (`.strict()`, sin campos libres
   salvo el título recortado); si no valida, el envío falla y se registra en el log (RN-18).
-- **Envío.** `POST https://<dominio>/v1/reports`, con reintentos con *backoff* exponencial a cargo de la cola.
-  El reporte enviado se guarda en `TelemetryReport` tal cual salió (RF-TEL-06). Un fallo nunca afecta al
-  resto de la app (RN-21).
-- **Sin clave en la app.** El instalador no lleva secretos (se podrían extraer); la protección está del lado
-  del receptor (§19.4).
+- **Clave por instalación (ADR-26).** Al aceptar la telemetría, junto con el `installId`, la app genera un par
+  de claves **Ed25519**. La privada la guarda el proceso main de Electron cifrada con `safeStorage` (como las
+  API keys, ADR-23) y se la pasa al backend en memoria. Nunca va a la base, a los logs ni a los backups. La
+  pública viaja en el primer envío y el receptor la asocia a ese `installId`.
+  - Cada envío se **firma sobre los bytes exactos del cuerpo**. Así el receptor detecta cualquier cambio y
+    nadie puede mandar datos a nombre de otra instalación, aunque conozca su `installId`.
+  - Si la clave se pierde (otra PC, restaurar un backup o reinstalar), o si el usuario regenera el id, la app
+    genera **un `installId` y una clave nuevos**. Nunca se reutiliza un id con otra clave.
+  - **No hay secretos compartidos en el instalador**: se podrían extraer. Cada clave identifica a una sola
+    instalación.
+- **Envío: una solicitud exitosa por día.**
+  - `POST https://<dominio>/v1/reports` con **un único lote** que lleva todos los reportes diarios pendientes
+    (hasta 30 días, para cubrir el tiempo sin conexión). Después de una respuesta `2xx` o `409` no se manda nada
+    más ese día.
+  - Lo que se firma es exactamente lo que se guarda en `TelemetryReport` y se ve en "Privacidad" (RF-TEL-06).
+  - Antes de firmar, el reporte se valida contra el mismo esquema que usa el receptor, con sus rangos de
+    plausibilidad. Un reporte que no pasa no se envía y se registra el motivo en el log, sin el contenido
+    (RN-18).
+- **Reintentos del cliente**, a cargo de la cola de `jobs`:
+  - Sin red, `429`, `5xx` o timeout: *backoff* exponencial con *jitter* (≈1 min, 5 min, 30 min, 2 h), hasta
+    5 intentos por día, y respetando `Retry-After`.
+  - `409` (ese día ya se recibió): cuenta como enviado.
+  - `428` (falta la prueba de trabajo o no alcanza la dificultad): se calcula con la dificultad que indica la
+    respuesta y se reintenta.
+  - `400`, `401`, `413` o `415`: no se reintenta el mismo cuerpo. Se registra el código. Con `401` (la clave no
+    corresponde al id), al día siguiente se generan un id y una clave nuevos.
+  - Un fallo nunca afecta al resto de la app (RN-21).
 - **Origen de cada métrica:**
 
 | Métrica | Fuente | Forma en el reporte |
@@ -926,19 +949,67 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
 ```
 
 - `schemaVersion` permite evolucionar el formato: el receptor acepta las versiones que conoce.
-- Idempotencia: la clave es `(installId, day)`. Un reenvío del mismo día reemplaza al anterior.
+- Idempotencia: la clave es `(installId, day)` y **gana el primero**. Un reporte de un día ya recibido no
+  reemplaza al anterior y se ignora.
+- **Sobre de envío (`TelemetryBatchV1`):** `{ schemaVersion, installId, sentAt, publicKey?, reports: [...] }`,
+  donde `publicKey` va solo en el primer envío de la instalación.
+  - Headers: `X-Careerly-Signature` (Ed25519 en base64 sobre el cuerpo crudo) y, para una instalación nueva,
+    `X-Careerly-Pow` (el *nonce* de la prueba de trabajo).
+  - Cuerpo de **16 KB como máximo**. Treinta reportes con todas las métricas entran holgados.
 
 ### 19.4 Receptor (`apps/telemetry-api`)
 
 - **NestJS + Drizzle sobre Postgres**, reutilizando `TelemetryReportV1` de `packages/contracts`.
-- **Ingesta pública:** `POST /v1/reports` es lo único que Caddy expone de este servicio. Valida el esquema,
-  aplica topes de plausibilidad (p. ej. no más de 50 postulaciones por día, `day` no futuro ni de más de 30
-  días atrás), tiene rate limit por IP (en memoria, sin persistir la IP) y responde `202`.
+- **Ingesta pública:** `POST /v1/reports` es lo único que Caddy expone de este servicio. Los chequeos van del
+  más barato al más caro, así cada rechazo cuesta lo mínimo (ADR-26):
+  1. **Forma:** `Content-Type: application/json` y cuerpo de hasta 16 KB, cortado antes de leerlo todo
+     (Caddy y Nest). Si no, `415` o `413`.
+  2. **Rate limit general por IP** (p. ej. 20 solicitudes por hora), en memoria y con la IP hasheada con una
+     sal que rota cada día. Nunca se persiste (RNF-23). Si se excede, `429` con `Retry-After`.
+  3. **Firma:** se verifica sobre el cuerpo crudo, antes de parsear el JSON. Un `installId` conocido debe
+     firmar con su clave registrada; si no, `401`.
+  4. **Instalación nueva:** se registra solo si:
+     - trae `publicKey`, la firma corresponde a esa clave y la **prueba de trabajo** es válida (*hashcash*
+       sobre `installId:publicKey:díaUTC:nonce`, con una dificultad que tarda ~1–2 s; se puede subir sin
+       actualizar la app). Si falta o no alcanza, `428` con la dificultad requerida;
+     - esa IP no registró otra instalación ese día y no se superó el tope global de instalaciones nuevas por
+       hora (con alerta). Si no, `429`.
+  5. **Una solicitud exitosa por instalación por día (UTC):** si ya hubo una, `409` sin escribir nada.
+  6. **Esquema y plausibilidad:** el lote y cada reporte validan contra el esquema estricto, y **cada campo
+     numérico tiene un rango** definido en `packages/contracts` junto a la métrica. Por ejemplo:
+     - postulaciones creadas por día: 0–100;
+     - CVs generados por día: 0–100;
+     - tokens de IA por día: 0–5.000.000;
+     - claves de mapas (países, portales, categorías): de catálogos cerrados.
+
+     `day` no puede ser futuro ni de más de 30 días atrás, ni anterior a la fecha en que se registró la
+     instalación. **Un valor fuera de rango rechaza el lote entero** (`400`, con el motivo en el log y sin el
+     contenido). Los rangos no recortan: un dato imposible no se corrige, se descarta.
+  7. **Inserción:** en una transacción, cada `(installId, day)` nuevo y la marca del envío del día. Responde
+     `202` con los días aceptados y los ignorados por estar repetidos.
+
+  En conjunto, **un id y una IP juntos acotan el abuso**. Si se reinicia el router y cambia la IP, el id sigue
+  siendo el mismo y no puede mandar otra vez ese día. Si se borra o cambia el id, la IP no puede registrar otra
+  instalación hasta el día siguiente: en el peor caso logra una solicitud más. Varias personas detrás de la
+  misma IP (una oficina, CGNAT) no se bloquean entre sí: el tope por IP solo aplica a **instalaciones nuevas**,
+  así que la segunda que se instale ese día empieza a reportar al día siguiente.
 - **API de lectura interna:** `GET /internal/stats/*` devuelve agregados ya filtrados por el umbral de
   anonimato (RN-20, k ≥ 5 instalaciones). Solo escucha en la red interna de Docker y además exige un secreto
   compartido con `stats-web`.
-- **Datos:** tabla `reports` (installId, day, schemaVersion, appVersion, metrics JSONB, receivedAt) con clave
-  única `(installId, day)`. Retención sin límite (D-11). Sin IPs (RNF-23).
+- **Datos:**
+  - `reports` (installId, day, schemaVersion, appVersion, metrics JSONB, receivedAt), con clave única
+    `(installId, day)`.
+  - `installs` (installId, publicKey, registeredOn, excluded): `excluded` deja fuera de las estadísticas a una
+    instalación sospechosa sin borrar sus datos.
+  - `sends` (installId, utcDay), con clave única: la marca de "ya envió hoy".
+
+  Retención sin límite (D-11). Sin IPs (RNF-23). La cuenta de Postgres de la ingesta solo puede insertar en
+  esas tablas y leer `installs`.
+- **Lo que esto no garantiza:** alguien que modifique su propia copia de la app puede mandar números inventados
+  pero plausibles para su instalación. Sin cuentas ni atestación del equipo no se puede evitar. El impacto queda
+  acotado por los rangos, por el costo de crear instalaciones (prueba de trabajo y una por IP por día), por el
+  umbral k ≥ 5, porque la página pública usa medianas en lugar de promedios donde corresponde, y por la
+  exclusión manual.
 
 ### 19.5 Página pública (`apps/stats-web`)
 
