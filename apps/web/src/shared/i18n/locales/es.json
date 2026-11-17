@@ -608,5 +608,71 @@
       "MONTH": "Por mes",
       "HOUR": "Por hora"
     }
+  },
+  "templates": {
+    "back": "Volver a Configuración",
+    "title": "Plantillas de CV",
+    "description": "El diseño con el que se arma el PDF de tus CVs. Podés usar la incluida o subir la tuya como un archivo .typ.",
+    "loading": "Cargando las plantillas…",
+    "loadError": "No se pudieron cargar las plantillas.",
+    "listTitle": "Plantillas disponibles",
+    "builtIn": "Incluida",
+    "own": "Propia",
+    "version": "Versión {{version}}",
+    "card": {
+      "title": "Plantillas de CV",
+      "description": "El diseño del PDF de tus CVs.",
+      "count_one": "La incluida y {{count}} propia.",
+      "count_other": "La incluida y {{count}} propias.",
+      "count_zero": "Solo la incluida. Podés subir la tuya.",
+      "manage": "Administrar"
+    },
+    "upload": {
+      "action": "Subir plantilla",
+      "validating": "Validando…",
+      "validatingDetail": "Probando la plantilla con los CVs de ejemplo en español e inglés. Puede tardar unos segundos.",
+      "done": "«{{name}}» quedó disponible. Abajo está su vista previa.",
+      "diagnostics": "Esto es lo que respondió Typst:",
+      "errors": {
+        "invalid": "La plantilla no compila con los CVs de ejemplo, así que no se guardó.",
+        "timeout": "La plantilla tardó demasiado en generar el PDF, así que no se guardó.",
+        "rendererUnavailable": "No se encontró Typst, el programa que arma los PDF. Reinstalá la app.",
+        "file": "Elegí un archivo .typ de texto, de hasta 256 KB.",
+        "unknown": "No se pudo subir la plantilla. Probá de nuevo."
+      }
+    },
+    "rename": {
+      "action": "Renombrar «{{name}}»",
+      "title": "Renombrar plantilla",
+      "label": "Nombre"
+    },
+    "delete": {
+      "action": "Eliminar «{{name}}»",
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "Se borra el archivo de la plantilla. Los CVs que ya generaste no cambian."
+    },
+    "preview": {
+      "title": "Vista previa: {{name}}",
+      "language": "Idioma del ejemplo",
+      "languages": {
+        "es": "Español",
+        "en": "Inglés"
+      },
+      "loading": "Generando la vista previa…",
+      "error": "No se pudo generar la vista previa.",
+      "frameTitle": "Vista previa de {{name}} en {{language}}"
+    },
+    "starterKit": {
+      "download": "Descargar punto de partida",
+      "error": "No se pudo descargar el punto de partida."
+    },
+    "guide": {
+      "title": "Cómo escribir una plantilla",
+      "download": "Descargá el punto de partida: la plantilla incluida y los CVs de ejemplo en español e inglés.",
+      "data": "La plantilla recibe todo en un solo JSON, con los títulos de sección ya traducidos: no hace falta traducir nada.",
+      "test": "Probala con Typst desde la carpeta descomprimida:",
+      "upload": "Subila acá. Se guarda solo si genera bien los dos ejemplos.",
+      "ats": "Para que los sistemas de selección (ATS) lean bien el CV: una sola columna, títulos de sección estándar, texto seleccionable, sin espaciado entre letras en los títulos y nada de texto en imágenes. La app no lo puede comprobar del todo."
+    }
   }
 }

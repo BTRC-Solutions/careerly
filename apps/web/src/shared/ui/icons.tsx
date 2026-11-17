@@ -63,6 +63,12 @@ export const ChevronLeftIcon = (props: SVGProps<SVGSVGElement>) => (
   </Icon>
 );
 
+export const DownloadIcon = (props: SVGProps<SVGSVGElement>) => (
+  <Icon {...props}>
+    <path d="M12 4v11m0 0-4-4m4 4 4-4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+  </Icon>
+);
+
 export const UploadIcon = (props: SVGProps<SVGSVGElement>) => (
   <Icon {...props}>
     <path d="M12 15V4m0 0L8 8m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />

@@ -1,6 +1,8 @@
 import { type ResumeDocument, TemplateDataSchema, type TemplateSummary } from '@careerly/contracts';
 import fs from 'node:fs';
 import path from 'node:path';
+import JSZip from 'jszip';
+import { PDFDocument } from 'pdf-lib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTempDir, HAS_TYPST, TEMPLATES_DIR } from '../../test-support/temp-dir.js';
 import {
@@ -113,6 +115,9 @@ describe('user templates (integration)', () => {
       expect(body.error.code).toBe('TEMPLATE_INVALID');
       // The Typst diagnostics go back to the author so they can fix the file.
       expect(body.error.message).toContain('#let x = (');
+      // …naming the file as they know it, not by the temporary folder it was rendered in.
+      expect(body.error.message).toMatch(/─ template\.typ:\d+:\d+/);
+      expect(body.error.message).not.toContain('careerly-render-');
       expect(await listed()).toEqual(onlyBuiltIn());
       expect(fs.existsSync(templatesFolder) ? fs.readdirSync(templatesFolder) : []).toEqual([]);
     });
@@ -172,6 +177,20 @@ describe('user templates (integration)', () => {
       expect(await listed()).toContainEqual(created);
     });
 
+    it('previews any template with the example of each language as a PDF', async () => {
+      const created = (await (await upload(CLASSIC_SOURCE)).json()) as TemplateSummary;
+
+      for (const id of ['classic', created.id]) {
+        for (const language of ['es', 'en']) {
+          const response = await call('GET', `/templates/${id}/preview/${language}`);
+          expect(response.status, `${id} ${language}`).toBe(200);
+          expect(response.headers.get('content-type')).toBe('application/pdf');
+          const pdf = await PDFDocument.load(await response.arrayBuffer());
+          expect(pdf.getPageCount()).toBeGreaterThan(0);
+        }
+      }
+    });
+
     it('keeps a template that a snapshot uses', async () => {
       const created = (await (await upload(CLASSIC_SOURCE)).json()) as TemplateSummary;
       const service = new UserTemplatesService(
@@ -210,6 +229,28 @@ describe('user templates (integration)', () => {
     const body = (await response.json()) as { error: { code: string } };
     expect(body.error.code).toBe('RENDERER_UNAVAILABLE');
     expect(await listed()).toEqual(onlyBuiltIn());
+  });
+
+  it('refuses previews of unknown templates or languages', async () => {
+    expect((await call('GET', '/templates/custom-00000000/preview/es')).status).toBe(404);
+    expect((await call('GET', '/templates/classic/preview/fr')).status).toBe(400);
+  });
+
+  it('downloads the default template and the examples as a starting point', async () => {
+    const response = await call('GET', '/templates/starter-kit');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/zip');
+    expect(response.headers.get('content-disposition')).toContain('.zip');
+
+    const zip = await JSZip.loadAsync(await response.arrayBuffer());
+    expect(Object.keys(zip.files).filter((name) => !name.endsWith('/'))).toEqual(
+      expect.arrayContaining([
+        'template.typ',
+        'examples/example.en.json',
+        'examples/example.es.json',
+      ]),
+    );
+    expect(await zip.file('template.typ')?.async('string')).toBe(CLASSIC_SOURCE);
   });
 
   it('refuses to rename or delete the built-in templates and unknown ids', async () => {

@@ -15,6 +15,7 @@ import { LanguagesPage } from '../features/profile/pages/LanguagesPage';
 import { CvImportPage } from '../features/profile/pages/CvImportPage';
 import { PersonalInfoPage } from '../features/profile/pages/PersonalInfoPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
+import { TemplatesPage } from '../features/templates/pages/TemplatesPage';
 import { AppLayout } from './layout/AppLayout';
 
 // Hash routing works the same in Vite dev, in the browser and from the packaged `app://` protocol.
@@ -46,6 +47,7 @@ export const router = createHashRouter([
       { path: 'job-postings/:id', element: <JobPostingPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/ai-usage', element: <AiUsagePage /> },
+      { path: 'settings/templates', element: <TemplatesPage /> },
     ],
   },
 ]);

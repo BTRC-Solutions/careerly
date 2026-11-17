@@ -608,5 +608,71 @@
       "MONTH": "Per month",
       "HOUR": "Per hour"
     }
+  },
+  "templates": {
+    "back": "Back to Settings",
+    "title": "CV templates",
+    "description": "The design used to build your CV PDFs. Use the built-in one or upload your own as a .typ file.",
+    "loading": "Loading templates…",
+    "loadError": "The templates could not be loaded.",
+    "listTitle": "Available templates",
+    "builtIn": "Built-in",
+    "own": "Yours",
+    "version": "Version {{version}}",
+    "card": {
+      "title": "CV templates",
+      "description": "The design of your CV PDFs.",
+      "count_one": "The built-in one and {{count}} of yours.",
+      "count_other": "The built-in one and {{count}} of yours.",
+      "count_zero": "Only the built-in one. You can upload your own.",
+      "manage": "Manage"
+    },
+    "upload": {
+      "action": "Upload template",
+      "validating": "Validating…",
+      "validatingDetail": "Trying the template with the example CVs in Spanish and English. It can take a few seconds.",
+      "done": "“{{name}}” is now available. Its preview is below.",
+      "diagnostics": "This is what Typst said:",
+      "errors": {
+        "invalid": "The template does not compile with the example CVs, so it was not saved.",
+        "timeout": "The template took too long to build the PDF, so it was not saved.",
+        "rendererUnavailable": "Typst, the program that builds the PDFs, was not found. Reinstall the app.",
+        "file": "Choose a .typ text file of up to 256 KB.",
+        "unknown": "The template could not be uploaded. Try again."
+      }
+    },
+    "rename": {
+      "action": "Rename “{{name}}”",
+      "title": "Rename template",
+      "label": "Name"
+    },
+    "delete": {
+      "action": "Delete “{{name}}”",
+      "title": "Delete “{{name}}”?",
+      "description": "The template file is deleted. CVs you already generated do not change."
+    },
+    "preview": {
+      "title": "Preview: {{name}}",
+      "language": "Example language",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "loading": "Building the preview…",
+      "error": "The preview could not be built.",
+      "frameTitle": "Preview of {{name}} in {{language}}"
+    },
+    "starterKit": {
+      "download": "Download starting point",
+      "error": "The starting point could not be downloaded."
+    },
+    "guide": {
+      "title": "How to write a template",
+      "download": "Download the starting point: the built-in template and the example CVs in Spanish and English.",
+      "data": "The template gets everything in a single JSON, with the section titles already translated: there is nothing to translate.",
+      "test": "Try it with Typst from the unpacked folder:",
+      "upload": "Upload it here. It is saved only if it builds both examples.",
+      "ats": "For applicant tracking systems (ATS) to read the CV: a single column, standard section titles, selectable text, no letter spacing in titles and no text in images. The app cannot fully check this."
+    }
   }
 }

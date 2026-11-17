@@ -40,13 +40,27 @@ export async function apiRequest<T extends z.ZodType>(
   });
   const json: unknown = await response.json().catch(() => undefined);
 
-  if (!response.ok) {
-    const parsed = ApiErrorResponseSchema.safeParse(json);
-    throw parsed.success
-      ? new ApiError(response.status, parsed.data.error.code, parsed.data.error.message)
-      : new ApiError(response.status, 'INTERNAL_ERROR', `Request failed (${response.status}).`);
-  }
+  if (!response.ok) throw toApiError(response.status, json);
   return schema.parse(json);
+}
+
+function toApiError(status: number, json: unknown): ApiError {
+  const parsed = ApiErrorResponseSchema.safeParse(json);
+  return parsed.success
+    ? new ApiError(status, parsed.data.error.code, parsed.data.error.message)
+    : new ApiError(status, 'INTERNAL_ERROR', `Request failed (${status}).`);
+}
+
+/** GET a file (a PDF, a `.zip`) from the local API. Errors still come as JSON, like {@link apiRequest}. */
+export async function apiGetBlob(path: string): Promise<Blob> {
+  const { baseUrl, token } = getApiConnection();
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw toApiError(response.status, await response.json().catch(() => undefined));
+  }
+  return response.blob();
 }
 
 /** GET a JSON resource from the local API. */

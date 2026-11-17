@@ -73,6 +73,15 @@ export abstract class UserTemplateStore {
 }
 
 /**
+ * Port: the starting point for writing a template (roadmap 4.13): the default template's source and the
+ * shared examples, packed as a single file to download.
+ */
+export abstract class TemplateStarterKit {
+  /** A `.zip` with `template.typ` and `examples/example.<language>.json`. */
+  abstract build(): Promise<Uint8Array>;
+}
+
+/**
  * Port: whether a saved snapshot uses a template version. Those templates are kept (roadmap 4.12).
  * Snapshots arrive in phase 7; until then nothing uses a template.
  */

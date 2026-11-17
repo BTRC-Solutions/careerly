@@ -4,6 +4,7 @@ import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { AiUsageCard } from '../../ai/components/AiUsageCard';
+import { TemplatesCard } from '../../templates/components/TemplatesCard';
 import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
 import { useClaudeCode } from '../api/useClaudeCode';
 import { useSettings } from '../api/useSettings';
@@ -46,6 +47,7 @@ export function SettingsPage() {
           <ClaudeCodeCard />
           {(settings.data.aiKey.configured || claudeCode.data?.enabled) && <AiModelsCard />}
           <AiUsageCard />
+          <TemplatesCard />
           <DataFolderCard dataDir={settings.data.dataDir} />
           <BackupsCard />
           <PrivacyCard />

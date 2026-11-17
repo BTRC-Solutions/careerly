@@ -1,6 +1,8 @@
 import path from 'node:path';
 import {
   type RenameTemplateRequest,
+  type ResumeLanguage,
+  ResumeLanguageSchema,
   RenameTemplateRequestSchema,
   type TemplateSummary,
   USER_TEMPLATE_MAX_BYTES,
@@ -18,12 +20,14 @@ import {
   Param,
   Patch,
   Post,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
 import { UserTemplateError } from '../application/documents.ports.js';
+import { TemplateExamplesService } from '../application/template-examples.service.js';
 import { UserTemplatesService } from '../application/user-templates.service.js';
 import { TemplatesErrorsInterceptor } from './templates-errors.interceptor.js';
 
@@ -34,15 +38,38 @@ interface UploadedTemplate {
   originalname: string;
 }
 
-/** The CV templates the user can choose from, and their own `.typ` files (RF-TAIL-09, roadmap 4.12). */
+/** The CV templates the user can choose from, and their own `.typ` files (RF-TAIL-09, roadmaps 4.12 and 4.13). */
 @Controller('templates')
 @UseInterceptors(TemplatesErrorsInterceptor)
 export class TemplatesController {
-  constructor(private readonly templates: UserTemplatesService) {}
+  constructor(
+    private readonly templates: UserTemplatesService,
+    private readonly examples: TemplateExamplesService,
+  ) {}
 
   @Get()
   list(): Promise<TemplateSummary[]> {
     return this.templates.list();
+  }
+
+  /** The default template and the examples, as a `.zip` to start writing one's own. */
+  @Get('starter-kit')
+  async starterKit(): Promise<StreamableFile> {
+    return new StreamableFile(await this.examples.downloadStarterKit(), {
+      type: 'application/zip',
+      disposition: 'attachment; filename="careerly-template-starter-kit.zip"',
+    });
+  }
+
+  /** The template rendered with the example in `language`, as a PDF. */
+  @Get(':id/preview/:language')
+  async preview(
+    @Param('id') id: string,
+    @Param('language', new ZodValidationPipe(ResumeLanguageSchema)) language: ResumeLanguage,
+  ): Promise<StreamableFile> {
+    return new StreamableFile(await this.examples.preview(id, language), {
+      type: 'application/pdf',
+    });
   }
 
   /** Uploads a `.typ` file in the "file" field; the optional "name" field defaults to the file name. */
