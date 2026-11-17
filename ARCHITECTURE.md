@@ -294,6 +294,14 @@ stateDiagram-v2
     FINALIZED --> [*]
 ```
 
+Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reglas que el diagrama no fija:
+
+- El match deja guardada la cantidad de gaps. Con gaps, de `MATCHED` solo se pasa a `AWAITING_ANSWERS`; sin gaps,
+  solo a `GENERATING`. "Volver a gaps" desde `REVIEW` exige que haya gaps. Saltear preguntas pasa dentro de
+  `AWAITING_ANSWERS` (RF-GAP-01).
+- `FAILED` recuerda el paso que falló (`failedStep`) y el reintento vuelve a ese paso.
+- `FINALIZED` es terminal. Cancelar o abandonar una sesión queda para el paso 6.8.
+
 ### 7.2 Pasos
 
 | # | Paso | Tipo |
