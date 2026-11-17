@@ -24,13 +24,14 @@ export class SqliteJobAnalysisRepository extends JobAnalysisRepository {
       );
       db.prepare(
         `INSERT INTO job_analyses (job_posting_id, language, role_category, seniority, work_mode, country,
-           years_of_experience, keywords, prompt_version, model, analyzed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           years_of_experience, keywords, prompt_version, model, analyzed_at, edited_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (job_posting_id) DO UPDATE SET language = excluded.language,
            role_category = excluded.role_category, seniority = excluded.seniority,
            work_mode = excluded.work_mode, country = excluded.country,
            years_of_experience = excluded.years_of_experience, keywords = excluded.keywords,
-           prompt_version = excluded.prompt_version, model = excluded.model, analyzed_at = excluded.analyzed_at`,
+           prompt_version = excluded.prompt_version, model = excluded.model, analyzed_at = excluded.analyzed_at,
+           edited_at = excluded.edited_at`,
       ).run(
         analysis.jobPostingId,
         analysis.language,
@@ -43,6 +44,7 @@ export class SqliteJobAnalysisRepository extends JobAnalysisRepository {
         analysis.promptVersion,
         analysis.model,
         analysis.analyzedAt,
+        analysis.editedAt,
       );
       const insert = db.prepare(
         `INSERT INTO job_requirements (id, job_posting_id, position, label, kind, importance, tool_id, tool_name)
@@ -97,6 +99,7 @@ export class SqliteJobAnalysisRepository extends JobAnalysisRepository {
       promptVersion: row.promptVersion,
       model: row.model,
       analyzedAt: row.analyzedAt,
+      editedAt: row.editedAt,
     });
   }
 }

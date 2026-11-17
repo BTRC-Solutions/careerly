@@ -133,8 +133,38 @@ export const JobAnalysisSchema = z.object({
   promptVersion: z.string(),
   model: z.string(),
   analyzedAt: z.iso.datetime(),
+  /** When the user last corrected it (RF-JD-03); `null` while it is as the AI produced it. */
+  editedAt: z.iso.datetime().nullable(),
 });
 export type JobAnalysis = z.infer<typeof JobAnalysisSchema>;
+
+/**
+ * `PATCH /job-postings/:id/analysis`: the user's corrections (RF-JD-03). Replaces the editable fields;
+ * requirements without `id` are new, and existing ones left out are removed. Tools are matched again.
+ */
+export const UpdateJobAnalysisRequestSchema = z.object({
+  roleCategory: RoleCategorySchema,
+  seniority: SenioritySchema,
+  workMode: TelemetryWorkModeSchema,
+  country: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/)
+    .transform((code) => code.toUpperCase())
+    .nullable(),
+  yearsOfExperience: z.number().int().min(0).max(40).nullable(),
+  keywords: z.array(z.string().trim().min(1).max(200)).max(30),
+  requirements: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        label: z.string().trim().min(1).max(200),
+        kind: RequirementKindSchema,
+        importance: RequirementImportanceSchema,
+      }),
+    )
+    .max(60),
+});
+export type UpdateJobAnalysisRequest = z.infer<typeof UpdateJobAnalysisRequestSchema>;
 
 /** `GET /job-postings/:id/analysis`: the last analysis and the job of the one in progress, if any. */
 export const JobAnalysisStateSchema = z.object({

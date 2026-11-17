@@ -27,6 +27,7 @@ const analysis = (requirements: JobRequirement[]): JobAnalysis => ({
   promptVersion: 'jd-analysis.v1',
   model: 'test',
   analyzedAt: '2026-11-17T12:00:00.000Z',
+  editedAt: null,
 });
 
 describe('scoreAnalysis', () => {
