@@ -1,0 +1,32 @@
+{
+  "title": "Desarrollador/a Backend Semi Senior",
+  "company": "Fintech del Sur",
+  "location": "Buenos Aires, Argentina",
+  "text": "Sumate a nuestro equipo de Pagos como Desarrollador/a Backend Semi Senior.\n\nModalidad híbrida: 2 días por semana en nuestras oficinas de Palermo, CABA.\n\n¿Qué vas a hacer?\n- Diseñar y mantener APIs REST para el procesamiento de pagos.\n- Participar en code reviews y en la definición de la arquitectura.\n- Monitorear servicios en producción.\n\nRequisitos:\n- Al menos 3 años de experiencia como desarrollador/a backend.\n- Experiencia sólida con Node.js y TypeScript.\n- Conocimientos de PostgreSQL.\n- Experiencia con Docker.\n- Manejo de Git.\n\nDeseable:\n- Experiencia con AWS (Lambda, SQS).\n- Conocimientos de Redis.\n- Inglés intermedio.\n\nOfrecemos: prepaga, bono anual, clases de inglés y semana extra de vacaciones.",
+  "expected": {
+    "required": [
+      "Node.js",
+      "TypeScript",
+      "PostgreSQL",
+      "Docker",
+      "Git",
+      ["APIs REST", "REST API", "REST"]
+    ],
+    "niceToHave": [
+      "AWS",
+      ["Lambda", "AWS Lambda"],
+      ["SQS", "Amazon SQS"],
+      "Redis",
+      ["Inglés", "English"]
+    ],
+    "acceptable": ["code review", "arquitectura", "monitoreo", "backend"],
+    "facts": {
+      "language": "es",
+      "roleCategory": "backend",
+      "seniority": "semi-senior",
+      "workMode": "hybrid",
+      "country": "AR",
+      "yearsOfExperience": 3
+    }
+  }
+}

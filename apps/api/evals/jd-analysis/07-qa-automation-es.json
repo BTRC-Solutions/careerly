@@ -1,0 +1,35 @@
+{
+  "title": "QA Automation Engineer",
+  "company": "Retail Uno",
+  "location": "Montevideo, Uruguay",
+  "text": "Estamos buscando QA Automation Engineer para nuestro equipo de e-commerce. Esquema híbrido en Montevideo.\n\nTus tareas:\n- Diseñar y automatizar pruebas end-to-end y de API.\n- Integrar las pruebas al pipeline de CI.\n- Reportar y dar seguimiento a defectos en Jira.\n\nQué necesitamos:\n- 3+ años de experiencia en QA, al menos 2 en automatización.\n- Experiencia con Cypress o Playwright.\n- Testing de APIs con Postman.\n- Conocimientos de JavaScript o TypeScript.\n- Inglés técnico para leer documentación.\n\nEs un plus:\n- Pruebas de performance con JMeter o k6.\n- Conocimientos de ISTQB.",
+  "expected": {
+    "required": [
+      ["Cypress", "Playwright"],
+      "Postman",
+      ["JavaScript", "TypeScript"],
+      ["Inglés", "English"],
+      ["automatización", "automation", "end-to-end"]
+    ],
+    "niceToHave": [["JMeter", "k6", "performance"], "ISTQB"],
+    "acceptable": [
+      "Jira",
+      "CI",
+      "Playwright",
+      "Cypress",
+      "TypeScript",
+      "JavaScript",
+      "API",
+      "JMeter",
+      "k6",
+      "QA"
+    ],
+    "facts": {
+      "language": "es",
+      "roleCategory": "qa",
+      "workMode": "hybrid",
+      "country": "UY",
+      "yearsOfExperience": 3
+    }
+  }
+}

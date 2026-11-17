@@ -1,0 +1,35 @@
+{
+  "title": "Senior Frontend Engineer",
+  "company": "Brightlane",
+  "location": "Remote (US time zones)",
+  "text": "Brightlane is hiring a Senior Frontend Engineer to lead the development of our customer dashboard.\n\nThis is a fully remote position; you must overlap at least 4 hours with US Eastern time.\n\nWhat you'll do\n- Build accessible, fast interfaces with React and TypeScript.\n- Own our design system together with the design team.\n- Mentor other engineers.\n\nWhat we're looking for\n- 5+ years of professional frontend experience.\n- Expert knowledge of React and TypeScript.\n- Experience with state management (Redux or Zustand).\n- Strong CSS skills; Tailwind CSS is a plus.\n- Experience writing tests with Jest or Vitest and Testing Library.\n- Excellent written communication in English.\n\nBonus points\n- Experience with Next.js.\n- GraphQL.\n- Familiarity with web accessibility standards (WCAG).\n\nWe offer equity, a home office budget and unlimited PTO.",
+  "expected": {
+    "required": [
+      "React",
+      "TypeScript",
+      ["Redux", "state management"],
+      "CSS",
+      ["Jest", "Vitest", "tests"],
+      "Testing Library",
+      ["English", "communication"]
+    ],
+    "niceToHave": ["Tailwind CSS", "Next.js", "GraphQL", ["WCAG", "accessibility"]],
+    "acceptable": [
+      "Zustand",
+      "Jest",
+      "Vitest",
+      "design system",
+      "mentor",
+      "frontend",
+      "US Eastern",
+      "time zone"
+    ],
+    "facts": {
+      "language": "en",
+      "roleCategory": "frontend",
+      "seniority": "senior",
+      "workMode": "remote",
+      "yearsOfExperience": 5
+    }
+  }
+}
