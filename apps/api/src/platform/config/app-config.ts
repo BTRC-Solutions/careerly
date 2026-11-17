@@ -35,6 +35,8 @@ const EnvSchema = z.object({
   /** Typst CLI (ADR-14): the packaged one when installed; from source, the vendored one or the PATH's. */
   CAREERLY_TYPST_BIN: z.string().min(1).optional(),
   CAREERLY_RENDER_TIMEOUT_MS: z.coerce.number().int().min(100).max(120_000).default(10_000),
+  /** First retry delay of a failed background job; it doubles on each attempt (ARCHITECTURE §10). */
+  CAREERLY_JOB_RETRY_BASE_MS: z.coerce.number().int().min(10).max(600_000).default(2_000),
   /** Optional: enables the `/internal/*` routes used by the Electron main process (ADR-23). */
   CAREERLY_CONTROL_TOKEN: z
     .string()
@@ -95,6 +97,8 @@ export interface AppConfig {
   renderTimeoutMs: number;
   /** Typst package cache, so templates never write to system folders. Not backed up. */
   typstPackagesDir: string;
+  /** First retry delay of a failed background job. */
+  jobRetryBaseMs: number;
   /** Per-launch secret that every request must send as `Authorization: Bearer <token>`. */
   apiToken: string;
   /**
@@ -167,6 +171,7 @@ export function loadConfig(
     typstBinary: parsed.CAREERLY_TYPST_BIN ?? options.defaultTypstBinary ?? 'typst',
     renderTimeoutMs: parsed.CAREERLY_RENDER_TIMEOUT_MS,
     typstPackagesDir: path.join(dataDir, 'cache', 'typst-packages'),
+    jobRetryBaseMs: parsed.CAREERLY_JOB_RETRY_BASE_MS,
     apiToken: parsed.CAREERLY_API_TOKEN,
     controlToken: parsed.CAREERLY_CONTROL_TOKEN,
     host: '127.0.0.1',

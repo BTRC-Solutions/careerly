@@ -8,6 +8,7 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
 /**
@@ -282,4 +283,36 @@ export const aiGenerations = sqliteTable(
     createdAt: text('created_at').notNull(),
   },
   (table) => [index('ai_generations_created_at_idx').on(table.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Background jobs (owned by the `jobs` module; ARCHITECTURE §10).
+// ---------------------------------------------------------------------------
+
+export const jobs = sqliteTable(
+  'jobs',
+  {
+    id: text('id').primaryKey(),
+    /** Handler that runs it, e.g. `jd-analysis`. */
+    type: text('type').notNull(),
+    /** JSON with ids only: the handler reads the content from its module (no profile or JD text here). */
+    payload: text('payload').notNull(),
+    /** Makes enqueueing idempotent, e.g. `<sessionId>:<step>`. */
+    dedupeKey: text('dedupe_key'),
+    /** `JobStatus`. */
+    status: text('status').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull(),
+    /** Not before this instant (retries wait with exponential backoff). */
+    runAt: text('run_at').notNull(),
+    /** Error code or class of the last failure; never its message (it could carry content). */
+    lastError: text('last_error'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (table) => [
+    uniqueIndex('jobs_dedupe_key_idx').on(table.dedupeKey),
+    index('jobs_status_run_at_idx').on(table.status, table.runAt),
+  ],
 );
