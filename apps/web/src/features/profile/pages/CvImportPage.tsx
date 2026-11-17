@@ -13,7 +13,8 @@ import { Card } from '../../../shared/ui/Card';
 import { ChevronLeftIcon, UploadIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
-import { useAiKeysStatus } from '../../settings/api/useAiKeys';
+import { AiUnavailableNotice } from '../../ai/components/AiUnavailableNotice';
+import { useAiAvailability } from '../../ai/useAiAvailability';
 import { useClaudeCode } from '../../settings/api/useClaudeCode';
 import { useConfirmCvImport, useReadCv } from '../api/cv-import-api';
 import { CvImportReview, type UpdateReview } from '../components/CvImportReview';
@@ -106,7 +107,7 @@ function PickStep({
   const { t } = useTranslation();
   const inputId = useId();
   const readCv = useReadCv();
-  const aiKeys = useAiKeysStatus();
+  const ai = useAiAvailability();
   const claudeCode = useClaudeCode();
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -114,12 +115,6 @@ function PickStep({
 
   // Claude Code with the subscription (ADR-25) needs no API key.
   const usesClaudeCode = claudeCode.data?.enabled === true;
-  // Inside the desktop app we know up front whether there is a key; in the browser the API says.
-  const noAiKey =
-    aiKeys.data !== undefined &&
-    aiKeys.data.activeProvider === null &&
-    !usesClaudeCode &&
-    !claudeCode.isPending;
   const hasContent =
     profile.positions.length + profile.projects.length + profile.education.length > 0;
 
@@ -142,22 +137,11 @@ function PickStep({
   function onDrop(event: DragEvent) {
     event.preventDefault();
     setDragging(false);
-    if (!noAiKey) read(event.dataTransfer.files[0]);
+    if (ai.available) read(event.dataTransfer.files[0]);
   }
 
-  if (noAiKey) {
-    return (
-      <Card className="flex flex-col items-start gap-4">
-        <InlineError>{t('profile.import.noKey')}</InlineError>
-        <Link
-          to="/settings"
-          className="inline-flex h-9 items-center rounded-control bg-indigo-navy px-4 text-sm font-medium text-pure-white shadow-button hover:bg-midnight-ink"
-        >
-          {t('profile.import.goToSettings')}
-        </Link>
-      </Card>
-    );
-  }
+  // No connection, no key or a rejected one (RNF-13): say why instead of failing after the upload.
+  if (ai.reason && !readCv.isPending) return <AiUnavailableNotice reason={ai.reason} />;
 
   return (
     <Card className="flex flex-col gap-5">

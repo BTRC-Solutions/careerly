@@ -7,6 +7,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '../../../shared/api/client';
 import { getDesktopActions } from '../../../shared/desktop';
+import { AI_STATUS_QUERY_KEY } from '../../ai/api/useAiStatus';
 import { AI_MODELS_QUERY_KEY } from './useAiModels';
 import { SETTINGS_QUERY_KEY } from './useSettings';
 
@@ -47,6 +48,7 @@ function useRefreshKeyState() {
       queryClient.invalidateQueries({ queryKey: AI_KEYS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: AI_MODELS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: AI_STATUS_QUERY_KEY }),
     ]);
 }
 

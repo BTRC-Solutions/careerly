@@ -6,6 +6,7 @@ import {
 } from '@careerly/contracts';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOnline } from '../../../shared/lib/useOnline';
 import { getDesktopActions } from '../../../shared/desktop';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
@@ -117,6 +118,7 @@ function DesktopAiKeys() {
 function ProviderList({ status }: { status: AiKeysStatus }) {
   const { t } = useTranslation();
   const verify = useVerifyAiKey();
+  const online = useOnline();
   const setActive = useSetActiveAiProvider();
   const remove = useRemoveAiKey();
   const [toRemove, setToRemove] = useState<ProviderInfo>();
@@ -149,7 +151,8 @@ function ProviderList({ status }: { status: AiKeysStatus }) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={verify.isPending}
+                    disabled={verify.isPending || !online}
+                    title={online ? undefined : t('ai.offlineHint')}
                     onClick={() => verify.mutate({})}
                   >
                     {verify.isPending ? t('settings.ai.verifying') : t('settings.ai.verify')}

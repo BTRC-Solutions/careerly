@@ -1,6 +1,7 @@
 import type { AiModelOption, AiModelsResponse, ModelTier } from '@careerly/contracts';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOnline } from '../../../shared/lib/useOnline';
 import { ApiError } from '../../../shared/api/client';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
@@ -68,6 +69,7 @@ function TierChoice({ tier, models }: { tier: ModelTier; models: AiModelsRespons
   const choose = useChooseAiModel();
   const { selected, defaults } = models.tiers[tier] ?? { selected: null, defaults: [] };
   const saved = selected ?? DEFAULTS;
+  const online = useOnline();
   const [draft, setDraft] = useState(saved);
   const [message, setMessage] = useState<string>();
   const options = modelOptionsFor(tier, models);
@@ -133,7 +135,8 @@ function TierChoice({ tier, models }: { tier: ModelTier; models: AiModelsRespons
       <div className="flex flex-wrap items-center gap-3">
         <Button
           size="sm"
-          disabled={draft === saved || choose.isPending}
+          disabled={draft === saved || choose.isPending || (!online && draft !== DEFAULTS)}
+          title={!online && draft !== DEFAULTS ? t('ai.offlineHint') : undefined}
           onClick={() => void save().catch(() => {})}
         >
           {choose.isPending

@@ -56,6 +56,12 @@ class MemoryGenerations extends AiGenerationRepository {
     this.entries.push(entry);
     return Promise.resolve();
   }
+  listSince() {
+    return Promise.resolve(this.entries);
+  }
+  latestErrorSince() {
+    return Promise.resolve(this.entries.at(-1)?.errorCode ?? null);
+  }
 }
 
 function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | null = 'gemini') {
