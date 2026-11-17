@@ -1,6 +1,23 @@
 import type { Profile } from '@careerly/contracts';
 import { describe, expect, it } from 'vitest';
-import { describeProfile } from './llm-requirement-matcher.js';
+import { describeProfile, parseRef } from './llm-requirement-matcher.js';
+
+describe('parseRef', () => {
+  it('reads the reference however the model wrote it', () => {
+    expect(parseRef('R1')).toBe('R1');
+    expect(parseRef('[R12]')).toBe('R12');
+    expect(parseRef(' a3 ')).toBe('A3');
+    // Claude Code with haiku copies the requirement after its reference.
+    expect(parseRef('[R1] Estudiante avanzado o egresado de Ingeniería')).toBe('R1');
+    expect(parseRef('W2: Backend Engineer at Acme')).toBe('W2');
+  });
+
+  it('ignores text that does not start with a reference', () => {
+    expect(parseRef('Leading teams R1')).toBeNull();
+    expect(parseRef('')).toBeNull();
+    expect(parseRef('R')).toBeNull();
+  });
+});
 
 const provenance = {
   origin: 'MANUAL',

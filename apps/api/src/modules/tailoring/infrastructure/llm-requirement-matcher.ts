@@ -61,9 +61,9 @@ export class LlmRequirementMatcher extends RequirementMatcher {
     });
 
     const answers: SemanticAnswer[] = data.matches.flatMap((item) => {
-      const requirementId = requirementRefs.get(stripBrackets(item.requirement));
+      const requirementId = requirementRefs.get(parseRef(item.requirement) ?? '');
       if (!requirementId) return [];
-      const evidence = item.evidence.flatMap((ref) => refs.get(stripBrackets(ref)) ?? []);
+      const evidence = item.evidence.flatMap((ref) => refs.get(parseRef(ref) ?? '') ?? []);
       return [{ requirementId, status: item.status, evidence }];
     });
     this.logger.log(
@@ -73,11 +73,14 @@ export class LlmRequirementMatcher extends RequirementMatcher {
   }
 }
 
-const stripBrackets = (ref: string) =>
-  ref
-    .trim()
-    .replace(/^\[|\]$/g, '')
-    .toUpperCase();
+/**
+ * The reference a model wrote, however it wrote it: `R1`, `[R1]`, `r1` or `[R1] Leading teams` (models often
+ * copy the requirement's text after its reference). `null` when the text does not start with one.
+ */
+export function parseRef(text: string): string | null {
+  const match = /^\W*([a-z]\d+)\b/i.exec(text);
+  return match ? match[1]!.toUpperCase() : null;
+}
 
 /** The profile as text with a short reference per element, and the elements each reference stands for. */
 export function describeProfile(profile: Profile): { text: string; refs: Map<string, Evidence> } {

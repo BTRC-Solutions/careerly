@@ -48,8 +48,12 @@ const JD_ANALYSIS = {
 const EVIDENCE_ANSWER = {
   matches: [
     { requirement: 'R1', status: 'MISSING', evidence: [] },
-    // An invented reference is dropped; the real one stays.
-    { requirement: 'R2', status: 'COVERED', evidence: ['A1', 'A99'] },
+    // References followed by text (as Claude writes them) are read; an invented one is dropped.
+    {
+      requirement: '[R2] Designing REST APIs',
+      status: 'COVERED',
+      evidence: ['[A1] Designed the public REST API', 'A99'],
+    },
     { requirement: '[R3]', status: 'COVERED', evidence: ['[L1]'] },
     { requirement: 'R9', status: 'COVERED', evidence: ['W1'] },
   ],
