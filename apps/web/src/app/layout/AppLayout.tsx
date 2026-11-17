@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
 import { OnboardingGate } from '../../features/onboarding/components/OnboardingGate';
 import { UiLanguageSync } from '../../features/settings/components/UiLanguageSync';
+import logo from '../../shared/brand/careerly-horizontal-color.svg';
 import { cn } from '../../shared/lib/cn';
 
 const NAV_ITEMS = [
@@ -18,7 +19,7 @@ export function AppLayout() {
       <UiLanguageSync />
       <OnboardingGate />
       <aside className="flex w-60 shrink-0 flex-col border-r border-silver-lining bg-pure-white px-4 py-6">
-        <p className="px-3 text-xl font-semibold tracking-tight text-indigo-navy">Careerly</p>
+        <img src={logo} alt="Careerly" className="h-8 w-auto self-start px-3" />
         <nav aria-label={t('nav.label')} className="mt-8">
           <ul className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (

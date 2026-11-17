@@ -299,6 +299,8 @@ function createWindow(url: string) {
     minHeight: 640,
     show: false,
     backgroundColor: '#f6f6f8',
+    // Installed, the window takes the executable's icon (set by electron-builder).
+    ...(app.isPackaged ? {} : { icon: path.join(here, '..', 'build', 'icon.png') }),
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),
       contextIsolation: true,
