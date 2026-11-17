@@ -22,6 +22,7 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 | Cómo está diseñado: procesos, módulos, datos, pipeline, ADRs | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Qué paso toca ahora y su criterio de terminado | [ROADMAP.md](ROADMAP.md) |
 | Contrato de las plantillas de CV (Typst) | [apps/api/templates/README.md](apps/api/templates/README.md) |
+| Logo, íconos de la app y favicon (colores y reglas de uso) | [assets/brand/README.md](assets/brand/README.md) |
 | Colores, tipografía, componentes de UI | [STYLES.md](STYLES.md) (tokens ya volcados en `apps/web/src/styles.css`) |
 | Comandos para correr, testear y generar migraciones | [README.md](README.md) |
 | Cómo se versiona y qué revisar antes de largar una versión | [VERSIONING.md](VERSIONING.md) |

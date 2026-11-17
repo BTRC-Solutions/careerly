@@ -138,12 +138,19 @@ await buildInstaller({
     asar: true,
     npmRebuild: false,
     nodeGypRebuild: false,
-    win: { artifactName: '${productName}-Setup-${version}.${ext}' },
+    // Brand icons (assets/brand/app-icon); build/icon.icns and icon.png are for macOS (step 8.9).
+    win: {
+      artifactName: '${productName}-Setup-${version}.${ext}',
+      icon: path.join(desktopDir, 'build', 'icon.ico'),
+    },
     nsis: {
       oneClick: false,
       perMachine: false,
       allowToChangeInstallationDirectory: true,
       createDesktopShortcut: true,
+      installerIcon: path.join(desktopDir, 'build', 'icon.ico'),
+      uninstallerIcon: path.join(desktopDir, 'build', 'icon.ico'),
+      installerHeaderIcon: path.join(desktopDir, 'build', 'icon.ico'),
       // User data (<appData>/Careerly) is kept on uninstall; deleting it is an explicit action in the app.
       deleteAppDataOnUninstall: false,
     },
