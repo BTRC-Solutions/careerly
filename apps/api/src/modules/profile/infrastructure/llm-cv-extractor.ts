@@ -8,25 +8,14 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import mammoth from 'mammoth';
 import { z } from 'zod';
-import {
-  AiError,
-  AiKeyRejectedError,
-  AiNotConfiguredError,
-  AiProviderNotSupportedError,
-  AiRateLimitedError,
-  AiUnavailableError,
-  AiModelUnavailableError,
-  LlmClient,
-  type LlmPart,
-  untrustedText,
-} from '../../ai/index.js';
+import { AiError, LlmClient, type LlmPart, untrustedText } from '../../ai/index.js';
 import {
   type CvFile,
   CvExtractor,
   CvImportError,
-  type CvImportFailure,
   type RawCvDraft,
 } from '../application/cv-import.ports.js';
+import { aiFailure } from './ai-failure.js';
 import { docxLinks, pdfLinks } from './cv-links.js';
 import { CV_IMPORT_V1 } from './prompts/cv-import.v1.js';
 
@@ -171,15 +160,5 @@ export class LlmCvExtractor extends CvExtractor {
 }
 
 function toImportError(error: AiError): CvImportError {
-  const reason: CvImportFailure =
-    error instanceof AiNotConfiguredError || error instanceof AiProviderNotSupportedError
-      ? 'AI_NOT_CONFIGURED'
-      : error instanceof AiKeyRejectedError
-        ? 'AI_KEY_REJECTED'
-        : error instanceof AiRateLimitedError
-          ? 'AI_RATE_LIMITED'
-          : error instanceof AiUnavailableError || error instanceof AiModelUnavailableError
-            ? 'AI_UNAVAILABLE'
-            : 'AI_FAILED';
-  return new CvImportError(reason, error.message);
+  return new CvImportError(aiFailure(error), error.message);
 }

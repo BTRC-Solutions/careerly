@@ -152,6 +152,24 @@ export type CreateAchievementRequest = z.infer<typeof CreateAchievementRequestSc
 export const UpdateAchievementRequestSchema = nonEmptyPatch(AchievementFields);
 export type UpdateAchievementRequest = z.infer<typeof UpdateAchievementRequestSchema>;
 
+/**
+ * `POST /profile/achievements/suggestions` (RF-PROF-10): the achievement as it is in the form (it may not be
+ * saved yet). Nothing is stored: the user accepts or discards the suggestion, and then saves the form.
+ */
+export const SuggestAchievementRequestSchema = z
+  .object({ text: requiredText(5000), metrics: optionalText(1000) })
+  .strict();
+export type SuggestAchievementRequest = z.infer<typeof SuggestAchievementRequestSchema>;
+
+/** A clearer wording of an achievement, with the same facts, and questions about what is missing. */
+export const AchievementSuggestionSchema = z.object({
+  text: z.string(),
+  metrics: z.string().nullable(),
+  /** Questions for data that would make it stronger (e.g. a missing metric); never invented. */
+  questions: z.array(z.string()),
+});
+export type AchievementSuggestion = z.infer<typeof AchievementSuggestionSchema>;
+
 /** `PUT /profile/positions/:id/achievements/order` (and projects): every achievement id, in the new order. */
 export const ReorderAchievementsRequestSchema = z
   .object({ achievementIds: z.array(z.string().min(1)).min(1).max(1000) })

@@ -20,6 +20,8 @@ export const ApiErrorCode = z.enum([
   'AI_MODEL_UNAVAILABLE',
   /** The AI answered something unusable (invalid structure or blocked content). */
   'AI_FAILED',
+  /** The AI answer added facts that are not in the user's text (RN-01), so it was discarded. */
+  'AI_UNFAITHFUL',
   /** A CV template does not compile (its Typst diagnostics are in the message). */
   'TEMPLATE_INVALID',
   /** A CV template took longer than the render timeout. */
