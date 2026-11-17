@@ -461,6 +461,8 @@ la mayor parte del tiempo esperando respuestas de red (LLM) o procesos hijos (Ty
   que el backend reenvía a la interfaz por **SSE**. `GET /jobs/:id/events` manda primero el estado y termina
   cuando la tarea termina; `GET /tailoring-sessions/:id/events` los agrupará por sesión. Si la interfaz se recarga,
   consulta el estado persistido (`GET /jobs/:id`).
+  `EventSource` no permite mandar headers, así que la interfaz lee el SSE con `fetch` (stream) y el mismo
+  `Authorization: Bearer <token>` que el resto de la API: no hace falta un token en la URL.
 
 ## 11. API local (resumen)
 
