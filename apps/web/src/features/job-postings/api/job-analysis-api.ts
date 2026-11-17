@@ -1,10 +1,19 @@
-import { JobAnalysisStateSchema, JobViewSchema } from '@careerly/contracts';
+import {
+  type JobAnalysisState,
+  JobAnalysisSchema,
+  JobAnalysisStateSchema,
+  JobViewSchema,
+  type UpdateJobAnalysisRequest,
+} from '@careerly/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '../../../shared/api/client';
+import { apiGet, apiPatch, apiPost } from '../../../shared/api/client';
 import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
 import { JOB_POSTINGS_QUERY_KEY } from './job-postings-api';
 
-/* Job description analysis (RF-JD-02): it runs in the background; the state is polled while it does. */
+/*
+ * Job description analysis (RF-JD-02): it runs in the background; the state is polled while it does.
+ * The user can correct the result (RF-JD-03).
+ */
 
 const POLL_MS = 1500;
 
@@ -35,5 +44,17 @@ export function useAnalyzeJobPosting(id: string) {
   return useMutation({
     mutationFn: () => apiPost(`/job-postings/${id}/analyze`, JobViewSchema, {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: analysisKey(id) }),
+  });
+}
+
+export function useCorrectJobAnalysis(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: UpdateJobAnalysisRequest) =>
+      apiPatch(`/job-postings/${id}/analysis`, JobAnalysisSchema, changes),
+    onSuccess: (analysis) =>
+      queryClient.setQueryData<JobAnalysisState>(analysisKey(id), (state) =>
+        state ? { ...state, analysis } : state,
+      ),
   });
 }

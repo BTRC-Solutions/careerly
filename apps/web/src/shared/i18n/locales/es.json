@@ -211,7 +211,9 @@
     "endBeforeStart": "La fecha de fin no puede ser anterior a la de inicio.",
     "wholeNumber": "Ingresá un número entero, sin puntos ni símbolos.",
     "currency": "Usá el código de 3 letras de la moneda (USD, ARS, EUR…).",
-    "salaryRange": "El máximo no puede ser menor que el mínimo."
+    "salaryRange": "El máximo no puede ser menor que el mínimo.",
+    "countryCode": "Usá el código de 2 letras del país (p. ej. AR).",
+    "years": "Un número entero de 0 a 40."
   },
   "profile": {
     "title": "Perfil maestro",
@@ -686,6 +688,26 @@
         "hybrid": "Híbrido",
         "onsite": "Presencial",
         "unknown": "Sin especificar"
+      },
+      "againTitle": "¿Volver a analizar la oferta?",
+      "againDescription": "El nuevo análisis reemplaza al actual, con las correcciones que le hiciste.",
+      "edited": "Corregido por vos el {{date}}.",
+      "importances": {
+        "REQUIRED": "Obligatorio",
+        "NICE_TO_HAVE": "Deseable"
+      },
+      "edit": {
+        "start": "Corregir",
+        "title": "Corregir el análisis",
+        "countryHint": "Código de 2 letras (AR, ES, US…). Vacío si no lo dice.",
+        "yearsHint": "Vacío si no lo dice.",
+        "requirements": "Requisitos",
+        "label": "Requisito {{number}}",
+        "kind": "Tipo del requisito {{number}}",
+        "importance": "Importancia del requisito {{number}}",
+        "remove": "Quitar «{{label}}»",
+        "add": "Agregar requisito",
+        "keywordsHint": "Separadas por comas."
       }
     }
   },

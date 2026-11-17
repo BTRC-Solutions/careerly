@@ -1,17 +1,22 @@
 import type { JobAnalysis, JobRequirement, JobView } from '@careerly/contracts';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { Tag } from '../../../shared/ui/Tag';
 import { useAiAvailability } from '../../ai/useAiAvailability';
 import { useAnalyzeJobPosting, useJobAnalysis } from '../api/job-analysis-api';
+import { AnalysisEditor } from './AnalysisEditor';
 
 /** Error codes with their own explanation; anything else gets the generic one. */
 const KNOWN_ERRORS = new Set(['NOT_CONFIGURED', 'KEY_REJECTED', 'BLOCKED', 'RATE_LIMITED']);
 
-/** The AI analysis of a job description (RF-JD-02): start it, follow it, read the result. */
+/**
+ * The AI analysis of a job description: start it, follow it, read the result (RF-JD-02) and correct it
+ * (RF-JD-03). Analyzing again replaces the corrections, so it asks first.
+ */
 export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
   const { t } = useTranslation();
   const state = useJobAnalysis(jobPostingId);
@@ -20,6 +25,8 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
   const job = state.data?.job ?? null;
   const analysis = state.data?.analysis ?? null;
   const running = job?.status === 'PENDING' || job?.status === 'RUNNING' || analyze.isPending;
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <Card className="flex flex-col gap-5">
@@ -28,13 +35,22 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
           <h2 className="text-section-title text-indigo-navy">{t('jobPostings.analysis.title')}</h2>
           <p className="mt-1 text-sm text-steel-text">{t('jobPostings.analysis.description')}</p>
         </div>
-        <Button
-          variant={analysis ? 'secondary' : 'primary'}
-          disabled={running || !ai.available}
-          onClick={() => analyze.mutate()}
-        >
-          {analysis ? t('jobPostings.analysis.again') : t('jobPostings.analysis.start')}
-        </Button>
+        {!editing && (
+          <div className="flex shrink-0 gap-2">
+            {analysis && !running && (
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {t('jobPostings.analysis.edit.start')}
+              </Button>
+            )}
+            <Button
+              variant={analysis ? 'secondary' : 'primary'}
+              disabled={running || !ai.available}
+              onClick={() => (analysis?.editedAt ? setConfirming(true) : analyze.mutate())}
+            >
+              {analysis ? t('jobPostings.analysis.again') : t('jobPostings.analysis.start')}
+            </Button>
+          </div>
+        )}
       </div>
 
       {ai.reason && !running && (
@@ -52,7 +68,25 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
       )}
       {analyze.error && <InlineError>{analyze.error.message}</InlineError>}
 
-      {analysis && <AnalysisResult analysis={analysis} />}
+      {analysis &&
+        (editing ? (
+          <AnalysisEditor
+            jobPostingId={jobPostingId}
+            analysis={analysis}
+            onDone={() => setEditing(false)}
+          />
+        ) : (
+          <AnalysisResult analysis={analysis} />
+        ))}
+
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={t('jobPostings.analysis.againTitle')}
+        description={t('jobPostings.analysis.againDescription')}
+        confirmLabel={t('jobPostings.analysis.again')}
+        onConfirm={() => analyze.mutateAsync()}
+      />
     </Card>
   );
 }
@@ -74,6 +108,10 @@ function Progress({ job }: { job: JobView | null }) {
 
 function AnalysisResult({ analysis }: { analysis: JobAnalysis }) {
   const { t, i18n } = useTranslation();
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+      new Date(iso),
+    );
   const required = analysis.requirements.filter((r) => r.importance === 'REQUIRED');
   const niceToHave = analysis.requirements.filter((r) => r.importance === 'NICE_TO_HAVE');
   const country = analysis.country
@@ -126,11 +164,10 @@ function AnalysisResult({ analysis }: { analysis: JobAnalysis }) {
       <p className="text-xs text-steel-text">
         {t('jobPostings.analysis.footer', {
           model: analysis.model,
-          date: new Intl.DateTimeFormat(i18n.language, {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          }).format(new Date(analysis.analyzedAt)),
+          date: formatDate(analysis.analyzedAt),
         })}
+        {analysis.editedAt &&
+          ` ${t('jobPostings.analysis.edited', { date: formatDate(analysis.editedAt) })}`}
       </p>
     </div>
   );

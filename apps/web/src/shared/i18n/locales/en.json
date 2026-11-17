@@ -211,7 +211,9 @@
     "endBeforeStart": "The end date cannot be before the start date.",
     "wholeNumber": "Enter a whole number, without separators or symbols.",
     "currency": "Use the 3-letter currency code (USD, ARS, EUR…).",
-    "salaryRange": "The maximum cannot be lower than the minimum."
+    "salaryRange": "The maximum cannot be lower than the minimum.",
+    "countryCode": "Use the country's 2-letter code (e.g. AR).",
+    "years": "A whole number from 0 to 40."
   },
   "profile": {
     "title": "Master profile",
@@ -686,6 +688,26 @@
         "hybrid": "Hybrid",
         "onsite": "On-site",
         "unknown": "Not specified"
+      },
+      "againTitle": "Analyze the job posting again?",
+      "againDescription": "The new analysis replaces the current one, including the corrections you made.",
+      "edited": "Corrected by you on {{date}}.",
+      "importances": {
+        "REQUIRED": "Required",
+        "NICE_TO_HAVE": "Nice to have"
+      },
+      "edit": {
+        "start": "Correct",
+        "title": "Correct the analysis",
+        "countryHint": "2-letter code (AR, ES, US…). Empty if not stated.",
+        "yearsHint": "Empty if not stated.",
+        "requirements": "Requirements",
+        "label": "Requirement {{number}}",
+        "kind": "Type of requirement {{number}}",
+        "importance": "Importance of requirement {{number}}",
+        "remove": "Remove “{{label}}”",
+        "add": "Add requirement",
+        "keywordsHint": "Separated by commas."
       }
     }
   },
