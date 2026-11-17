@@ -242,8 +242,14 @@ function RequirementRow({
                   <span className="text-steel-text">{t('tailoring.evidence.deleted')}</span>
                 ) : (
                   <>
-                    {described.text}
-                    {described.level && ` · ${t(`profile.enums.languageLevel.${described.level}`)}`}
+                    <Link
+                      to={described.href}
+                      className="underline decoration-silver-lining underline-offset-2 hover:text-indigo-navy hover:decoration-indigo-navy"
+                    >
+                      {described.text}
+                      {described.level &&
+                        ` · ${t(`profile.enums.languageLevel.${described.level}`)}`}
+                    </Link>
                     {described.context && (
                       <span className="text-steel-text"> · {described.context}</span>
                     )}

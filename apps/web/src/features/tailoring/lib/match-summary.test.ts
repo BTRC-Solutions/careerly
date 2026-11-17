@@ -88,28 +88,35 @@ describe('describeEvidence', () => {
       kind: 'ACHIEVEMENT',
       text: 'Built the payments API.',
       context: 'Backend Engineer · Acme',
+      href: '/profile/experience/pos-1',
     });
     expect(describeEvidence({ kind: 'ACHIEVEMENT', id: 'ach-2' }, profile)).toMatchObject({
       text: 'Reached 1M requests a month.',
       context: 'feriados-api',
+      href: '/profile/projects/prj-1',
     });
     expect(describeEvidence({ kind: 'POSITION', id: 'pos-1' }, profile)).toMatchObject({
       text: 'Backend Engineer · Acme',
       context: null,
+      href: '/profile/experience/pos-1',
     });
     expect(describeEvidence({ kind: 'PROJECT', id: 'prj-1' }, profile)).toMatchObject({
       text: 'feriados-api',
       context: 'Maintainer',
+      href: '/profile/projects/prj-1',
     });
     expect(describeEvidence({ kind: 'EDUCATION', id: 'edu-1' }, profile)).toMatchObject({
       text: 'Ingeniería en Sistemas · UTN',
+      href: '/profile/education',
     });
     expect(describeEvidence({ kind: 'CERTIFICATION', id: 'cert-1' }, profile)).toMatchObject({
       text: 'AWS Developer',
+      href: '/profile/education',
     });
     expect(describeEvidence({ kind: 'LANGUAGE', id: 'lang-1' }, profile)).toMatchObject({
       text: 'Inglés',
       level: 'B2',
+      href: '/profile/languages',
     });
   });
 

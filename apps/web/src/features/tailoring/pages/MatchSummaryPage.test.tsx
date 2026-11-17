@@ -201,6 +201,14 @@ describe('MatchSummaryPage', () => {
       }),
     ).toBeVisible();
     expect(within(covered).getByText(/Backend Engineer · Acme/)).toBeVisible();
+    // Each piece of evidence links to where it is edited in the profile.
+    expect(
+      within(covered).getByRole('link', { name: /Designed the public REST API/ }),
+    ).toHaveAttribute('href', '/profile/experience/pos-1');
+    expect(within(covered).getByRole('link', { name: /^English · C1/ })).toHaveAttribute(
+      'href',
+      '/profile/languages',
+    );
     expect(within(covered).getByText(/English · C1/)).toBeVisible();
     expect(within(covered).getByText('ya no está en tu perfil')).toBeVisible();
     expect(within(covered).getByText(/Según la IA/)).toBeVisible();
