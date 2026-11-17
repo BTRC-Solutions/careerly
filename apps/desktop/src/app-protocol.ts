@@ -26,6 +26,8 @@ export function serveUi(uiRoot: string, apiUrl: string) {
     "font-src 'self' data:",
     "img-src 'self' data:",
     `connect-src 'self' ${apiUrl}`,
+    // PDF previews: the UI fetches the PDF and shows it as a `blob:` URL in Chromium's viewer.
+    'frame-src blob:',
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",

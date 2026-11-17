@@ -27,7 +27,8 @@ templates/
 - **Archivos:** la plantilla solo puede leer dentro de su directorio (`--root`). No hay red ni acceso a otros
   archivos.
 - **ATS (RNF-09):** una columna, títulos de sección estándar (los de `labels`), texto seleccionable, sin texto en
-  imágenes y sin tablas para maquetar.
+  imágenes y sin tablas para maquetar. Sin espaciado entre letras (`tracking`) en títulos ni nombres: al extraer
+  el texto del PDF, "Experiencia" pasa a ser "E X P E R I E N C I A" y un ATS ya no reconoce la sección.
 - **Páginas:** el ajuste a 1–2 páginas lo hace la app (ARCHITECTURE.md §8); la plantilla solo dibuja lo que
   recibe y no recorta contenido.
 

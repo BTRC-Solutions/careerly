@@ -75,7 +75,7 @@ export class TypstResumeRenderer extends ResumeRenderer {
         },
       );
     } catch (error) {
-      throw toRenderError(error as ExecError, this.config.renderTimeoutMs);
+      throw toRenderError(error as ExecError, this.config.renderTimeoutMs, work);
     }
   }
 }
@@ -90,13 +90,23 @@ async function countPages(pdf: Uint8Array): Promise<number> {
 
 type ExecError = NodeJS.ErrnoException & { killed?: boolean; stderr?: string };
 
-function toRenderError(error: ExecError, timeoutMs: number): RenderError {
+function toRenderError(error: ExecError, timeoutMs: number, work: string): RenderError {
   if (error.code === 'ENOENT') {
     return new RenderError('RENDERER_UNAVAILABLE', 'The Typst CLI was not found.');
   }
   if (error.killed) {
     return new RenderError('TIMEOUT', `The template took more than ${timeoutMs} ms to render.`);
   }
-  const diagnostics = (error.stderr ?? '').trim().slice(0, MAX_DIAGNOSTICS) || null;
+  const stderr = withoutWorkFolder(error.stderr ?? '', work);
+  const diagnostics = stderr.trim().slice(0, MAX_DIAGNOSTICS) || null;
   return new RenderError('COMPILE_ERROR', 'The template could not be rendered.', diagnostics);
+}
+
+/**
+ * Typst names files by their absolute path (on Windows with the `\\?\` prefix). The temporary folder means
+ * nothing to the template's author, so `…/careerly-render-x/template.typ` becomes `template.typ`.
+ */
+function withoutWorkFolder(text: string, work: string): string {
+  const folder = `${work}${path.sep}`;
+  return text.replaceAll(`\\\\?\\${folder}`, '').replaceAll(folder, '');
 }
