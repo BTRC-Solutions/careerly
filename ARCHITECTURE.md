@@ -484,6 +484,7 @@ DELETE /data                                # body { confirmation: "DELETE_ALL_D
 GET    /profile
 PATCH  /profile/personal-info
 CRUD   /profile/positions, /profile/positions/:id/achievements
+POST   /profile/achievements/suggestions          # sugerencia de redacción de un logro (no guarda nada; descarta las que agregan números)
 CRUD   /profile/projects, /profile/education, /profile/certifications, /profile/languages
 GET    /tools?query=                               # catálogo con alias
 

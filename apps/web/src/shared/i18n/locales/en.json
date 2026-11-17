@@ -352,7 +352,23 @@
       "metricsHint": "Optional. For example: “-40% p95 latency”.",
       "add": "New achievement",
       "addButton": "Add achievement",
-      "shortcut": "Ctrl + Enter to add"
+      "shortcut": "Ctrl + Enter to add",
+      "suggestion": {
+        "ask": "Suggest wording with AI",
+        "pending": "Thinking of a wording…",
+        "title": "Suggested wording",
+        "questions": "To make it stronger, you could add:",
+        "accept": "Use this wording",
+        "discard": "Discard",
+        "errors": {
+          "AI_NOT_CONFIGURED": "No AI API key is set up. Add one in Settings.",
+          "AI_KEY_REJECTED": "The AI provider rejected the API key. Check it in Settings.",
+          "AI_RATE_LIMITED": "You reached the AI provider's usage limit. Wait a moment and try again.",
+          "AI_UNAVAILABLE": "The AI provider is not available right now. Try again later.",
+          "AI_UNFAITHFUL": "The AI added data your achievement does not have, so the suggestion was discarded. Try again.",
+          "AI_FAILED": "No suggestion could be generated. Try again."
+        }
+      }
     },
     "education": {
       "title": "Education and courses",
