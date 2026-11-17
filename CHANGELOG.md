@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.3.0](https://github.com/BTRC-Solutions/careerly/compare/v0.2.0...v0.3.0) (2026-11-17)
+
+
+### Features
+
+* **ai:** Claude as an AI provider with the user's API key (ADR-23) ([84bd526](https://github.com/BTRC-Solutions/careerly/commit/84bd526d77fd4020da053f6ffe915829b55a8b09))
+* **ai:** use Claude through Claude Code with the user's subscription (RF-CONF-14, ADR-24) ([e4a0e8d](https://github.com/BTRC-Solutions/careerly/commit/e4a0e8ddf3e53e6c5b0f553e090384760d5aa3f3))
+* **api:** manual page-fit tryout script (F3.6) ([b86e26a](https://github.com/BTRC-Solutions/careerly/commit/b86e26ad62fbd8086d834ee5a16a52e579d33b8e))
+* **api:** manual page-fit tryout script (F3.6) ([8aea83f](https://github.com/BTRC-Solutions/careerly/commit/8aea83f5102701e6112fee8494730395ee2f2f52))
+* Careerly logo and app icons ([8875d54](https://github.com/BTRC-Solutions/careerly/commit/8875d542d182d437b48aceec8dbd397df60965c6))
+* Careerly logo and app icons ([91ca8cf](https://github.com/BTRC-Solutions/careerly/commit/91ca8cfd0a35b92cb4c948fb7000dc03594be9fb))
+* Claude as an AI provider, with an API key or the user's subscription (F4.11) ([eb67108](https://github.com/BTRC-Solutions/careerly/commit/eb671081d1440ed750e5574c7fbc0423256c1061))
+* **desktop:** bundle the pinned Typst CLI in the installer (F3.2) ([fd49ce0](https://github.com/BTRC-Solutions/careerly/commit/fd49ce08b9b284df375f1608201a72e5732f01d5))
+* **desktop:** bundle the pinned Typst CLI in the installer (F3.2) ([1e27fb6](https://github.com/BTRC-Solutions/careerly/commit/1e27fb6563dfbf6d9664fe0217624b48adfbfce8))
+* **documents:** count rendered pages from the PDF (F3.4) ([d198b92](https://github.com/BTRC-Solutions/careerly/commit/d198b92e28a1a743f74c54e87308bc03911c49a0))
+* **documents:** count rendered pages from the PDF (F3.4) ([0092f1c](https://github.com/BTRC-Solutions/careerly/commit/0092f1c249d4c74ce9f6e7ab5f807b951e9c41b6))
+* **documents:** ResumeRenderer port with a Typst adapter (F3.3) ([2455ae7](https://github.com/BTRC-Solutions/careerly/commit/2455ae73161fbadc31f01d6da44a96af292f0067))
+* **documents:** ResumeRenderer port with a Typst adapter (F3.3) ([1be09fd](https://github.com/BTRC-Solutions/careerly/commit/1be09fd7a7395c2ce9d6cb10c9d018bae7c93efa))
+* **documents:** template contract and classic Typst template (F3.1) ([a730bdf](https://github.com/BTRC-Solutions/careerly/commit/a730bdfac09ebc3d26521ec8e369f879c2a27c4c))
+* **documents:** template contract and classic Typst template (F3.1) ([eb16900](https://github.com/BTRC-Solutions/careerly/commit/eb16900266e63aa5b540de38b0f03413b3b840ce))
+* **tailoring:** deterministic page fitter (F3.5) ([cd61769](https://github.com/BTRC-Solutions/careerly/commit/cd61769cf0498698f45c505b13b3d89636f5649f))
+* **tailoring:** deterministic page fitter (F3.5) ([5677b9b](https://github.com/BTRC-Solutions/careerly/commit/5677b9bee51bdd7bb8b34ce262d64e6a4d3f68ad))
+* **web:** turn on Claude with the subscription from Settings (F4.11) ([9faef51](https://github.com/BTRC-Solutions/careerly/commit/9faef51eec394b64082911222a836a58dd9093ca))
+
+
+### Bug Fixes
+
+* **web:** let the CV import run with Claude Code and no API key ([5b0f525](https://github.com/BTRC-Solutions/careerly/commit/5b0f5259ecb91f79b9403bad6f2aa0177fbffc7c))
+
+
+### Miscellaneous Chores
+
+* close phase 3 ([c777056](https://github.com/BTRC-Solutions/careerly/commit/c777056ace89b993f7d318d2af30d09a67551f1b))
+
 ## [0.2.0](https://github.com/BTRC-Solutions/careerly/compare/v0.1.0...v0.2.0) (2026-11-16)
 
 
