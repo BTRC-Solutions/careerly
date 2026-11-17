@@ -247,7 +247,7 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `Achievement` | text, metrics?, toolIds[], origin, originSessionId? | Unidad mínima. Puede ser muy detallado: es material de base, no texto final. |
 | `Tool` | canonicalName, category, isCustom | Catálogo inicial incluido en la app (*seed*) + herramientas creadas por el usuario. |
 | `ToolAlias` | alias → toolId | Resuelve sinónimos ("Postgres" → PostgreSQL). |
-| `JobAnalysis` | language, roleCategory, seniority, workMode, country, yearsOfExperience, keywords, promptVersion, model | Salida validada de la IA, una por JD (se reemplaza al volver a analizar). Los requisitos viven en `JobRequirement`. |
+| `JobAnalysis` | language, roleCategory, seniority, workMode, country, yearsOfExperience, keywords, promptVersion, model, editedAt | Salida validada de la IA, una por JD (se reemplaza al volver a analizar). El usuario puede corregirla (RF-JD-03): `editedAt` marca que hubo correcciones, que pasan por la misma normalización. No se corrige mientras hay un análisis en curso (409). Los requisitos viven en `JobRequirement`. |
 | `JobRequirement` | jobPostingId, position, label, kind, importance, toolId?, toolName? | Requisitos normalizados para poder agregarlos entre JDs (ADR-09, §18.1). `toolId` apunta al catálogo de `profile` sin clave foránea. |
 | `TailoringSession` | status, jobPostingId, languages[], pageBudget, templateId, matchResult (JSON) | Agregado principal del módulo `tailoring`. |
 | `GapQuestion` | requirement, kind (`MISSING`, `PARTIAL`), relatedEvidence, answer (`USED_AT_WORK`, `USED_ELSEWHERE`, `NOT_USED`, `SKIPPED`), answerDetail, includeInResume, createdEntityIds[] | El "No" vive **solo acá**, nunca en el perfil (RN-11, RN-12). |

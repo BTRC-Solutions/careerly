@@ -1,16 +1,20 @@
 import {
   type CreateJobPostingRequest,
   CreateJobPostingRequestSchema,
+  type JobAnalysis,
   type JobAnalysisState,
   type JobPosting,
   type JobPostingSummary,
   type JobView,
+  type UpdateJobAnalysisRequest,
+  UpdateJobAnalysisRequestSchema,
   type UpdateJobPostingRequest,
   UpdateJobPostingRequestSchema,
 } from '@careerly/contracts';
 import {
   Body,
   type CallHandler,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -26,27 +30,34 @@ import {
 } from '@nestjs/common';
 import { catchError, type Observable, throwError } from 'rxjs';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
-import { JobAnalysisService } from '../application/job-analysis.service.js';
+import {
+  AnalysisInProgressError,
+  JobAnalysisNotFoundError,
+  JobAnalysisService,
+} from '../application/job-analysis.service.js';
 import { JobPostingNotFoundError } from '../application/job-postings.repository.js';
 import { JobPostingsService } from '../application/job-postings.service.js';
 
-/** Maps a missing job posting to 404 (then shaped by `ApiExceptionFilter`). */
+/**
+ * Maps a missing job posting or analysis to 404, and corrections during an analysis to 409 (then shaped
+ * by `ApiExceptionFilter`).
+ */
 @Injectable()
 class JobPostingErrorsInterceptor implements NestInterceptor {
   intercept(_context: unknown, next: CallHandler): Observable<unknown> {
-    return next
-      .handle()
-      .pipe(
-        catchError((error: unknown) =>
-          throwError(() =>
-            error instanceof JobPostingNotFoundError ? new NotFoundException(error.message) : error,
-          ),
-        ),
-      );
+    return next.handle().pipe(catchError((error: unknown) => throwError(() => toHttpError(error))));
   }
 }
 
-/** Job descriptions (RF-JD-01) and their analysis (RF-JD-02). */
+function toHttpError(error: unknown): unknown {
+  if (error instanceof JobPostingNotFoundError || error instanceof JobAnalysisNotFoundError) {
+    return new NotFoundException(error.message);
+  }
+  if (error instanceof AnalysisInProgressError) return new ConflictException(error.message);
+  return error;
+}
+
+/** Job descriptions (RF-JD-01) and their analysis (RF-JD-02, RF-JD-03). */
 @Controller('job-postings')
 @UseInterceptors(JobPostingErrorsInterceptor)
 export class JobPostingsController {
@@ -90,6 +101,15 @@ export class JobPostingsController {
   @Get(':id/analysis')
   analysis(@Param('id') id: string): Promise<JobAnalysisState> {
     return this.analyses.state(id);
+  }
+
+  /** The user's corrections to the analysis (RF-JD-03). */
+  @Patch(':id/analysis')
+  correctAnalysis(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateJobAnalysisRequestSchema)) body: UpdateJobAnalysisRequest,
+  ): Promise<JobAnalysis> {
+    return this.analyses.update(id, body);
   }
 
   @Delete(':id')

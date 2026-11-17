@@ -1,0 +1,1 @@
+ALTER TABLE `job_analyses` ADD `edited_at` text;

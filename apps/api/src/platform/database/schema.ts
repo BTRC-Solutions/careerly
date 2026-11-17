@@ -334,6 +334,8 @@ export const jobAnalyses = sqliteTable('job_analyses', {
   promptVersion: text('prompt_version').notNull(),
   model: text('model').notNull(),
   analyzedAt: text('analyzed_at').notNull(),
+  /** Last correction by the user (RF-JD-03); null while it is as the AI produced it. */
+  editedAt: text('edited_at'),
 });
 
 /**
