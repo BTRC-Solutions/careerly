@@ -1,12 +1,14 @@
 import type { JobAnalysis, JobRequirement, JobView } from '@careerly/contracts';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { Tag } from '../../../shared/ui/Tag';
 import { useAiAvailability } from '../../ai/useAiAvailability';
+import { useStartTailoring } from '../../tailoring/api/tailoring-api';
 import { useAnalyzeJobPosting, useJobAnalysis } from '../api/job-analysis-api';
 import { AnalysisEditor } from './AnalysisEditor';
 
@@ -21,6 +23,8 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
   const { t } = useTranslation();
   const state = useJobAnalysis(jobPostingId);
   const analyze = useAnalyzeJobPosting(jobPostingId);
+  const startTailoring = useStartTailoring();
+  const navigate = useNavigate();
   const ai = useAiAvailability();
   const job = state.data?.job ?? null;
   const analysis = state.data?.analysis ?? null;
@@ -49,6 +53,19 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
             >
               {analysis ? t('jobPostings.analysis.again') : t('jobPostings.analysis.start')}
             </Button>
+            {analysis && !running && (
+              <Button
+                disabled={startTailoring.isPending || !ai.available}
+                onClick={() =>
+                  startTailoring.mutate(
+                    { jobPostingId },
+                    { onSuccess: ({ session }) => void navigate(`/tailoring/${session.id}`) },
+                  )
+                }
+              >
+                {t('jobPostings.analysis.tailor')}
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -67,6 +84,7 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
         </InlineError>
       )}
       {analyze.error && <InlineError>{analyze.error.message}</InlineError>}
+      {startTailoring.error && <InlineError>{startTailoring.error.message}</InlineError>}
 
       {analysis &&
         (editing ? (

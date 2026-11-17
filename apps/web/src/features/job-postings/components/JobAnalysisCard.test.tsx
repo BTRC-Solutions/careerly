@@ -2,6 +2,7 @@
 import type { JobAnalysis, JobView, UpdateJobAnalysisRequest } from '@careerly/contracts';
 import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
+import { Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { api, apiError, apiServer, setupApiServer } from '../../../test-support/api-server';
 import { renderScreen } from '../../../test-support/render';
@@ -208,5 +209,57 @@ describe('JobAnalysisCard corrections', () => {
     await user.click(await screen.findByRole('button', { name: 'Volver a analizar' }));
     await waitFor(() => expect(analyzeCalls).toBe(1));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('JobAnalysisCard tailoring', () => {
+  it('starts a tailoring session for the job description and opens its match', async () => {
+    const started: unknown[] = [];
+    apiServer.use(
+      http.post(api('/tailoring-sessions'), async ({ request }) => {
+        started.push(await request.json());
+        return HttpResponse.json(
+          {
+            session: {
+              id: 'session-9',
+              jobPostingId: ID,
+              languages: ['en'],
+              pageBudget: 1,
+              templateId: 'classic',
+              status: 'ANALYZING',
+              failedStep: null,
+              match: null,
+              createdAt: '2026-11-17T12:00:00.000Z',
+              updatedAt: '2026-11-17T12:00:00.000Z',
+            },
+            job: { ...JOB, type: 'tailoring-match', status: 'PENDING', attempts: 0 },
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    const { user } = await renderScreen(
+      <Routes>
+        <Route path="/" element={<JobAnalysisCard jobPostingId={ID} />} />
+        <Route path="/tailoring/:id" element={<p>match page</p>} />
+      </Routes>,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Adaptar mi CV' }));
+    expect(await screen.findByText('match page')).toBeVisible();
+    expect(started).toEqual([{ jobPostingId: ID }]);
+  });
+
+  it('shows why a session could not start', async () => {
+    apiServer.use(
+      http.post(api('/tailoring-sessions'), () =>
+        apiError(409, 'CONFLICT', 'The job description is being analyzed.'),
+      ),
+    );
+    const { user } = await card();
+    await user.click(await screen.findByRole('button', { name: 'Adaptar mi CV' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The job description is being analyzed.',
+    );
   });
 });
