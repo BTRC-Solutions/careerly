@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-16
+> Estado: borrador v0.4 · Última actualización: 2026-11-17
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -76,7 +76,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 3.5 | `page-fitter` puro: reglas iniciales por sección + recorte por score + relleno. Tests con medidor falso. `[RN-04, RN-06, RN-07]` | Tests unitarios cubren: entra justo, sobra, falta y mínimo por puesto. | ✅ (PR #42) |
 | 3.6 | Prueba manual: con el perfil real y scores asignados a mano, generar CVs de 1 y 2 páginas. | El resultado es un CV presentable. **Validar la plantilla antes de seguir.** | ✅ (PR #43: `npm run fit:tryout` con el perfil real, ES y EN; CVs presentables) |
 
-## Fase 4 — Job descriptions + módulo de IA · `v0.4.0`
+## Fase 4 — Job descriptions + módulo de IA · `v0.4.0` · ✅ cerrada (2026-11-17)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
