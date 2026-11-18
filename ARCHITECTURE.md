@@ -325,6 +325,14 @@ Al empezar a responder (paso 5.5) las preguntas se guardan en `gap_questions` co
 cambia mientras el usuario responde en cualquier orden, y volver desde la revisión conserva lo ya respondido. Un
 "No" o una pregunta salteada viven solo ahí, nunca en el perfil (RN-11, RN-12).
 
+**Respuestas al perfil (paso 5.6):** una respuesta afirmativa se agrega enseguida al perfil por el puerto
+`ProfileWriter`, que usa `ProfileChangesService` (origen `GAP_ANSWER` y la sesión, con registro para deshacer).
+"En un trabajo" crea un logro con lo que contó en cada experiencia elegida; "en un proyecto o curso" lo crea en ese
+proyecto, o primero el proyecto si es nuevo. Si el requisito es una herramienta del catálogo, el logro la lleva.
+`gap_questions.created` guarda lo que agregó cada respuesta: cambiarla deshace eso antes de aplicar la nueva. El
+match se recalcula sin IA (`matchWithAnswers`, RF-GAP-05): un requisito cuya respuesta agregó logros queda cubierto
+con ellos como evidencia, y vuelve a como estaba si la respuesta pasa a "no".
+
 ### 7.2 Pasos
 
 | # | Paso | Tipo |

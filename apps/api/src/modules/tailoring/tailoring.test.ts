@@ -1,5 +1,6 @@
 import {
   GapQuestionsSchema,
+  type Profile,
   JobAnalysisStateSchema,
   JobPostingSchema,
   type Tool,
@@ -413,5 +414,89 @@ describe('tailoring session match (integration)', () => {
     const profileAfter = JSON.stringify(await json('GET', '/profile'));
     expect(profileAfter).not.toContain('FooBarDB');
     expect((await gaps())[2]!.answer).toEqual({ answer: 'NOT_USED' });
+  });
+
+  it('adds affirmative answers to the profile and the match, and a "no" only to the session', async () => {
+    // Two sessions on the same job description: the second one is matched without new AI answers needed.
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER), ok(EVIDENCE_ANSWER)]);
+    const profile = await createProfile();
+    const posting = await analyzedPosting();
+    const startSession = async () => {
+      const { session } = TailoringSessionViewSchema.parse(
+        await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+      );
+      await waitFor(settled(session.id));
+      return session.id;
+    };
+    const id = await startSession();
+    const asked = GapQuestionsSchema.parse(
+      await json('POST', `/tailoring-sessions/${id}/ask-gaps`),
+    ).questions;
+    const byLabel = (label: string) => asked.find((q) => q.label === label)!;
+    const answer = (label: string, body: unknown) =>
+      json('PUT', `/tailoring-sessions/${id}/gaps/${byLabel(label).requirementId}`, body).then(
+        (gaps) => GapQuestionsSchema.parse(gaps).questions.find((q) => q.label === label)!,
+      );
+    const getProfile = () => json<Profile>('GET', '/profile');
+    const statusOf = async (label: string) =>
+      (await view(id)).session.match!.requirements.find((r) => r.label === label)!;
+
+    // Yes, at work: an achievement with the catalog tool, from this session.
+    const postgres = await answer('Postgres', {
+      answer: 'USED_AT_WORK',
+      positionIds: [profile.position.id],
+      detail: 'Tuned the queries of the billing service.',
+    });
+    expect(postgres.created).toHaveLength(1);
+    const added = (await getProfile()).positions[0]!.achievements.find(
+      (a) => a.id === postgres.created[0]!.id,
+    )!;
+    expect(added).toMatchObject({
+      text: 'Tuned the queries of the billing service.',
+      origin: 'GAP_ANSWER',
+      originSessionId: id,
+      tools: [{ name: 'PostgreSQL' }],
+    });
+    // The match follows (RF-GAP-05).
+    expect(await statusOf('Postgres')).toMatchObject({
+      status: 'COVERED',
+      evidence: [{ kind: 'ACHIEVEMENT', id: added.id }],
+    });
+
+    // Yes, in a new project: the project and its achievement.
+    const docker = await answer('Docker', {
+      answer: 'USED_ELSEWHERE',
+      project: { name: 'Homelab', kind: 'PERSONAL' },
+      detail: 'Ran my services in containers.',
+      includeInResume: true,
+    });
+    expect(docker.created.map((c) => c.kind)).toEqual(['PROJECT', 'ACHIEVEMENT']);
+    expect((await getProfile()).projects.map((p) => p.name)).toEqual(['Homelab']);
+
+    // Changing an answer to "no" undoes what it added, and the requirement is a gap again.
+    const before = JSON.stringify(await getProfile());
+    const changed = await answer('Docker', { answer: 'NOT_USED' });
+    expect(changed.created).toEqual([]);
+    expect((await getProfile()).projects).toEqual([]);
+    expect(JSON.stringify(await getProfile())).not.toEqual(before);
+    expect(await statusOf('Docker')).toMatchObject({
+      status: 'PARTIAL',
+      evidence: [{ kind: 'POSITION', id: profile.position.id }],
+    });
+
+    // A "no" creates nothing in the profile (RN-11)…
+    const profileBeforeNo = await getProfile();
+    await answer('FooBarDB', { answer: 'NOT_USED' });
+    expect(await getProfile()).toEqual(profileBeforeNo);
+
+    // …and the same requirement is asked again in another session (RN-12).
+    const next = await startSession();
+    const askedAgain = GapQuestionsSchema.parse(
+      await json('POST', `/tailoring-sessions/${next}/ask-gaps`),
+    ).questions;
+    expect(askedAgain.map((q) => [q.label, q.answer])).toEqual([
+      ['Docker', null],
+      ['FooBarDB', null],
+    ]);
   });
 });

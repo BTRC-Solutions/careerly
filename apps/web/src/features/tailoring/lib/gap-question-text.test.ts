@@ -15,6 +15,7 @@ const question = (kind: RequirementKind, gap: GapKind, changes: Partial<GapQuest
     relatedEvidence: [],
     answer: null,
     answeredAt: null,
+    created: [],
     ...changes,
   }) satisfies GapQuestion;
 

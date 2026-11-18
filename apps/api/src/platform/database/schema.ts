@@ -447,6 +447,8 @@ export const gapQuestions = sqliteTable(
     /** JSON `GapAnswer`; `null` until answered. */
     answer: text('answer'),
     answeredAt: text('answered_at'),
+    /** JSON array of `Evidence`: what the answer added to the profile (ids only). */
+    created: text('created').notNull().default('[]'),
   },
   (table) => [primaryKey({ columns: [table.sessionId, table.requirementId] })],
 );

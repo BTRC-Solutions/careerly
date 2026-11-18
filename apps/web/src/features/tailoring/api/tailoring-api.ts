@@ -8,6 +8,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPut } from '../../../shared/api/client';
 import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
+import { PROFILE_QUERY_KEY } from '../../profile/api/profile-api';
 
 /*
  * Tailoring sessions (RF-TAIL-01): starting one runs the match in the background (RF-TAIL-02); the session is
@@ -86,6 +87,11 @@ export function useAnswerGap(id: string) {
   return useMutation({
     mutationFn: ({ requirementId, answer }: { requirementId: string; answer: GapAnswer }) =>
       apiPut(`/tailoring-sessions/${id}/gaps/${requirementId}`, GapQuestionsSchema, answer),
-    onSuccess: (gaps) => queryClient.setQueryData(gapsKey(id), gaps),
+    onSuccess: (gaps) => {
+      queryClient.setQueryData(gapsKey(id), gaps);
+      // An affirmative answer adds to the profile and changes the match (RF-TAIL-05, RF-GAP-05).
+      void queryClient.invalidateQueries({ queryKey: sessionKey(id), exact: true });
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+    },
   });
 }
