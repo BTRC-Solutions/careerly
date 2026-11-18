@@ -9,6 +9,7 @@ import {
   JobDescriptionReader,
   MatchQueue,
   ProfileReader,
+  ProfileWriter,
   RequirementMatcher,
   TailoringSessionRepository,
   ToolResolver,
@@ -22,6 +23,7 @@ import {
   JobPostingsModuleReader,
   JobQueueMatchQueue,
   ProfileModuleReader,
+  ProfileModuleWriter,
   TailoringMatchJobHandler,
 } from './infrastructure/module-adapters.js';
 
@@ -39,6 +41,7 @@ import {
     { provide: TailoringSessionRepository, useClass: DrizzleTailoringSessionRepository },
     { provide: GapQuestionRepository, useClass: DrizzleGapQuestionRepository },
     { provide: ProfileReader, useClass: ProfileModuleReader },
+    { provide: ProfileWriter, useClass: ProfileModuleWriter },
     { provide: JobDescriptionReader, useClass: JobPostingsModuleReader },
     { provide: ToolResolver, useClass: CatalogToolResolver },
     { provide: RequirementMatcher, useClass: LlmRequirementMatcher },

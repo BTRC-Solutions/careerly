@@ -1,0 +1,1 @@
+ALTER TABLE `gap_questions` ADD `created` text DEFAULT '[]' NOT NULL;

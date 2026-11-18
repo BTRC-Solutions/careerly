@@ -898,7 +898,8 @@
         "detail": "Tell in 1 or 2 lines what you did.",
         "positions": "Pick at least one experience.",
         "projectName": "Give the project or course a name."
-      }
+      },
+      "addedToProfile": "Added to your master profile. You can undo it from \"Changes to your profile\"."
     }
   }
 }

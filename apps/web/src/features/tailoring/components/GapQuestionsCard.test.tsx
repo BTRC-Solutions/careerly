@@ -84,6 +84,7 @@ const question = (requirementId: string, changes: Partial<GapQuestion>): GapQues
   relatedEvidence: [],
   answer: null,
   answeredAt: null,
+  created: [],
   ...changes,
 });
 
@@ -134,7 +135,15 @@ beforeEach(() => {
       const requirementId = String(params.requirementId);
       answers.push({ requirementId, body });
       questions = questions.map((q) =>
-        q.requirementId === requirementId ? { ...q, answer: body, answeredAt: AT } : q,
+        q.requirementId === requirementId
+          ? {
+              ...q,
+              answer: body,
+              answeredAt: AT,
+              created:
+                body.answer === 'USED_AT_WORK' ? [{ kind: 'ACHIEVEMENT', id: 'new-ach' }] : [],
+            }
+          : q,
       );
       return HttpResponse.json({ questions });
     }),
@@ -237,6 +246,7 @@ describe('GapQuestionsCard', () => {
     // Answered questions show the answer, and can change it.
     expect(await pg.findByText('Tuned the billing queries.')).toBeVisible();
     expect(pg.getByRole('button', { name: 'Cambiar' })).toBeVisible();
+    expect(pg.getByText(/Se agregó a tu perfil maestro/)).toBeVisible();
   });
 
   it('asks for what is missing before saving an affirmative answer', async () => {

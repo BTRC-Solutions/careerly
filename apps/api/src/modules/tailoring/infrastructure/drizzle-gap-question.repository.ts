@@ -1,4 +1,5 @@
 import {
+  type Evidence,
   type GapAnswer,
   GapAnswerSchema,
   type GapQuestion,
@@ -25,9 +26,9 @@ export class DrizzleGapQuestionRepository extends GapQuestionRepository {
     inTransaction(connection, () => {
       connection.prepare('DELETE FROM gap_questions WHERE session_id = ?').run(sessionId);
       const insert = connection.prepare(
-        'INSERT INTO gap_questions (session_id, requirement_id, position, question, answer, answered_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO gap_questions (session_id, requirement_id, position, question, answer, answered_at, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
       );
-      questions.forEach(({ answer, answeredAt, ...question }, position) => {
+      questions.forEach(({ answer, answeredAt, created, ...question }, position) => {
         insert.run(
           sessionId,
           question.requirementId,
@@ -35,6 +36,7 @@ export class DrizzleGapQuestionRepository extends GapQuestionRepository {
           JSON.stringify(question),
           answer === null ? null : JSON.stringify(answer),
           answeredAt,
+          JSON.stringify(created),
         );
       });
     });
@@ -54,10 +56,11 @@ export class DrizzleGapQuestionRepository extends GapQuestionRepository {
     requirementId: string,
     answer: GapAnswer,
     answeredAt: string,
+    created: Evidence[],
   ): Promise<void> {
     await this.database.db
       .update(gapQuestions)
-      .set({ answer: JSON.stringify(answer), answeredAt })
+      .set({ answer: JSON.stringify(answer), answeredAt, created: JSON.stringify(created) })
       .where(
         and(eq(gapQuestions.sessionId, sessionId), eq(gapQuestions.requirementId, requirementId)),
       );
@@ -70,5 +73,6 @@ function toQuestion(row: Row): GapQuestion {
     ...(JSON.parse(row.question) as object),
     answer: row.answer === null ? null : GapAnswerSchema.parse(JSON.parse(row.answer)),
     answeredAt: row.answeredAt,
+    created: JSON.parse(row.created) as unknown,
   });
 }

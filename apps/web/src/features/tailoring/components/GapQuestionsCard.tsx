@@ -138,7 +138,11 @@ function GapQuestionItem({
         />
       ) : (
         <div className="flex items-start justify-between gap-4">
-          <AnswerSummary answer={question.answer} profile={profile} />
+          <AnswerSummary
+            answer={question.answer}
+            addedToProfile={question.created.length > 0}
+            profile={profile}
+          />
           <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
             {t('tailoring.gaps.change')}
           </Button>
@@ -148,7 +152,15 @@ function GapQuestionItem({
   );
 }
 
-function AnswerSummary({ answer, profile }: { answer: GapAnswer; profile: Profile | undefined }) {
+function AnswerSummary({
+  answer,
+  addedToProfile,
+  profile,
+}: {
+  answer: GapAnswer;
+  addedToProfile: boolean;
+  profile: Profile | undefined;
+}) {
   const { t } = useTranslation();
   let where: string | null = null;
   if (answer.answer === 'USED_AT_WORK') {
@@ -171,6 +183,9 @@ function AnswerSummary({ answer, profile }: { answer: GapAnswer; profile: Profil
         {where && <span className="text-slate-ink">{where}</span>}
       </span>
       {'detail' in answer && <p className="text-steel-text">{answer.detail}</p>}
+      {addedToProfile && (
+        <p className="text-xs text-seafoam-700">{t('tailoring.gaps.addedToProfile')}</p>
+      )}
       {answer.answer === 'USED_ELSEWHERE' && !answer.includeInResume && (
         <p className="text-xs text-steel-text">{t('tailoring.gaps.notInThisResume')}</p>
       )}

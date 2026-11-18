@@ -898,7 +898,8 @@
         "detail": "Contá en 1 o 2 líneas qué hiciste.",
         "positions": "Elegí al menos una experiencia.",
         "projectName": "Poné un nombre al proyecto o curso."
-      }
+      },
+      "addedToProfile": "Se agregó a tu perfil maestro. Podés deshacerlo desde \"Cambios en tu perfil\"."
     }
   }
 }

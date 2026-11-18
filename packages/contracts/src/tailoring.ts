@@ -167,6 +167,11 @@ export const GapQuestionSchema = z.object({
   /** `null` until answered; an unanswered question counts as skipped (RF-GAP-01). */
   answer: z.lazy(() => GapAnswerSchema).nullable(),
   answeredAt: z.iso.datetime().nullable(),
+  /**
+   * What the answer added to the master profile (RF-TAIL-05): the achievements and the new project, with origin
+   * `GAP_ANSWER`. Empty for "no" and skipped answers, which never touch the profile (RN-11).
+   */
+  created: z.array(EvidenceSchema),
 });
 export type GapQuestion = z.infer<typeof GapQuestionSchema>;
 
@@ -197,7 +202,7 @@ export const GapAnswerSchema = z.discriminatedUnion('answer', [
       /** An existing project, or a new one to create. */
       project: z.union([
         z.object({ id: z.string().min(1) }).strict(),
-        z.object({ name: z.string().trim().min(1).max(200), kind: ProjectKindSchema }).strict(),
+        z.object({ name: z.string().trim().min(1).max(160), kind: ProjectKindSchema }).strict(),
       ]),
       detail: GapDetailSchema,
       /** "Is it relevant for THIS CV?" */

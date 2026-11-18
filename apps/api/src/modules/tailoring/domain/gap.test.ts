@@ -1,7 +1,13 @@
 import type { MatchResult, RequirementMatch } from '@careerly/contracts';
 import { describe, expect, it } from 'vitest';
 import { countGaps } from './match.js';
-import { gapQuestions, invalidAnswerReason, keepAnswers } from './gap.js';
+import {
+  gapQuestions,
+  invalidAnswerReason,
+  isAffirmative,
+  keepAnswers,
+  matchWithAnswers,
+} from './gap.js';
 
 const requirement = (
   id: string,
@@ -122,5 +128,46 @@ describe('invalidAnswerReason', () => {
         profile,
       ),
     ).toMatch(/project/);
+  });
+});
+
+describe('matchWithAnswers', () => {
+  const original = match([
+    requirement('covered', 'COVERED'),
+    requirement('aws', 'PARTIAL'),
+    requirement('k8s', 'MISSING'),
+  ]);
+  const asked = gapQuestions(original);
+
+  it('covers the requirements whose answers added achievements, with them as evidence', () => {
+    const answered = asked.map((q) =>
+      q.requirementId === 'k8s'
+        ? {
+            ...q,
+            answer: { answer: 'USED_AT_WORK' as const, positionIds: ['p'], detail: 'x' },
+            created: [{ kind: 'ACHIEVEMENT' as const, id: 'new-ach' }],
+          }
+        : q,
+    );
+    const result = matchWithAnswers(original, answered);
+    expect(result.requirements.map((r) => [r.requirementId, r.status, r.evidence])).toEqual([
+      ['covered', 'COVERED', [{ kind: 'ACHIEVEMENT', id: 'evidence-covered' }]],
+      ['aws', 'PARTIAL', [{ kind: 'ACHIEVEMENT', id: 'evidence-aws' }]],
+      ['k8s', 'COVERED', [{ kind: 'ACHIEVEMENT', id: 'new-ach' }]],
+    ]);
+  });
+
+  it('puts a requirement back as the match left it when its answer no longer adds anything', () => {
+    const covered = matchWithAnswers(original, [
+      { ...asked[0]!, created: [{ kind: 'ACHIEVEMENT', id: 'x' }] },
+    ]);
+    expect(matchWithAnswers(covered, asked)).toEqual(original);
+  });
+
+  it('knows which answers are affirmative', () => {
+    expect(isAffirmative({ answer: 'NOT_USED' })).toBe(false);
+    expect(isAffirmative({ answer: 'SKIPPED' })).toBe(false);
+    expect(isAffirmative(null)).toBe(false);
+    expect(isAffirmative({ answer: 'USED_AT_WORK', positionIds: ['p'], detail: 'x' })).toBe(true);
   });
 });

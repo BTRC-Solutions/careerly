@@ -23,6 +23,7 @@ export function gapQuestions(match: MatchResult): GapQuestion[] {
             relatedEvidence: requirement.status === 'PARTIAL' ? requirement.evidence : [],
             answer: null,
             answeredAt: null,
+            created: [],
           },
         ],
   );
@@ -42,7 +43,12 @@ export function keepAnswers(
   return questions.map((question) => {
     const before = answered.get(question.requirementId);
     return before
-      ? { ...question, answer: before.answer, answeredAt: before.answeredAt }
+      ? {
+          ...question,
+          answer: before.answer,
+          answeredAt: before.answeredAt,
+          created: before.created,
+        }
       : question;
   });
 }
@@ -67,4 +73,31 @@ export function invalidAnswerReason(
     if (!profile.projects.some((project) => project.id === id)) return 'Unknown project.';
   }
   return null;
+}
+
+/** Answers that add something to the master profile (RF-TAIL-05); "no" and skipped never do (RN-11). */
+export const isAffirmative = (answer: GapAnswer | null) =>
+  answer?.answer === 'USED_AT_WORK' || answer?.answer === 'USED_ELSEWHERE';
+
+/**
+ * The match after the answers (RF-GAP-05), without AI: a requirement whose answer added achievements to the
+ * profile is covered by them; one whose answer added nothing is back to how the match left it. Requirements
+ * without a question are not touched.
+ */
+export function matchWithAnswers(
+  match: MatchResult,
+  questions: readonly GapQuestion[],
+): MatchResult {
+  const byRequirement = new Map(questions.map((question) => [question.requirementId, question]));
+  return {
+    ...match,
+    requirements: match.requirements.map((requirement) => {
+      const question = byRequirement.get(requirement.requirementId);
+      if (!question) return requirement;
+      const achievements = question.created.filter((item) => item.kind === 'ACHIEVEMENT');
+      return achievements.length > 0
+        ? { ...requirement, status: 'COVERED', evidence: achievements }
+        : { ...requirement, status: question.gap, evidence: question.relatedEvidence };
+    }),
+  };
 }
