@@ -25,6 +25,11 @@ export class ActiveAiCredentials {
     this.claudeCodeEnabled = source;
   }
 
+  /** Whether the API key is known yet (see `AiCredentialsStore.received`). */
+  received(): boolean {
+    return this.keys.received();
+  }
+
   async get(): Promise<ActiveCredentials | null> {
     try {
       if (await this.claudeCodeEnabled()) return { provider: 'claude-code', apiKey: '' };

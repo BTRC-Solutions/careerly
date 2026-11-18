@@ -15,9 +15,11 @@ export class AiCredentialsStore {
   private readonly logger = new Logger(AiCredentialsStore.name);
   #credentials: Credentials | null = null;
   #changedAt = new Date().toISOString();
+  #received = false;
 
   /** Replaces the credentials. Logs only the provider, and only when something changed. */
   set(credentials: Credentials | null): void {
+    this.#received = true;
     const current = this.#credentials;
     const changed =
       credentials?.provider !== current?.provider || credentials?.apiKey !== current?.apiKey;
@@ -42,6 +44,14 @@ export class AiCredentialsStore {
   /** When the credentials last changed (or the backend started): older AI errors do not apply to them. */
   changedAt(): string {
     return this.#changedAt;
+  }
+
+  /**
+   * Whether Electron has sent the credentials (even `null`, "no key") since the backend started. Until then a
+   * missing key means "not known yet", not "not configured": jobs resumed at startup run before the first push.
+   */
+  received(): boolean {
+    return this.#received;
   }
 
   activeProvider(): AiProvider | null {

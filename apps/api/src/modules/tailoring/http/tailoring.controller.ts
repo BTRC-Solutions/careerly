@@ -1,4 +1,7 @@
 import {
+  type ListTailoringSessionsQuery,
+  ListTailoringSessionsQuerySchema,
+  type TailoringSessionList,
   type ApiErrorCode,
   type CreateTailoringSessionRequest,
   CreateTailoringSessionRequestSchema,
@@ -28,6 +31,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   StreamableFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -112,6 +116,22 @@ export class TailoringController {
     body: CreateTailoringSessionRequest,
   ): Promise<TailoringSessionView> {
     return this.sessions.start(body);
+  }
+
+  /** Sessions to resume (RF-TAIL-15): `?open=true` for the unfinished ones, `?jobPostingId=` for one posting. */
+  @Get()
+  list(
+    @Query(new ZodValidationPipe(ListTailoringSessionsQuerySchema))
+    query: ListTailoringSessionsQuery,
+  ): Promise<TailoringSessionList> {
+    return this.sessions.list(query);
+  }
+
+  /** Leaves the session; it stays stored but is no longer open. */
+  @Post(':id/abandon')
+  @HttpCode(HttpStatus.OK)
+  abandon(@Param('id') id: string): Promise<TailoringSessionView> {
+    return this.sessions.abandon(id);
   }
 
   @Get(':id')

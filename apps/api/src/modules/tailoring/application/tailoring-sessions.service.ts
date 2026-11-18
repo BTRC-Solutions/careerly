@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
+  type ListTailoringSessionsQuery,
+  type TailoringSessionList,
   type CreateTailoringSessionRequest,
   type JobProgress,
   type JobRequirement,
@@ -93,6 +95,31 @@ export class TailoringSessionsService {
     const stored: StoredSession = { ...session, createdAt: now, updatedAt: now };
     await this.sessions.save(stored);
     return { session: stored, job: this.queue.request(session.id) };
+  }
+
+  /** Sessions to find again (RF-TAIL-15): e.g. the open ones, or those of a job description. */
+  async list(query: ListTailoringSessionsQuery): Promise<TailoringSessionList> {
+    const sessions = await this.sessions.list(query);
+    return {
+      sessions: sessions.map(({ id, jobPostingId, status, languages, createdAt, updatedAt }) => ({
+        id,
+        jobPostingId,
+        status,
+        languages,
+        createdAt,
+        updatedAt,
+      })),
+    };
+  }
+
+  /**
+   * Leaves the session (RF-TAIL-15). A match or generation still running finishes in the background, but its
+   * result is dropped: both jobs only write while the session is still in their step. What the session added
+   * to the profile stays; it can be undone first.
+   */
+  async abandon(id: string): Promise<TailoringSessionView> {
+    const session = await this.transition(await this.load(id), { type: 'ABANDON' });
+    return { session, job: null };
   }
 
   async get(id: string): Promise<TailoringSessionView> {

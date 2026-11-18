@@ -301,7 +301,14 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   solo a `GENERATING`. "Volver a gaps" desde `REVIEW` exige que haya gaps. Saltear preguntas pasa dentro de
   `AWAITING_ANSWERS` (RF-GAP-01).
 - `FAILED` recuerda el paso que falló (`failedStep`) y el reintento vuelve a ese paso.
-- `FINALIZED` es terminal. Cancelar o abandonar una sesión queda para el paso 6.8.
+- `FINALIZED` es terminal. `ABANDONED` también (paso 6.8): el usuario deja la sesión desde cualquier estado salvo
+  `FINALIZED`; se conserva, pero ya no figura entre las sesiones en curso. Si había un match o una generación
+  corriendo, terminan en segundo plano y su resultado se descarta (solo escriben si la sesión sigue en su paso). Lo
+  que la sesión agregó al perfil se mantiene; se puede deshacer antes.
+- **Retomar (paso 6.8, RF-TAIL-15):** la sesión, sus respuestas y sus CVs viven en la base, y las tareas que la app
+  cerró a medias vuelven a `PENDING` al arrancar (§10). Como la API key llega de Electron recién después de que
+  arranca la API, `LlmClient` trata la falta de key antes de ese primer envío como un error reintentable
+  (`AiUnavailableError`) y no como "sin configurar": la tarea retomada espera la key en lugar de fallar.
 
 **Match (paso 5.2, `tailoring/domain/match.ts`):** crear la sesión exige una JD analizada y encola la tarea
 `tailoring-match` (3 intentos; al rendirse, la sesión pasa a `FAILED` y se reintenta con
@@ -592,6 +599,8 @@ PATCH  /job-postings/:id/analysis                  # correcciones del usuario
 POST   /tailoring-sessions                         # { jobPostingId, languages[]?, pageBudget?, templateId? }; encola el match
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
+GET    /tailoring-sessions?open=true&jobPostingId=   # sesiones para retomar (las no finalizadas ni abandonadas)
+POST   /tailoring-sessions/:id/abandon             # deja la sesión (ABANDONED)
 GET    /tailoring-sessions/:id/events              # SSE
 POST   /tailoring-sessions/:id/gaps                # pasa a las preguntas de gaps (AWAITING_ANSWERS)
 GET    /tailoring-sessions/:id/gaps

@@ -8,6 +8,7 @@ import {
   AiInvalidOutputError,
   AiModelUnavailableError,
   AiNotConfiguredError,
+  AiUnavailableError,
   AiProviderNotSupportedError,
   AiRateLimitedError,
 } from './llm-errors.js';
@@ -66,7 +67,7 @@ class MemoryGenerations extends AiGenerationRepository {
 
 function setup(answers: (string | Error)[], provider: 'gemini' | 'anthropic' | null = 'gemini') {
   const credentials = new AiCredentialsStore();
-  if (provider) credentials.set({ provider, apiKey: KEY });
+  credentials.set(provider ? { provider, apiKey: KEY } : null);
   const fake = new FakeProvider(answers);
   const registry = new (class extends LlmProviderRegistry {
     get(id: string) {
@@ -224,6 +225,34 @@ describe('LlmClient', () => {
 
     expect(await setup([]).client.isAvailable()).toBe(true);
     expect(none.generations.entries).toHaveLength(0);
+  });
+
+  it('retries instead of failing for good while the key has not arrived from Electron yet', async () => {
+    const credentials = new AiCredentialsStore();
+    const client = new LlmClient(
+      new ActiveAiCredentials(credentials),
+      new (class extends LlmProviderRegistry {
+        get() {
+          return undefined;
+        }
+      })(),
+      new MemoryGenerations(),
+      new AiModelChoiceStore(),
+    );
+    const call = () =>
+      client.generateStructured({
+        task: 'smoke-test',
+        prompt: PROMPT,
+        tier: 'small',
+        input: [{ type: 'text', text: 'Extract the title.' }],
+        schema: Schema,
+      });
+
+    // Right after startup: not known yet, so a retryable error.
+    await expect(call()).rejects.toBeInstanceOf(AiUnavailableError);
+    // Electron said there is no key: now it is not configured.
+    credentials.set(null);
+    await expect(call()).rejects.toBeInstanceOf(AiNotConfiguredError);
   });
   it("uses the user's model first and keeps the defaults as fallbacks (RF-CONF-09)", async () => {
     const { fake, choices, call } = setup([

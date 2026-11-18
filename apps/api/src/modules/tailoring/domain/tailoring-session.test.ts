@@ -64,6 +64,7 @@ const situations: Record<string, TailoringSession> = {
   finalized: replay(noGaps, { type: 'GENERATE' }, { type: 'RESUMES_READY' }, { type: 'FINALIZE' }),
   'failed while analyzing': replay({ type: 'FAIL' }),
   'failed while generating': replay(noGaps, { type: 'GENERATE' }, { type: 'FAIL' }),
+  abandoned: replay(withGaps, { type: 'ABANDON' }),
 };
 
 /** The only allowed transitions (ARCHITECTURE §7.1); anything missing must be rejected. */
@@ -71,21 +72,23 @@ const allowed: Record<
   string,
   Partial<Record<TailoringSessionEventType, TailoringSessionStatus>>
 > = {
-  analyzing: { MATCH_READY: 'MATCHED', FAIL: 'FAILED' },
-  'matched, with gaps': { ASK_GAPS: 'AWAITING_ANSWERS' },
-  'matched, no gaps': { GENERATE: 'GENERATING' },
-  'awaiting answers': { GENERATE: 'GENERATING' },
-  'generating, with gaps': { RESUMES_READY: 'REVIEW', FAIL: 'FAILED' },
-  'generating, no gaps': { RESUMES_READY: 'REVIEW', FAIL: 'FAILED' },
+  analyzing: { MATCH_READY: 'MATCHED', FAIL: 'FAILED', ABANDON: 'ABANDONED' },
+  'matched, with gaps': { ASK_GAPS: 'AWAITING_ANSWERS', ABANDON: 'ABANDONED' },
+  'matched, no gaps': { GENERATE: 'GENERATING', ABANDON: 'ABANDONED' },
+  'awaiting answers': { GENERATE: 'GENERATING', ABANDON: 'ABANDONED' },
+  'generating, with gaps': { RESUMES_READY: 'REVIEW', FAIL: 'FAILED', ABANDON: 'ABANDONED' },
+  'generating, no gaps': { RESUMES_READY: 'REVIEW', FAIL: 'FAILED', ABANDON: 'ABANDONED' },
   'review, with gaps': {
     GENERATE: 'GENERATING',
     ASK_GAPS: 'AWAITING_ANSWERS',
     FINALIZE: 'FINALIZED',
+    ABANDON: 'ABANDONED',
   },
-  'review, no gaps': { GENERATE: 'GENERATING', FINALIZE: 'FINALIZED' },
+  'review, no gaps': { GENERATE: 'GENERATING', FINALIZE: 'FINALIZED', ABANDON: 'ABANDONED' },
   finalized: {},
-  'failed while analyzing': { RETRY: 'ANALYZING' },
-  'failed while generating': { RETRY: 'GENERATING' },
+  'failed while analyzing': { RETRY: 'ANALYZING', ABANDON: 'ABANDONED' },
+  'failed while generating': { RETRY: 'GENERATING', ABANDON: 'ABANDONED' },
+  abandoned: {},
 };
 
 const eventOf = (type: TailoringSessionEventType): TailoringSessionEvent =>

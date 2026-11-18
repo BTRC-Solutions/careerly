@@ -118,6 +118,7 @@ describe('AI smoke test route (integration)', () => {
 
   it('reports NOT_CONFIGURED without a key and KEY_REJECTED for a wrong one', async () => {
     await start('', 400);
+    await internal('/internal/ai-credentials', 'PUT', { credentials: null });
     expect(await (await internal('/internal/ai/smoke', 'POST')).json()).toMatchObject({
       status: 'NOT_CONFIGURED',
     });

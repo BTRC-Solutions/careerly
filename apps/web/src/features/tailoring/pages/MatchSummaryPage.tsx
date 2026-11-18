@@ -4,18 +4,25 @@ import type {
   RequirementMatch,
   TailoringSessionView,
 } from '@careerly/contracts';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { ChevronLeftIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { Tag } from '../../../shared/ui/Tag';
 import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useProfile } from '../../profile/api/profile-api';
-import { useGenerateResumes, useRetryTailoring, useTailoringSession } from '../api/tailoring-api';
+import {
+  useAbandonSession,
+  useGenerateResumes,
+  useRetryTailoring,
+  useTailoringSession,
+} from '../api/tailoring-api';
 import { ResumeReview } from '../components/ResumeReview';
 import { countGaps, describeEvidence, summarizeMatch } from '../lib/match-summary';
 
@@ -90,6 +97,9 @@ function Session({ view }: { view: TailoringSessionView }) {
   const { session, job } = view;
   const posting = useJobPosting(session.jobPostingId);
   const retry = useRetryTailoring(session.id);
+  const abandon = useAbandonSession(session.id);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const closed = session.status === 'FINALIZED' || session.status === 'ABANDONED';
   const subtitle = posting.data
     ? [posting.data.title ?? t('jobPostings.untitled'), posting.data.company]
         .filter(Boolean)
@@ -108,6 +118,30 @@ function Session({ view }: { view: TailoringSessionView }) {
       <PageHeader
         title={reviewing ? t('tailoring.review.title') : t('tailoring.match.title')}
         description={subtitle}
+        actions={
+          !closed && (
+            <Button variant="ghost" onClick={() => setConfirmingAbandon(true)}>
+              {t('tailoring.abandon.action')}
+            </Button>
+          )
+        }
+      />
+
+      {session.status === 'ABANDONED' && (
+        <Card>
+          <p role="status" className="text-sm text-slate-ink">
+            {t('tailoring.abandon.done')}
+          </p>
+        </Card>
+      )}
+
+      <ConfirmDialog
+        open={confirmingAbandon}
+        onOpenChange={setConfirmingAbandon}
+        title={t('tailoring.abandon.title')}
+        description={t('tailoring.abandon.description')}
+        confirmLabel={t('tailoring.abandon.action')}
+        onConfirm={() => abandon.mutateAsync()}
       />
 
       {session.status === 'ANALYZING' && (

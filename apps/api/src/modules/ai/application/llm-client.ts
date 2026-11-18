@@ -10,6 +10,7 @@ import {
   AiModelUnavailableError,
   AiNotConfiguredError,
   AiProviderNotSupportedError,
+  AiUnavailableError,
 } from './llm-errors.js';
 import { AiGenerationRepository, LlmProviderRegistry } from './llm.ports.js';
 import type {
@@ -70,7 +71,13 @@ export class LlmClient {
     request: StructuredRequest<T>,
   ): Promise<StructuredResult<z.infer<T>>> {
     const credentials = await this.credentials.get();
-    if (!credentials) throw new AiNotConfiguredError();
+    if (!credentials) {
+      // Right after startup the key may not have arrived from Electron yet: a resumed job retries
+      // instead of failing for good (RF-TAIL-15).
+      if (!this.credentials.received())
+        throw new AiUnavailableError('the key was not received yet');
+      throw new AiNotConfiguredError();
+    }
     const provider = this.providers.get(credentials.provider);
     if (!provider) throw new AiProviderNotSupportedError(credentials.provider);
 
