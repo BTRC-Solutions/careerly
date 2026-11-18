@@ -13,6 +13,9 @@ const question = (kind: RequirementKind, gap: GapKind, changes: Partial<GapQuest
     tool: null,
     gap,
     relatedEvidence: [],
+    answer: null,
+    answeredAt: null,
+    created: [],
     ...changes,
   }) satisfies GapQuestion;
 

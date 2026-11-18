@@ -1,4 +1,8 @@
 import type {
+  Evidence,
+  GapAnswer,
+  ProjectKind,
+  GapQuestion,
   JobAnalysis,
   JobRequirement,
   JobView,
@@ -93,6 +97,47 @@ export abstract class RequirementMatcher {
     requirements: JobRequirement[],
     profile: Profile,
   ): Promise<{ answers: SemanticAnswer[]; promptVersion: string; model: string }>;
+}
+
+/** The session has no gap question for this requirement (maps to 404). */
+export class GapQuestionNotFoundError extends Error {
+  constructor(readonly requirementId: string) {
+    super('Gap question not found in this session.');
+    this.name = 'GapQuestionNotFoundError';
+  }
+}
+
+/** Port: the gap questions asked in a session and their answers. */
+export abstract class GapQuestionRepository {
+  /** Replaces the session's questions (with whatever answers they carry), in order. */
+  abstract replace(sessionId: string, questions: GapQuestion[]): Promise<void>;
+  /** In order; empty until the session asks its gaps. */
+  abstract list(sessionId: string): Promise<GapQuestion[]>;
+  abstract saveAnswer(
+    sessionId: string,
+    requirementId: string,
+    answer: GapAnswer,
+    answeredAt: string,
+    created: Evidence[],
+  ): Promise<void>;
+}
+
+/**
+ * Port: writes to the master profile from gap answers (RF-TAIL-05), through the profile module. Everything is
+ * created with origin `GAP_ANSWER` and logged under the session, so it can be undone (RF-TAIL-06).
+ */
+export abstract class ProfileWriter {
+  abstract createAchievement(
+    sessionId: string,
+    parent: { kind: 'position' | 'project'; id: string },
+    achievement: { text: string; toolIds: string[] },
+  ): Promise<string>;
+  abstract createProject(
+    sessionId: string,
+    project: { name: string; kind: ProjectKind; toolIds: string[] },
+  ): Promise<string>;
+  /** Undoes what the session created for these elements (e.g. when an answer changes). */
+  abstract undo(sessionId: string, created: Evidence[]): Promise<void>;
 }
 
 /** Port: stored sessions. */

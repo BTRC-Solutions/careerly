@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { RequirementImportanceSchema, RequirementKindSchema } from './job-postings.js';
 import { JobViewSchema } from './jobs.js';
-import { ToolRefSchema } from './profile.js';
+import { ProjectKindSchema, ToolRefSchema } from './profile.js';
 import { ResumeLanguageSchema } from './resume.js';
 
 /*
@@ -209,9 +209,53 @@ export const GapQuestionSchema = z.object({
   gap: GapKindSchema,
   /** What the profile already shows that is related; empty when `MISSING`. */
   relatedEvidence: z.array(EvidenceSchema),
+  /** `null` until answered; an unanswered question counts as skipped (RF-GAP-01). */
+  answer: z.lazy(() => GapAnswerSchema).nullable(),
+  answeredAt: z.iso.datetime().nullable(),
+  /**
+   * What the answer added to the master profile (RF-TAIL-05): the achievements and the new project, with origin
+   * `GAP_ANSWER`. Empty for "no" and skipped answers, which never touch the profile (RN-11).
+   */
+  created: z.array(EvidenceSchema),
 });
 export type GapQuestion = z.infer<typeof GapQuestionSchema>;
 
 /** `GET /tailoring-sessions/:id/gaps`: required requirements first, then in the job description's order. */
 export const GapQuestionsSchema = z.object({ questions: z.array(GapQuestionSchema) });
 export type GapQuestions = z.infer<typeof GapQuestionsSchema>;
+
+/**
+ * The answer to a gap question (RF-GAP-01, REQUIREMENTS §5.5). `PUT /tailoring-sessions/:id/gaps/:requirementId`.
+ * - `USED_AT_WORK`: in one or more positions of the profile, with 1–2 lines of what the user did.
+ * - `USED_ELSEWHERE`: in a project, course or certification, existing or new, and whether this CV shows it.
+ * - `NOT_USED`: "no". It lives only in the session, never in the profile (RN-11, RN-12).
+ * - `SKIPPED`: treated as "no" for this CV.
+ */
+const GapDetailSchema = z.string().trim().min(1).max(1000);
+
+export const GapAnswerSchema = z.discriminatedUnion('answer', [
+  z
+    .object({
+      answer: z.literal('USED_AT_WORK'),
+      positionIds: z.array(z.string().min(1)).min(1).max(10),
+      detail: GapDetailSchema,
+    })
+    .strict(),
+  z
+    .object({
+      answer: z.literal('USED_ELSEWHERE'),
+      /** An existing project, or a new one to create. */
+      project: z.union([
+        z.object({ id: z.string().min(1) }).strict(),
+        z.object({ name: z.string().trim().min(1).max(160), kind: ProjectKindSchema }).strict(),
+      ]),
+      detail: GapDetailSchema,
+      /** "Is it relevant for THIS CV?" */
+      includeInResume: z.boolean(),
+    })
+    .strict(),
+  z.object({ answer: z.literal('NOT_USED') }).strict(),
+  z.object({ answer: z.literal('SKIPPED') }).strict(),
+]);
+export type GapAnswer = z.infer<typeof GapAnswerSchema>;
+export type GapAnswerKind = GapAnswer['answer'];

@@ -1,8 +1,10 @@
 import type {
+  Evidence,
   JobAnalysis,
   JobView,
   Profile,
   ProfileChangeEntity,
+  ProjectKind,
   RevertProfileChangesResult,
   SessionProfileChange,
   ToolRef,
@@ -24,6 +26,7 @@ import {
   MatchQueue,
   ProfileChangeLog,
   ProfileReader,
+  ProfileWriter,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
   ToolResolver,
@@ -79,6 +82,63 @@ export class ProfileModuleChangeLog extends ProfileChangeLog {
       entityId,
       fields,
     }));
+  }
+}
+
+const CHANGED_ENTITY = {
+  ACHIEVEMENT: 'achievement',
+  PROJECT: 'project',
+  POSITION: 'position',
+} as const;
+
+/** Gap answers written to the profile through its change log, so the session can undo them. */
+@Injectable()
+export class ProfileModuleWriter extends ProfileWriter {
+  constructor(private readonly changes: ProfileChangesService) {
+    super();
+  }
+
+  async createAchievement(
+    sessionId: string,
+    parent: { kind: 'position' | 'project'; id: string },
+    achievement: { text: string; toolIds: string[] },
+  ): Promise<string> {
+    const created = await this.changes.createAchievement(sessionId, parent, {
+      ...achievement,
+      metrics: null,
+    });
+    return created.id;
+  }
+
+  async createProject(
+    sessionId: string,
+    project: { name: string; kind: ProjectKind; toolIds: string[] },
+  ): Promise<string> {
+    const created = await this.changes.createProject(sessionId, {
+      ...project,
+      role: null,
+      url: null,
+      startDate: null,
+      endDate: null,
+      description: null,
+    });
+    return created.id;
+  }
+
+  async undo(sessionId: string, created: Evidence[]): Promise<void> {
+    const wanted = new Set(
+      created.flatMap((item) =>
+        item.kind in CHANGED_ENTITY
+          ? [`${CHANGED_ENTITY[item.kind as keyof typeof CHANGED_ENTITY]}:${item.id}`]
+          : [],
+      ),
+    );
+    const changeIds = (await this.changes.listChanges(sessionId))
+      .filter(
+        (change) => change.revertedAt === null && wanted.has(`${change.entity}:${change.entityId}`),
+      )
+      .map((change) => change.id);
+    if (changeIds.length > 0) await this.changes.revert(sessionId, changeIds);
   }
 }
 

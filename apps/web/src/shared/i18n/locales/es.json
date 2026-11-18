@@ -886,7 +886,38 @@
         "SKILL": "Tu perfil tiene algo relacionado, pero menos de lo que piden:",
         "LANGUAGE": "Tu perfil tiene este idioma, pero no con el nivel que piden:",
         "OTHER": "Tu perfil tiene algo relacionado, pero menos de lo que piden:"
-      }
+      },
+      "title": "Preguntas sobre lo que falta",
+      "intro_one": "Hay {{count}} requisito que tu perfil no muestra o muestra a medias. Contanos si lo tenés: lo que sumes queda en tu perfil.",
+      "intro_other": "Hay {{count}} requisitos que tu perfil no muestra o muestra a medias. Contanos si los tenés: lo que sumes queda en tu perfil.",
+      "start": "Responder",
+      "description": "Respondé en el orden que quieras. Lo que saltees cuenta como \"no\" para este CV, y un \"no\" nunca se guarda en tu perfil.",
+      "progress": "{{answered}} de {{total}} respondidas",
+      "answerLegend": "Tu respuesta",
+      "answers": {
+        "USED_AT_WORK": "Sí, en un trabajo",
+        "USED_ELSEWHERE": "Sí, en un proyecto o curso",
+        "NOT_USED": "No",
+        "SKIPPED": "Salteada"
+      },
+      "positions": "¿En qué experiencia?",
+      "noPositions": "Todavía no cargaste experiencias en tu perfil.",
+      "project": "Proyecto o curso",
+      "newProject": "Uno nuevo…",
+      "projectName": "Nombre",
+      "projectKind": "Tipo",
+      "detail": "¿Qué hiciste?",
+      "detailHint": "En 1 o 2 líneas. Se agrega a tu perfil como un logro.",
+      "includeInResume": "Incluirlo en este CV",
+      "notInThisResume": "No se incluye en este CV.",
+      "skip": "Saltear",
+      "change": "Cambiar",
+      "errors": {
+        "detail": "Contá en 1 o 2 líneas qué hiciste.",
+        "positions": "Elegí al menos una experiencia.",
+        "projectName": "Poné un nombre al proyecto o curso."
+      },
+      "addedToProfile": "Se agregó a tu perfil maestro. Podés deshacerlo desde \"Cambios en tu perfil\"."
     }
   }
 }
