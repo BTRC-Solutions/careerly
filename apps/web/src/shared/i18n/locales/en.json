@@ -843,6 +843,21 @@
         "LANGUAGE": "Language"
       },
       "deleted": "no longer in your profile"
+    },
+    "options": {
+      "title": "CV options",
+      "description": "They apply the next time you generate the CVs.",
+      "locked": "They cannot change while the CVs are being generated or once the session is finalized.",
+      "languages": "Languages",
+      "languageNames": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "pages": "Page limit",
+      "pageCount_one": "{{count}} page",
+      "pageCount_other": "{{count}} pages",
+      "pagesHint": "By default, 1 page with less than 8 years of experience and 2 from 8 years on.",
+      "template": "Template"
     }
   }
 }

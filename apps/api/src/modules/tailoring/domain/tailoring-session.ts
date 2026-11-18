@@ -79,7 +79,7 @@ export class TailoringSessionValidationError extends Error {
 export class InvalidSessionTransitionError extends Error {
   constructor(
     readonly from: TailoringSessionStatus,
-    readonly event: TailoringSessionEventType,
+    readonly event: TailoringSessionEventType | 'CHANGE_OPTIONS',
     reason?: string,
   ) {
     super(`Cannot apply ${event} to a ${from} session${reason ? `: ${reason}` : ''}.`);
@@ -95,17 +95,36 @@ export interface NewTailoringSession {
   templateId: string;
 }
 
-/** Starts a session (RF-TAIL-01): it begins matching right away. */
-export function startTailoringSession(input: NewTailoringSession): TailoringSession {
-  if (input.languages.length === 0) {
+/** The options the user picks for the CVs (RF-TAIL-07, RF-TAIL-08, RF-TAIL-09). */
+export type TailoringSessionOptions = Pick<
+  TailoringSession,
+  'languages' | 'pageBudget' | 'templateId'
+>;
+
+/** Statuses in which the options can change: not while generating, and never once finalized. */
+const OPTIONS_EDITABLE: readonly TailoringSessionStatus[] = [
+  'ANALYZING',
+  'MATCHED',
+  'AWAITING_ANSWERS',
+  'REVIEW',
+  'FAILED',
+];
+
+function checkOptions(options: TailoringSessionOptions) {
+  if (options.languages.length === 0) {
     throw new TailoringSessionValidationError('At least one output language is required.');
   }
-  if (new Set(input.languages).size !== input.languages.length) {
+  if (new Set(options.languages).size !== options.languages.length) {
     throw new TailoringSessionValidationError('Output languages must not repeat.');
   }
-  if (input.templateId.trim() === '') {
+  if (options.templateId.trim() === '') {
     throw new TailoringSessionValidationError('A template is required.');
   }
+}
+
+/** Starts a session (RF-TAIL-01): it begins matching right away. */
+export function startTailoringSession(input: NewTailoringSession): TailoringSession {
+  checkOptions(input);
   return {
     ...input,
     languages: [...input.languages],
@@ -113,6 +132,26 @@ export function startTailoringSession(input: NewTailoringSession): TailoringSess
     match: null,
     failedStep: null,
   };
+}
+
+/**
+ * Changes the options. They apply to the next generation: CVs already generated stay as they are until the user
+ * regenerates them.
+ */
+export function changeSessionOptions(
+  session: TailoringSession,
+  changes: Partial<TailoringSessionOptions>,
+): TailoringSession {
+  if (!OPTIONS_EDITABLE.includes(session.status)) {
+    throw new InvalidSessionTransitionError(session.status, 'CHANGE_OPTIONS');
+  }
+  const options: TailoringSessionOptions = {
+    languages: [...(changes.languages ?? session.languages)],
+    pageBudget: changes.pageBudget ?? session.pageBudget,
+    templateId: changes.templateId ?? session.templateId,
+  };
+  checkOptions(options);
+  return { ...session, ...options };
 }
 
 /** Applies an event and returns the new session; throws `InvalidSessionTransitionError` if not allowed. */

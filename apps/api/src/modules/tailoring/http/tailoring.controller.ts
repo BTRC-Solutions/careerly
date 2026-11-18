@@ -2,6 +2,8 @@ import {
   type CreateTailoringSessionRequest,
   CreateTailoringSessionRequestSchema,
   type TailoringSessionView,
+  type UpdateTailoringOptionsRequest,
+  UpdateTailoringOptionsRequestSchema,
 } from '@careerly/contracts';
 import {
   BadRequestException,
@@ -16,6 +18,7 @@ import {
   type NestInterceptor,
   NotFoundException,
   Param,
+  Patch,
   Post,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,6 +29,7 @@ import {
   JobDescriptionNotReadyError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
+  TailoringTemplateNotFoundError,
 } from '../application/tailoring.ports.js';
 import {
   InvalidSessionTransitionError,
@@ -53,7 +57,10 @@ function toHttpError(error: unknown): unknown {
   ) {
     return new ConflictException(error.message);
   }
-  if (error instanceof TailoringSessionValidationError) {
+  if (
+    error instanceof TailoringSessionValidationError ||
+    error instanceof TailoringTemplateNotFoundError
+  ) {
     return new BadRequestException(error.message);
   }
   return error;
@@ -77,6 +84,16 @@ export class TailoringController {
   @Get(':id')
   get(@Param('id') id: string): Promise<TailoringSessionView> {
     return this.sessions.get(id);
+  }
+
+  /** Changes the CV options (RF-TAIL-07 to RF-TAIL-09); not while generating or once finalized. */
+  @Patch(':id/options')
+  updateOptions(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateTailoringOptionsRequestSchema))
+    body: UpdateTailoringOptionsRequest,
+  ): Promise<TailoringSessionView> {
+    return this.sessions.updateOptions(id, body);
   }
 
   /** Retries the step that failed. */

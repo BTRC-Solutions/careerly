@@ -2,9 +2,10 @@ import {
   type CreateTailoringSessionRequest,
   type TailoringSessionView,
   TailoringSessionViewSchema,
+  type UpdateTailoringOptionsRequest,
 } from '@careerly/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '../../../shared/api/client';
+import { apiGet, apiPatch, apiPost } from '../../../shared/api/client';
 import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
 
 /*
@@ -52,6 +53,16 @@ export function useRetryTailoring(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiPost(`/tailoring-sessions/${id}/retry`, TailoringSessionViewSchema, {}),
+    onSuccess: (view) => queryClient.setQueryData(sessionKey(id), view),
+  });
+}
+
+/** Changes the CV options of the session (RF-TAIL-07 to RF-TAIL-09). */
+export function useUpdateTailoringOptions(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: UpdateTailoringOptionsRequest) =>
+      apiPatch(`/tailoring-sessions/${id}/options`, TailoringSessionViewSchema, changes),
     onSuccess: (view) => queryClient.setQueryData(sessionKey(id), view),
   });
 }

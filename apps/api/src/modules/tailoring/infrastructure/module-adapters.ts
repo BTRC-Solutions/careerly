@@ -6,6 +6,7 @@ import {
   AiNotConfiguredError,
   AiProviderNotSupportedError,
 } from '../../ai/index.js';
+import { ResumeRenderService } from '../../documents/index.js';
 import { JobAnalysisService, JobPostingNotFoundError } from '../../job-postings/index.js';
 import { JobQueue, JobRunner, PermanentJobError } from '../../jobs/index.js';
 import { ProfileService, ToolCatalogService } from '../../profile/index.js';
@@ -17,6 +18,7 @@ import {
   ProfileReader,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
+  TemplateLookup,
   ToolResolver,
 } from '../application/tailoring.ports.js';
 
@@ -33,6 +35,18 @@ export class ProfileModuleReader extends ProfileReader {
 
   read(): Promise<Profile> {
     return this.profile.getProfile();
+  }
+}
+
+/** CV templates through the documents module. */
+@Injectable()
+export class DocumentsTemplateLookup extends TemplateLookup {
+  constructor(private readonly render: ResumeRenderService) {
+    super();
+  }
+
+  exists(templateId: string): Promise<boolean> {
+    return this.render.hasTemplate(templateId);
   }
 }
 
