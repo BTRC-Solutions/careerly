@@ -844,6 +844,24 @@
       },
       "deleted": "no longer in your profile"
     },
+    "profileChanges": {
+      "title": "Changes to your profile",
+      "description": "What this session added to or changed in your master profile while answering the gaps. You can undo them one by one or all at once.",
+      "kinds": {
+        "CREATE": "Added",
+        "UPDATE": "Changed"
+      },
+      "gone": "No longer in your profile.",
+      "undo": "Undo",
+      "undoOne": "Undo the change to “{{name}}”",
+      "undoAll": "Undo all",
+      "undone": "Undone",
+      "confirmTitle": "Undo this session's changes?",
+      "confirmDescription_one": "{{count}} change to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "confirmDescription_other": "{{count}} changes to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "kept_one": "You edited {{count}} field after this session: your version was kept.",
+      "kept_other": "You edited {{count}} fields after this session: your version was kept."
+    },
     "gaps": {
       "templates": {
         "TOOL": {

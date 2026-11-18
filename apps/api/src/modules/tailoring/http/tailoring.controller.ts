@@ -2,6 +2,10 @@ import {
   type CreateTailoringSessionRequest,
   type GapQuestions,
   CreateTailoringSessionRequestSchema,
+  type RevertProfileChangesRequest,
+  RevertProfileChangesRequestSchema,
+  type RevertProfileChangesResult,
+  type SessionProfileChanges,
   type TailoringSessionView,
 } from '@careerly/contracts';
 import {
@@ -22,9 +26,11 @@ import {
 } from '@nestjs/common';
 import { catchError, type Observable, throwError } from 'rxjs';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
+import { SessionProfileChangesService } from '../application/session-profile-changes.service.js';
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
 import {
   JobDescriptionNotReadyError,
+  SessionProfileChangeNotFoundError,
   SessionNotMatchedError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
@@ -45,7 +51,8 @@ class TailoringErrorsInterceptor implements NestInterceptor {
 function toHttpError(error: unknown): unknown {
   if (
     error instanceof TailoringSessionNotFoundError ||
-    error instanceof TailoringJobPostingNotFoundError
+    error instanceof TailoringJobPostingNotFoundError ||
+    error instanceof SessionProfileChangeNotFoundError
   ) {
     return new NotFoundException(error.message);
   }
@@ -62,11 +69,14 @@ function toHttpError(error: unknown): unknown {
   return error;
 }
 
-/** Tailoring sessions (RF-TAIL-01, RF-TAIL-02). */
+/** Tailoring sessions (RF-TAIL-01, RF-TAIL-02, RF-TAIL-06). */
 @Controller('tailoring-sessions')
 @UseInterceptors(TailoringErrorsInterceptor)
 export class TailoringController {
-  constructor(private readonly sessions: TailoringSessionsService) {}
+  constructor(
+    private readonly sessions: TailoringSessionsService,
+    private readonly profileChanges: SessionProfileChangesService,
+  ) {}
 
   /** Starts a session and its match in the background; follow it with `GET /tailoring-sessions/:id`. */
   @Post()
@@ -93,5 +103,22 @@ export class TailoringController {
   @HttpCode(HttpStatus.OK)
   retry(@Param('id') id: string): Promise<TailoringSessionView> {
     return this.sessions.retry(id);
+  }
+
+  /** What the session added to or changed in the master profile (RF-TAIL-05). */
+  @Get(':id/profile-changes')
+  listProfileChanges(@Param('id') id: string): Promise<SessionProfileChanges> {
+    return this.profileChanges.list(id);
+  }
+
+  /** Undoes the session's profile changes: every pending one, or only `changeIds` (RF-TAIL-06). */
+  @Post(':id/revert-profile-changes')
+  @HttpCode(HttpStatus.OK)
+  revertProfileChanges(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(RevertProfileChangesRequestSchema))
+    body: RevertProfileChangesRequest,
+  ): Promise<RevertProfileChangesResult> {
+    return this.profileChanges.revert(id, body.changeIds);
   }
 }
