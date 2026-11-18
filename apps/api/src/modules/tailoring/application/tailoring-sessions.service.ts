@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
   type CreateTailoringSessionRequest,
-  type GapQuestions,
   type JobProgress,
   type JobRequirement,
   type MatchResult,
@@ -11,7 +10,6 @@ import {
   type TailoringSessionView,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { gapQuestions } from '../domain/gap.js';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
 import {
   applySessionEvent,
@@ -24,7 +22,6 @@ import {
   MatchQueue,
   ProfileReader,
   RequirementMatcher,
-  SessionNotMatchedError,
   TailoringSessionNotFoundError,
   TailoringSessionRepository,
   ToolResolver,
@@ -66,13 +63,6 @@ export class TailoringSessionsService {
   async get(id: string): Promise<TailoringSessionView> {
     const session = await this.load(id);
     return { session, job: this.queue.current(id) };
-  }
-
-  /** The questions about the session's gaps (RF-TAIL-04), built from its last match without AI. */
-  async gaps(id: string): Promise<GapQuestions> {
-    const session = await this.load(id);
-    if (!session.match) throw new SessionNotMatchedError(id);
-    return { questions: gapQuestions(session.match) };
   }
 
   /** Retries the step that failed (only the match exists so far). */

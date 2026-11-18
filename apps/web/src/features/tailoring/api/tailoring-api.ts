@@ -1,11 +1,12 @@
 import {
   type CreateTailoringSessionRequest,
+  type GapAnswer,
   GapQuestionsSchema,
   type TailoringSessionView,
   TailoringSessionViewSchema,
 } from '@careerly/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '../../../shared/api/client';
+import { apiGet, apiPost, apiPut } from '../../../shared/api/client';
 import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
 
 /*
@@ -17,6 +18,7 @@ const POLL_MS = 1500;
 
 export const TAILORING_QUERY_KEY = ['tailoring-sessions'] as const;
 const sessionKey = (id: string) => [...TAILORING_QUERY_KEY, id] as const;
+const gapsKey = (id: string) => [...sessionKey(id), 'gaps'] as const;
 
 const isRunning = (view: TailoringSessionView | undefined) =>
   view?.session.status === 'ANALYZING' ||
@@ -60,8 +62,30 @@ export function useRetryTailoring(id: string) {
 /** The gap questions of a matched session (RF-TAIL-04). */
 export function useGapQuestions(id: string, enabled = true) {
   return useQuery({
-    queryKey: [...sessionKey(id), 'gaps'],
+    queryKey: gapsKey(id),
     queryFn: () => apiGet(`/tailoring-sessions/${id}/gaps`, GapQuestionsSchema),
     enabled,
+  });
+}
+
+/** Goes to the gap questions (the session moves to `AWAITING_ANSWERS`). */
+export function useAskGaps(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost(`/tailoring-sessions/${id}/ask-gaps`, GapQuestionsSchema, {}),
+    onSuccess: (gaps) => {
+      queryClient.setQueryData(gapsKey(id), gaps);
+      void queryClient.invalidateQueries({ queryKey: sessionKey(id), exact: true });
+    },
+  });
+}
+
+/** Answers one gap question (RF-GAP-01). */
+export function useAnswerGap(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requirementId, answer }: { requirementId: string; answer: GapAnswer }) =>
+      apiPut(`/tailoring-sessions/${id}/gaps/${requirementId}`, GapQuestionsSchema, answer),
+    onSuccess: (gaps) => queryClient.setQueryData(gapsKey(id), gaps),
   });
 }

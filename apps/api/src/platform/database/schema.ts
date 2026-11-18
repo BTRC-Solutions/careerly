@@ -430,3 +430,23 @@ export const tailoringSessions = sqliteTable(
     index('tailoring_sessions_updated_at_idx').on(table.updatedAt),
   ],
 );
+
+/**
+ * The gap questions of a session (RF-TAIL-04) and their answers (RF-GAP-01). Stored when the user starts
+ * answering, so the list does not change while they answer. A "No" lives only here (RN-11, RN-12).
+ */
+export const gapQuestions = sqliteTable(
+  'gap_questions',
+  {
+    sessionId: text('session_id').notNull(),
+    requirementId: text('requirement_id').notNull(),
+    /** Display order. */
+    position: integer('position').notNull(),
+    /** JSON: the question without its answer (requirement, kinds, tool, related evidence ids). */
+    question: text('question').notNull(),
+    /** JSON `GapAnswer`; `null` until answered. */
+    answer: text('answer'),
+    answeredAt: text('answered_at'),
+  },
+  (table) => [primaryKey({ columns: [table.sessionId, table.requirementId] })],
+);

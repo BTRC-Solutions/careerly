@@ -16,6 +16,7 @@ import { Tag } from '../../../shared/ui/Tag';
 import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useProfile } from '../../profile/api/profile-api';
 import { useRetryTailoring, useTailoringSession } from '../api/tailoring-api';
+import { GapQuestionsCard } from '../components/GapQuestionsCard';
 import { describeEvidence, summarizeMatch } from '../lib/match-summary';
 
 /** Error codes with their own explanation; anything else gets the generic one. */
@@ -108,6 +109,8 @@ function Session({ view }: { view: TailoringSessionView }) {
         </Card>
       )}
       {retry.error && <InlineError>{retry.error.message}</InlineError>}
+
+      <GapQuestionsCard session={session} />
 
       {session.match && <MatchResultView match={session.match} />}
     </>
