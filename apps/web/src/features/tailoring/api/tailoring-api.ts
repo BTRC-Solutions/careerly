@@ -1,6 +1,9 @@
 import {
   type CreateTailoringSessionRequest,
   type GapAnswer,
+  type RevertProfileChangesRequest,
+  RevertProfileChangesResultSchema,
+  SessionProfileChangesSchema,
   GapQuestionsSchema,
   type TailoringSessionView,
   TailoringSessionViewSchema,
@@ -20,6 +23,7 @@ const POLL_MS = 1500;
 export const TAILORING_QUERY_KEY = ['tailoring-sessions'] as const;
 const sessionKey = (id: string) => [...TAILORING_QUERY_KEY, id] as const;
 const gapsKey = (id: string) => [...sessionKey(id), 'gaps'] as const;
+const profileChangesKey = (id: string) => [...sessionKey(id), 'profile-changes'] as const;
 
 const isRunning = (view: TailoringSessionView | undefined) =>
   view?.session.status === 'ANALYZING' ||
@@ -57,6 +61,31 @@ export function useRetryTailoring(id: string) {
   return useMutation({
     mutationFn: () => apiPost(`/tailoring-sessions/${id}/retry`, TailoringSessionViewSchema, {}),
     onSuccess: (view) => queryClient.setQueryData(sessionKey(id), view),
+  });
+}
+
+/** What the session added to or changed in the master profile (RF-TAIL-05). */
+export function useSessionProfileChanges(id: string) {
+  return useQuery({
+    queryKey: profileChangesKey(id),
+    queryFn: () => apiGet(`/tailoring-sessions/${id}/profile-changes`, SessionProfileChangesSchema),
+  });
+}
+
+/** Undoes the session's profile changes, all or only `changeIds` (RF-TAIL-06). */
+export function useRevertProfileChanges(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: RevertProfileChangesRequest) =>
+      apiPost(
+        `/tailoring-sessions/${id}/revert-profile-changes`,
+        RevertProfileChangesResultSchema,
+        request,
+      ),
+    onSuccess: ({ changes }) => {
+      queryClient.setQueryData(profileChangesKey(id), { changes });
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+    },
   });
 }
 

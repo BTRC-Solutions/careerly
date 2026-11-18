@@ -142,6 +142,51 @@ export const CreateTailoringSessionRequestSchema = z
 export type CreateTailoringSessionRequest = z.infer<typeof CreateTailoringSessionRequestSchema>;
 
 // ---------------------------------------------------------------------------
+// Profile changes of a session (RF-TAIL-05, RF-TAIL-06)
+// ---------------------------------------------------------------------------
+
+/** The profile elements a gap answer can create or change (same names as the evidence kinds). */
+export const ProfileChangeEntitySchema = z.enum(['POSITION', 'PROJECT', 'ACHIEVEMENT']);
+export type ProfileChangeEntity = z.infer<typeof ProfileChangeEntitySchema>;
+
+/** One change the session made to the master profile: an element it created, or one it updated. */
+export const SessionProfileChangeSchema = z.object({
+  id: z.string(),
+  entity: ProfileChangeEntitySchema,
+  entityId: z.string(),
+  kind: z.enum(['CREATE', 'UPDATE']),
+  createdAt: z.iso.datetime(),
+  /** When it was undone; `null` while it is still in the profile. */
+  revertedAt: z.iso.datetime().nullable(),
+});
+export type SessionProfileChange = z.infer<typeof SessionProfileChangeSchema>;
+
+/** `GET /tailoring-sessions/:id/profile-changes`: oldest first, undone ones included. */
+export const SessionProfileChangesSchema = z.object({
+  changes: z.array(SessionProfileChangeSchema),
+});
+export type SessionProfileChanges = z.infer<typeof SessionProfileChangesSchema>;
+
+/** `POST /tailoring-sessions/:id/revert-profile-changes`: only `changeIds`, or every pending change. */
+export const RevertProfileChangesRequestSchema = z
+  .object({ changeIds: z.array(z.string().min(1)).min(1).max(500).optional() })
+  .strict();
+export type RevertProfileChangesRequest = z.infer<typeof RevertProfileChangesRequestSchema>;
+
+export const RevertProfileChangesResultSchema = z.object({
+  changes: z.array(SessionProfileChangeSchema),
+  /** Fields the user edited after the session: undoing kept the user's value. */
+  keptFields: z.array(
+    z.object({
+      entity: ProfileChangeEntitySchema,
+      entityId: z.string(),
+      fields: z.array(z.string()),
+    }),
+  ),
+});
+export type RevertProfileChangesResult = z.infer<typeof RevertProfileChangesResultSchema>;
+
+// ---------------------------------------------------------------------------
 // Gap questions (RF-TAIL-04, ARCHITECTURE §7.2 step 5)
 // ---------------------------------------------------------------------------
 
