@@ -95,6 +95,60 @@ export const MatchResultSchema = z.object({
 export type MatchResult = z.infer<typeof MatchResultSchema>;
 
 // ---------------------------------------------------------------------------
+// Tailored CVs (RF-TAIL-10, RF-TAIL-11)
+// ---------------------------------------------------------------------------
+
+/** A CV bullet and the profile elements it comes from (RN-01). */
+export const TailoredBulletSchema = z.object({
+  id: z.string(),
+  text: z.string().trim().min(1),
+  /** Achievements (or the project itself) it is based on; never empty for generated bullets. */
+  sourceIds: z.array(z.string()).min(1),
+  /** Relevance for the job description, 0–1; `null` until relevance scoring exists (roadmap 6.2). */
+  score: z.number().min(0).max(1).nullable(),
+  /** Edited by the user: RN-01 and RN-02 are no longer checked on it (RN-05). */
+  editedByUser: z.boolean(),
+});
+export type TailoredBullet = z.infer<typeof TailoredBulletSchema>;
+
+/** The bullets written for one position or project, most relevant first (RN-06). */
+export const TailoredExperienceSchema = z.object({
+  kind: z.enum(['POSITION', 'PROJECT']),
+  /** Id of the position or project in the master profile. */
+  sourceId: z.string(),
+  bullets: z.array(TailoredBulletSchema),
+});
+export type TailoredExperience = z.infer<typeof TailoredExperienceSchema>;
+
+/**
+ * What the AI wrote for one language. Only the worded parts: company, title, dates, education and the rest are
+ * copied from the profile when the CV is built (RN-03).
+ */
+export const TailoredResumeDataSchema = z.object({
+  summary: z.object({ text: z.string().trim().min(1), sourceIds: z.array(z.string()) }).nullable(),
+  /** Positions and projects with bullets; positions left out are shown with no bullets (RN-07). */
+  experiences: z.array(TailoredExperienceSchema),
+  /** Profile tools for the skills section, the ones the job description asks for first. */
+  toolIds: z.array(z.string()),
+});
+export type TailoredResumeData = z.infer<typeof TailoredResumeDataSchema>;
+
+/** One tailored CV per output language of the session (RF-TAIL-07). Editable until finalized. */
+export const TailoredResumeSchema = z.object({
+  sessionId: z.string(),
+  language: ResumeLanguageSchema,
+  data: TailoredResumeDataSchema,
+  promptVersion: z.string(),
+  model: z.string(),
+  generatedAt: z.iso.datetime(),
+});
+export type TailoredResume = z.infer<typeof TailoredResumeSchema>;
+
+/** `GET /tailoring-sessions/:id/resumes`: the session's CVs, in the order of its languages. */
+export const TailoredResumesViewSchema = z.object({ resumes: z.array(TailoredResumeSchema) });
+export type TailoredResumesView = z.infer<typeof TailoredResumesViewSchema>;
+
+// ---------------------------------------------------------------------------
 // Session
 // ---------------------------------------------------------------------------
 

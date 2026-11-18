@@ -1,6 +1,10 @@
 import {
+  type ApiErrorCode,
   type CreateTailoringSessionRequest,
   CreateTailoringSessionRequestSchema,
+  type ResumeLanguage,
+  ResumeLanguageSchema,
+  type TailoredResumesView,
   type TailoringSessionView,
 } from '@careerly/contracts';
 import {
@@ -11,12 +15,14 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Injectable,
   type NestInterceptor,
   NotFoundException,
   Param,
   Post,
+  StreamableFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { catchError, type Observable, throwError } from 'rxjs';
@@ -24,9 +30,12 @@ import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
 import {
   JobDescriptionNotReadyError,
+  ResumeRenderFailedError,
+  TailoredResumeNotFoundError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
 } from '../application/tailoring.ports.js';
+import { ResumeWithoutNameError } from '../domain/resume-writing.js';
 import {
   InvalidSessionTransitionError,
   TailoringSessionValidationError,
@@ -43,23 +52,44 @@ class TailoringErrorsInterceptor implements NestInterceptor {
 function toHttpError(error: unknown): unknown {
   if (
     error instanceof TailoringSessionNotFoundError ||
-    error instanceof TailoringJobPostingNotFoundError
+    error instanceof TailoringJobPostingNotFoundError ||
+    error instanceof TailoredResumeNotFoundError
   ) {
     return new NotFoundException(error.message);
   }
   if (
     error instanceof JobDescriptionNotReadyError ||
-    error instanceof InvalidSessionTransitionError
+    error instanceof InvalidSessionTransitionError ||
+    error instanceof ResumeWithoutNameError
   ) {
     return new ConflictException(error.message);
   }
   if (error instanceof TailoringSessionValidationError) {
     return new BadRequestException(error.message);
   }
+  if (error instanceof ResumeRenderFailedError) return renderHttpError(error);
   return error;
 }
 
-/** Tailoring sessions (RF-TAIL-01, RF-TAIL-02). */
+/** HTTP status and API error code for each reason a CV render can fail (as in the templates' routes). */
+const RENDER_ERRORS: Record<ResumeRenderFailedError['reason'], [number, ApiErrorCode]> = {
+  TEMPLATE_NOT_FOUND: [HttpStatus.NOT_FOUND, 'NOT_FOUND'],
+  COMPILE_ERROR: [HttpStatus.UNPROCESSABLE_ENTITY, 'TEMPLATE_INVALID'],
+  TIMEOUT: [HttpStatus.UNPROCESSABLE_ENTITY, 'TEMPLATE_TIMEOUT'],
+  RENDERER_UNAVAILABLE: [HttpStatus.SERVICE_UNAVAILABLE, 'RENDERER_UNAVAILABLE'],
+};
+
+function renderHttpError(error: ResumeRenderFailedError): HttpException {
+  const message = error.diagnostics
+    ? `${error.message}
+
+${error.diagnostics}`
+    : error.message;
+  const [status, code] = RENDER_ERRORS[error.reason];
+  return new HttpException({ code, message }, status);
+}
+
+/** Tailoring sessions (RF-TAIL-01, RF-TAIL-02, RF-TAIL-10, RF-TAIL-11). */
 @Controller('tailoring-sessions')
 @UseInterceptors(TailoringErrorsInterceptor)
 export class TailoringController {
@@ -84,5 +114,34 @@ export class TailoringController {
   @HttpCode(HttpStatus.OK)
   retry(@Param('id') id: string): Promise<TailoringSessionView> {
     return this.sessions.retry(id);
+  }
+
+  /** Goes to the gap questions (needs gaps); from there the session can generate. */
+  @Post(':id/gaps')
+  @HttpCode(HttpStatus.OK)
+  askGaps(@Param('id') id: string): Promise<TailoringSessionView> {
+    return this.sessions.askGaps(id);
+  }
+
+  /** Writes the session's CVs in the background, one per language; the session goes to `REVIEW`. */
+  @Post(':id/generate')
+  @HttpCode(HttpStatus.OK)
+  generate(@Param('id') id: string): Promise<TailoringSessionView> {
+    return this.sessions.generate(id);
+  }
+
+  @Get(':id/resumes')
+  listResumes(@Param('id') id: string): Promise<TailoredResumesView> {
+    return this.sessions.listResumes(id);
+  }
+
+  /** The CV of a language as a PDF (not fitted to the page budget yet). */
+  @Get(':id/resumes/:language/preview')
+  async resumePdf(
+    @Param('id') id: string,
+    @Param('language', new ZodValidationPipe(ResumeLanguageSchema)) language: ResumeLanguage,
+  ): Promise<StreamableFile> {
+    const pdf = await this.sessions.renderResume(id, language);
+    return new StreamableFile(pdf, { type: 'application/pdf' });
   }
 }

@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-17
+> Estado: borrador v0.4 · Última actualización: 2026-11-18
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -112,7 +112,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 |---|---|---|---|
 | 6.1 | Opciones de la sesión: idiomas de salida, límite de páginas (con valor por defecto por años de experiencia) y plantilla. `[RF-TAIL-07, RF-TAIL-08, RF-TAIL-09]` | Se persisten y se respetan en la generación. | ⬜ |
 | 6.2 | Puntuación de relevancia de logros y proyectos. | Scores guardados por candidato. | ⬜ |
-| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | ⬜ |
+| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | 🟨 (adelantado a 5.4–6.2, en PR draft: implementado y con tests; falta correr `npm run evals:resume` con una key real y revisar los CVs) |
 | 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | ⬜ |
 | 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | ⬜ |
 | 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | ⬜ |

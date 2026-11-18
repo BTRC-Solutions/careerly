@@ -1,4 +1,4 @@
-import type { JobAnalysis, JobView, Profile, ToolRef } from '@careerly/contracts';
+import type { JobAnalysis, JobView, Profile, ResumeDocument, ToolRef } from '@careerly/contracts';
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import {
   AiBlockedError,
@@ -6,23 +6,105 @@ import {
   AiNotConfiguredError,
   AiProviderNotSupportedError,
 } from '../../ai/index.js';
+import { RenderError, ResumeRenderService, TemplateNotFoundError } from '../../documents/index.js';
 import { JobAnalysisService, JobPostingNotFoundError } from '../../job-postings/index.js';
 import { JobQueue, JobRunner, PermanentJobError } from '../../jobs/index.js';
 import { ProfileService, ToolCatalogService } from '../../profile/index.js';
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
 import {
+  GenerateQueue,
   JobDescriptionNotReadyError,
   JobDescriptionReader,
   MatchQueue,
   ProfileReader,
+  ResumePdfRenderer,
+  ResumeRenderFailedError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
   ToolResolver,
 } from '../application/tailoring.ports.js';
 
 export const TAILORING_MATCH_JOB = 'tailoring-match';
+export const TAILORING_GENERATE_JOB = 'tailoring-generate';
 
 const dedupeKey = (sessionId: string) => `${TAILORING_MATCH_JOB}:${sessionId}`;
+const generateDedupeKey = (sessionId: string) => `${TAILORING_GENERATE_JOB}:${sessionId}`;
+
+/** CVs rendered through the documents module. */
+@Injectable()
+export class DocumentsModuleRenderer extends ResumePdfRenderer {
+  constructor(private readonly renderService: ResumeRenderService) {
+    super();
+  }
+
+  async render(document: ResumeDocument, templateId: string) {
+    try {
+      const { pdf, pageCount } = await this.renderService.render(document, templateId);
+      return { pdf, pageCount };
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new ResumeRenderFailedError('TEMPLATE_NOT_FOUND', error.message);
+      }
+      if (error instanceof RenderError) {
+        throw new ResumeRenderFailedError(error.reason, error.message, error.diagnostics);
+      }
+      throw error;
+    }
+  }
+}
+
+/** CVs are written as `tailoring-generate` jobs, one per session (regenerating restarts it). */
+@Injectable()
+export class JobQueueGenerateQueue extends GenerateQueue {
+  constructor(private readonly queue: JobQueue) {
+    super();
+  }
+
+  request(sessionId: string): JobView {
+    return this.queue.enqueue({
+      type: TAILORING_GENERATE_JOB,
+      payload: { sessionId },
+      dedupeKey: generateDedupeKey(sessionId),
+      maxAttempts: GenerateQueue.MAX_ATTEMPTS,
+      restartFinished: true,
+    });
+  }
+
+  current(sessionId: string): JobView | null {
+    return this.queue.findByDedupeKey(generateDedupeKey(sessionId));
+  }
+}
+
+/**
+ * Runs `tailoring-generate` jobs, with the same failure rules as the match: what cannot get better fails at
+ * once, the rest is retried, and when the job gives up the session goes to `FAILED`.
+ */
+@Injectable()
+export class TailoringGenerateJobHandler implements OnModuleInit {
+  constructor(
+    private readonly runner: JobRunner,
+    private readonly sessions: TailoringSessionsService,
+  ) {}
+
+  onModuleInit(): void {
+    this.runner.register({
+      type: TAILORING_GENERATE_JOB,
+      run: async (payload, context) => {
+        const sessionId = (payload as { sessionId?: unknown } | null)?.sessionId;
+        if (typeof sessionId !== 'string') throw new PermanentJobError('INVALID_PAYLOAD');
+        try {
+          await this.sessions.runGenerate(sessionId, context.report);
+        } catch (error) {
+          const fatal = permanent(error);
+          if (fatal || context.attempt >= GenerateQueue.MAX_ATTEMPTS) {
+            await this.sessions.markGenerateFailed(sessionId);
+          }
+          throw fatal ?? error;
+        }
+      },
+    });
+  }
+}
 
 /** The master profile through the profile module's public service. */
 @Injectable()

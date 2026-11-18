@@ -1,6 +1,6 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-16
+> Estado: borrador v0.4 · Última actualización: 2026-11-18
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
@@ -317,6 +317,27 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   ids reales.
 - El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
 
+**Redacción (paso 6.3, `tailoring/domain/resume-writing.ts`):** `POST /tailoring-sessions/:id/generate` aplica
+`GENERATE` y encola la tarea `tailoring-generate` (3 intentos; al rendirse, `FAILED` con `failedStep =
+GENERATING`). Mientras no se puedan responder los gaps (pasos 5.4–5.5), `POST /tailoring-sessions/:id/gaps` lleva
+la sesión a `AWAITING_ANSWERS` y desde ahí se genera salteándolos.
+
+- Una llamada al LLM por idioma (`resume-writing.v1`, modelo grande), con el perfil primero y las mismas
+  referencias cortas del match. La JD analizada (requisitos con su estado en el match, palabras clave) va como
+  dato no confiable. El modelo devuelve el resumen y, por experiencia (`[W1]`, `[P1]`), los bullets con las
+  referencias de los logros que usa.
+- `tailoredResumeData` se queda solo con lo trazable (RN-01): experiencias que existen y bullets cuyas fuentes son
+  logros de esa misma experiencia (o el propio proyecto); un bullet sin fuentes se descarta. Máximo 6 bullets por
+  experiencia. La guardia completa (herramientas, regeneración) es el paso 6.4, y el `score` queda en `null`
+  hasta el 6.2.
+- `TailoredResume` (tabla `tailored_resumes`, uno por sesión e idioma) guarda solo lo redactado e ids: resumen,
+  bullets con `sourceIds` y las herramientas de la sección de habilidades (`selectSkills`: primero las que pide
+  la JD, después las más usadas). Regenerar los reemplaza.
+- `buildResumeDocument` arma el `ResumeDocument` copiando del perfil empresas, títulos, fechas, educación,
+  certificaciones e idiomas (RN-03), con todos los puestos en orden cronológico inverso (RN-06, RN-07) y solo los
+  proyectos con bullets. `GET /tailoring-sessions/:id/resumes/:lang/preview` lo renderiza con la plantilla de la
+  sesión, todavía sin ajuste de páginas (paso 6.5).
+
 ### 7.2 Pasos
 
 | # | Paso | Tipo |
@@ -525,11 +546,13 @@ POST   /tailoring-sessions                         # { jobPostingId, languages[]
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions/:id/events              # SSE
+POST   /tailoring-sessions/:id/gaps                # pasa a las preguntas de gaps (AWAITING_ANSWERS)
 GET    /tailoring-sessions/:id/gaps
 PUT    /tailoring-sessions/:id/gaps                # respuestas
-POST   /tailoring-sessions/:id/generate
+POST   /tailoring-sessions/:id/generate            # encola la redacción de un CV por idioma
+GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
 PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
-GET    /tailoring-sessions/:id/resumes/:lang/preview
+GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF
 POST   /tailoring-sessions/:id/finalize
 POST   /tailoring-sessions/:id/revert-profile-changes
 
@@ -681,6 +704,12 @@ real (se copia con el *backup* de SQLite y sin las preferencias `ai.*`; la origi
 sea razonable se juzga leyéndolo; lo que se verifica solo es que **toda la evidencia apunte a elementos que
 existen** en el perfil: si alguna no, o si un match falla, el script termina con 1. Deja el reporte en
 `.data/evals/match-*.json`.
+
+`npm run evals:resume` (6.3) sigue con esas sesiones: saltea los gaps, redacta el CV en español y en inglés desde
+el mismo perfil y guarda los dos PDF. Imprime cada bullet con los logros que cita, para juzgar si la redacción es
+fiel; verifica solo que **todo bullet tenga fuentes y que existan** en el perfil (si no, o si una redacción falla,
+termina con 1). `--model` elige el modelo grande. Deja el reporte en `.data/evals/resume-*.json` y los PDF en
+`.data/evals/resume-*/`. Lo común con `evals:match` vive en `apps/api/scripts/eval-support.mjs`.
 
 ## 16. Distribución y actualizaciones
 

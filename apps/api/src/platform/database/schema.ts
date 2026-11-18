@@ -430,3 +430,24 @@ export const tailoringSessions = sqliteTable(
     index('tailoring_sessions_updated_at_idx').on(table.updatedAt),
   ],
 );
+
+/**
+ * The tailored CV of one session and language (RF-TAIL-10, RF-TAIL-11). `data` holds only the worded parts and
+ * profile ids (`TailoredResumeData`); the rest is copied from the profile when the CV is built (RN-03).
+ */
+export const tailoredResumes = sqliteTable(
+  'tailored_resumes',
+  {
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => tailoringSessions.id, { onDelete: 'cascade' }),
+    /** `ResumeLanguage`. */
+    language: text('language').notNull(),
+    /** JSON `TailoredResumeData`. */
+    data: text('data').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    model: text('model').notNull(),
+    generatedAt: text('generated_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.sessionId, table.language] })],
+);
