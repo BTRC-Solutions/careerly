@@ -3,18 +3,23 @@ import { DocumentsModule } from '../documents/index.js';
 import { JobPostingsModule } from '../job-postings/index.js';
 import { JobsModule } from '../jobs/index.js';
 import { ProfileModule } from '../profile/index.js';
+import { RelevanceService } from './application/relevance.service.js';
 import { TailoringSessionsService } from './application/tailoring-sessions.service.js';
 import {
   JobDescriptionReader,
   MatchQueue,
   ProfileReader,
+  RelevanceRepository,
+  RelevanceScorer,
   RequirementMatcher,
   TailoringSessionRepository,
   TemplateLookup,
   ToolResolver,
 } from './application/tailoring.ports.js';
 import { TailoringController } from './http/tailoring.controller.js';
+import { DrizzleRelevanceRepository } from './infrastructure/drizzle-relevance.repository.js';
 import { DrizzleTailoringSessionRepository } from './infrastructure/drizzle-tailoring-session.repository.js';
+import { LlmRelevanceScorer } from './infrastructure/llm-relevance-scorer.js';
 import { LlmRequirementMatcher } from './infrastructure/llm-requirement-matcher.js';
 import {
   CatalogToolResolver,
@@ -34,12 +39,15 @@ import {
   controllers: [TailoringController],
   providers: [
     TailoringSessionsService,
+    RelevanceService,
     TailoringMatchJobHandler,
     { provide: TailoringSessionRepository, useClass: DrizzleTailoringSessionRepository },
     { provide: ProfileReader, useClass: ProfileModuleReader },
     { provide: JobDescriptionReader, useClass: JobPostingsModuleReader },
     { provide: ToolResolver, useClass: CatalogToolResolver },
     { provide: RequirementMatcher, useClass: LlmRequirementMatcher },
+    { provide: RelevanceScorer, useClass: LlmRelevanceScorer },
+    { provide: RelevanceRepository, useClass: DrizzleRelevanceRepository },
     { provide: MatchQueue, useClass: JobQueueMatchQueue },
     { provide: TemplateLookup, useClass: DocumentsTemplateLookup },
   ],

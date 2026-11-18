@@ -317,6 +317,12 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   ids reales.
 - El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
 
+**Puntuación (paso 6.2, `tailoring/domain/relevance.ts`):** antes de redactar, el LLM (`relevance-score.v1`, modelo
+chico) puntúa de 0 a 1 cada logro y cada proyecto del perfil frente a la JD, con las mismas referencias cortas que
+el match. `relevanceScores` descarta lo que no es un candidato real, deja en 0 lo que no se puntuó y sube a 0,5 lo
+que el match citó como evidencia de un requisito cubierto o parcial. Se guarda un puntaje por candidato en
+`tailoring_relevance` (una fila por sesión, solo ids y números), y el ajuste de páginas lo usa para elegir.
+
 ### 7.2 Pasos
 
 | # | Paso | Tipo |

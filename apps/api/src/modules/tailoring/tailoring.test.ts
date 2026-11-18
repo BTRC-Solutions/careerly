@@ -16,6 +16,7 @@ import {
   TEST_TOKEN,
   testConfig,
 } from '../../test-support/test-server.js';
+import { RelevanceService } from './application/relevance.service.js';
 
 /*
  * Tailoring session up to the match, end to end (roadmap 5.2, RF-TAIL-01, RF-TAIL-02): a real profile and
@@ -372,5 +373,44 @@ describe('tailoring session match (integration)', () => {
       (await api('POST', '/tailoring-sessions', { jobPostingId: posting.id, templateId: 'nope' }))
         .status,
     ).toBe(400);
+  });
+
+  it('scores the achievements and projects for the job, floored by the match evidence', async () => {
+    const relevanceAnswer = {
+      scores: [
+        { ref: '[A1] Designed the public REST API', score: 0.3 },
+        { ref: 'P1', score: 0.8 },
+        // Not an achievement or project, and an invented reference: dropped.
+        { ref: 'W1', score: 1 },
+        { ref: 'A9', score: 1 },
+      ],
+    };
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER), ok(relevanceAnswer)]);
+    const profile = await createProfile();
+    const project = await json<{ id: string }>('POST', '/profile/projects', {
+      name: 'Payments SDK',
+      kind: 'OPEN_SOURCE',
+    });
+    const posting = await analyzedPosting();
+    const { session } = TailoringSessionViewSchema.parse(
+      await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+    );
+    await waitFor(settled(session.id));
+
+    const relevance = await server!.app.get(RelevanceService).score(session.id);
+    expect(relevance).toMatchObject({
+      promptVersion: 'relevance-score.v1',
+      model: expect.any(String),
+    });
+    expect(relevance.scores).toEqual([
+      // The match cites it as evidence of covered requirements: at least 0.5.
+      { kind: 'ACHIEVEMENT', id: profile.achievement.id, score: 0.5 },
+      { kind: 'PROJECT', id: project.id, score: 0.8 },
+    ]);
+    expect(await server!.app.get(RelevanceService).find(session.id)).toEqual(relevance);
+
+    const sent = gemini!.calls[2]!;
+    expect(sent).toMatch(/<untrusted source="job-description">[\s\S]*Designing REST APIs/);
+    expect(logs.output()).not.toContain('Payments SDK');
   });
 });
