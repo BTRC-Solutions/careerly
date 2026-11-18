@@ -10,6 +10,8 @@
  *    If it still does not fit, the result says so (RN-04: finalizing needs the user's confirmation).
  * 3. While there is room, add back the best-scored bullets left out, as long as the CV still fits.
  * 4. The log tells the user what was left out and why, and what was added to fill the space.
+ *
+ * Bullets pinned by the user are always in, count towards their section's limit and are never trimmed.
  */
 
 /** "2023-04". */
@@ -19,6 +21,8 @@ export interface BulletCandidate {
   id: string;
   /** Relevance for the job description, 0–1. */
   score: number;
+  /** Chosen by the user (RF-TAIL-12): always in the CV, never trimmed, even if it does not fit then. */
+  pinned?: boolean;
 }
 
 export interface PositionCandidate {
@@ -146,7 +150,7 @@ export async function fitToPages(
     const removable = slots
       .filter(
         ({ owner, bullet }) =>
-          owner.included.has(bullet.id) && owner.included.size > owner.minBullets,
+          !bullet.pinned && owner.included.has(bullet.id) && owner.included.size > owner.minBullets,
       )
       .sort(
         (a, b) =>
@@ -213,7 +217,7 @@ function initialOwners(candidates: FitCandidates, rules: FitRules, today: YearMo
       tier,
       order: index,
       bullets,
-      included: new Set(bullets.slice(0, limit).map((bullet) => bullet.id)),
+      included: initiallyIncluded(bullets, limit),
       minBullets: tier === 'OLD' ? 0 : Math.min(rules.minBulletsPerRecentPosition, bullets.length),
     };
   });
@@ -227,11 +231,20 @@ function initialOwners(candidates: FitCandidates, rules: FitRules, today: YearMo
       tier: project.relevant ? 'PROJECT' : 'IRRELEVANT_PROJECT',
       order: positions.length + index,
       bullets,
-      included: new Set(bullets.slice(0, limit).map((bullet) => bullet.id)),
+      included: initiallyIncluded(bullets, limit),
       minBullets: 0,
     });
   });
   return owners;
+}
+
+/** The pinned bullets, then the best of the rest up to the limit (pinned ones count towards it). */
+function initiallyIncluded(bullets: BulletCandidate[], limit: number): Set<string> {
+  const pinned = bullets.filter((bullet) => bullet.pinned);
+  const rest = bullets
+    .filter((bullet) => !bullet.pinned)
+    .slice(0, Math.max(0, limit - pinned.length));
+  return new Set([...pinned, ...rest].map((bullet) => bullet.id));
 }
 
 /** Old positions stay header-only and irrelevant projects stay out, even with room to spare. */

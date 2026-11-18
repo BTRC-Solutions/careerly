@@ -843,6 +843,94 @@
         "LANGUAGE": "Language"
       },
       "deleted": "no longer in your profile"
+    },
+    "generate": {
+      "title": "Generate the CV",
+      "action": "Generate CV",
+      "noGaps": "Your profile covers everything the job description asks for.",
+      "withGaps_one": "{{count}} requirement is not fully covered. Answering those questions comes in a future version; for now the CV is written with what your profile already has.",
+      "withGaps_other": "{{count}} requirements are not fully covered. Answering those questions comes in a future version; for now the CV is written with what your profile already has.",
+      "options_one": "In {{languages}} · up to {{count}} page",
+      "options_other": "In {{languages}} · up to {{count}} pages",
+      "retrying": "The generation failed and will be retried in a few seconds…",
+      "steps": {
+        "reading": "Getting ready…",
+        "writing": "Writing the CV with AI…",
+        "checking": "Checking that everything comes from your profile…",
+        "fitting": "Fitting the CV to its pages…"
+      },
+      "errors": {
+        "NOT_CONFIGURED": "There is no API key. Add one in Settings and retry.",
+        "KEY_REJECTED": "The AI provider rejected your API key. Check it in Settings and retry.",
+        "BLOCKED": "The AI provider declined to write this CV.",
+        "RATE_LIMITED": "The AI provider is rate limiting requests. Retry in a while.",
+        "JOB_POSTING_DELETED": "The job description of this session no longer exists.",
+        "PROFILE_WITHOUT_NAME": "Your profile has no name. Add it in the profile and retry.",
+        "RENDERER_UNAVAILABLE": "Typst was not found to build the PDF. Reinstall the app and retry.",
+        "COMPILE_ERROR": "The template of this session has errors. Check it in Templates and retry.",
+        "FAILED": "The CV could not be generated. Retry."
+      }
+    },
+    "review": {
+      "title": "CV review",
+      "loadError": "The CVs of this session could not be loaded.",
+      "language": "CV language",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "preview": "Preview",
+      "previewTitle": "Preview of the CV in {{language}}",
+      "previewError": "The preview could not be built.",
+      "updating": "Updating…",
+      "editError": "The change could not be applied: {{message}}",
+      "fit": {
+        "fits_one": "It takes {{count}} page, within the limit of {{budget}}.",
+        "fits_other": "It takes {{count}} pages, within the limit of {{budget}}.",
+        "over_one": "It does not fit in {{count}} page: it takes {{pages}}. Set a bullet back to “Automatic” or exclude it.",
+        "over_other": "It does not fit in {{count}} pages: it takes {{pages}}. Set a bullet back to “Automatic” or exclude it.",
+        "leftOut_one": "{{count}} bullet was left out so the CV fits.",
+        "leftOut_other": "{{count}} bullets were left out so the CV fits.",
+        "allIn": "Every bullet fits."
+      },
+      "summary": "Summary",
+      "noSummary": "No summary.",
+      "edit": "Edit",
+      "edited": "Edited by you",
+      "bulletText": "Bullet text",
+      "headerOnly": "Shown with company, title and dates only.",
+      "source": "From:",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "inclusion": {
+        "label": "Inclusion in the CV",
+        "AUTO": "Automatic",
+        "INCLUDED": "Always include",
+        "EXCLUDED": "Exclude"
+      },
+      "states": {
+        "IN": "In the CV",
+        "EXCLUDED": "Excluded by you",
+        "LEFT_OUT": {
+          "OVER_BUDGET": "Out: does not fit in the pages",
+          "SECTION_LIMIT": "Out: bullet limit of the position",
+          "OLD_POSITION": "Out: position older than 10 years",
+          "NOT_RELEVANT": "Out: project not relevant",
+          "SPACE_LEFT": "In the CV"
+        }
+      },
+      "guard": {
+        "summary_one": "The truthfulness guard fixed {{rewritten}} and left out {{count}} text",
+        "summary_other": "The truthfulness guard fixed {{rewritten}} and left out {{count}} texts",
+        "description": "These are texts the AI wrote with something your profile does not say. They are not in the CV.",
+        "reasons": {
+          "NO_SOURCE": "cites no achievement of its experience",
+          "UNKNOWN_EXPERIENCE": "was for an experience that is not in your profile",
+          "TOOL_NOT_IN_SOURCES": "names a tool its sources do not show",
+          "NUMBER_NOT_IN_SOURCES": "has a number its sources do not have"
+        }
+      },
+      "showMatch": "Show the match with the job description"
     }
   }
 }

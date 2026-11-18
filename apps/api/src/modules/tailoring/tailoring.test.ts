@@ -1,6 +1,7 @@
 import {
   JobAnalysisStateSchema,
   JobPostingSchema,
+  TailoredResumeSchema,
   TailoredResumesViewSchema,
   type Tool,
   type TailoringSessionView,
@@ -416,6 +417,7 @@ describe('tailoring session match (integration)', () => {
               sourceIds: [achievement.id],
               score: null,
               editedByUser: false,
+              inclusion: 'AUTO',
             },
           ],
         },
@@ -607,6 +609,75 @@ describe('tailoring session match (integration)', () => {
     },
   );
 
+  it.runIf(HAS_TYPST)(
+    'edits a CV under review and fits it again quickly (RF-TAIL-12, RNF-08)',
+    async () => {
+      const twoBullets = {
+        ...writing('en'),
+        experiences: [
+          {
+            experience: 'W1',
+            bullets: [
+              { text: 'Designed the public REST API used by 40 partners', sources: ['A1'] },
+              { text: 'Documented the public REST API for partners', sources: ['A1'] },
+            ],
+          },
+        ],
+      };
+      await start([ok(NODE_ONLY), ok(twoBullets)]);
+      const id = await matchedWithoutGaps(['en']);
+      await api('POST', `/tailoring-sessions/${id}/generate`);
+      await waitFor(generated(id));
+      const [generatedResume] = await resumesOf(id);
+      const [first, second] = generatedResume!.data.experiences[0]!.bullets;
+      const patch = (body: unknown) => api('PATCH', `/tailoring-sessions/${id}/resumes/en`, body);
+
+      // Editing a bullet and getting the new preview takes less than 2 s.
+      const started = Date.now();
+      const edited = await patch({
+        op: 'EDIT_BULLET',
+        bulletId: second!.id,
+        text: 'Wrote the docs',
+      });
+      const preview = await api('GET', `/tailoring-sessions/${id}/resumes/en/preview`);
+      expect(Date.now() - started).toBeLessThan(2000);
+      expect(edited.status).toBe(200);
+      expect(preview.status).toBe(200);
+      const afterEdit = TailoredResumeSchema.parse(await edited.json());
+      expect(afterEdit.data.experiences[0]!.bullets[1]).toMatchObject({
+        text: 'Wrote the docs',
+        editedByUser: true,
+        sourceIds: second!.sourceIds,
+      });
+      expect(afterEdit.data.fit).toMatchObject({ pageCount: 1, fits: true });
+
+      // Moving and excluding change what the CV shows; the change is stored.
+      const moved = TailoredResumeSchema.parse(
+        await (await patch({ op: 'MOVE_BULLET', bulletId: second!.id, toIndex: 0 })).json(),
+      );
+      expect(moved.data.fit!.selection.positions[0]!.bulletIds).toEqual([second!.id, first!.id]);
+      const excluded = TailoredResumeSchema.parse(
+        await (
+          await patch({ op: 'SET_INCLUSION', bulletId: first!.id, inclusion: 'EXCLUDED' })
+        ).json(),
+      );
+      expect(excluded.data.fit!.selection.positions[0]!.bulletIds).toEqual([second!.id]);
+      expect((await resumesOf(id))[0]).toEqual(excluded);
+
+      expect((await patch({ op: 'EDIT_BULLET', bulletId: 'nope', text: 'x' })).status).toBe(404);
+      expect((await patch({ op: 'EDIT_BULLET', bulletId: first!.id, text: ' ' })).status).toBe(400);
+      expect((await patch({ op: 'RENAME' })).status).toBe(400);
+      expect(
+        (
+          await api('PATCH', `/tailoring-sessions/${id}/resumes/es`, {
+            op: 'EDIT_SUMMARY',
+            text: '',
+          })
+        ).status,
+      ).toBe(404);
+    },
+  );
+
   it('does not generate while there are gaps to answer', async () => {
     await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER)]);
     await createProfile();
@@ -617,6 +688,15 @@ describe('tailoring session match (integration)', () => {
     await waitFor(settled(session.id));
     expect((await api('POST', `/tailoring-sessions/${session.id}/generate`)).status).toBe(409);
     expect((await api('POST', '/tailoring-sessions/nope/generate')).status).toBe(404);
+    // Only CVs under review can be edited.
+    expect(
+      (
+        await api('PATCH', `/tailoring-sessions/${session.id}/resumes/en`, {
+          op: 'EDIT_SUMMARY',
+          text: '',
+        })
+      ).status,
+    ).toBe(409);
 
     // Through the questions (skipping them all, until they can be answered), it can.
     const asking = await api('POST', `/tailoring-sessions/${session.id}/gaps`);

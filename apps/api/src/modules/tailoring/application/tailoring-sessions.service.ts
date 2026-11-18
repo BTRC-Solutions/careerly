@@ -7,7 +7,11 @@ import {
   type RequirementMatch,
   type ResumeLanguage,
   ResumeLanguageSchema,
+  type EditTailoredResumeRequest,
+  type FitSelection,
+  type Profile,
   type TailoredResume,
+  type TailoredResumeData,
   type TailoredResumesView,
   type TailoringSession as StoredSession,
   type TailoringSessionView,
@@ -15,7 +19,8 @@ import {
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
 import { fitToPages } from '../domain/page-fitter.js';
-import { fitCandidates } from '../domain/resume-fit.js';
+import { applyResumeEdit } from '../domain/resume-edits.js';
+import { fitCandidates, orderAsWritten } from '../domain/resume-fit.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
 import {
@@ -30,6 +35,7 @@ import {
   MatchQueue,
   ProfileReader,
   RequirementMatcher,
+  ResumeNotEditableError,
   ResumePdfRenderer,
   ResumeWriter,
   TailoredResumeNotFoundError,
@@ -145,6 +151,71 @@ export class TailoringSessionsService {
   }
 
   /**
+   * One change of the user to a CV under review (RF-TAIL-12, RN-05), fitted to its pages again. A new text
+   * first tries the bullets already chosen, with a single render, so the preview updates quickly (RNF-08);
+   * when they no longer fit, and after any other change, the whole fit runs again.
+   */
+  async editResume(
+    id: string,
+    language: ResumeLanguage,
+    edit: EditTailoredResumeRequest,
+  ): Promise<TailoredResume> {
+    const session = await this.load(id);
+    if (session.status !== 'REVIEW') throw new ResumeNotEditableError(id, session.status);
+    const resume = (await this.resumes.list(id)).find((r) => r.language === language);
+    if (!resume) throw new TailoredResumeNotFoundError(id, language);
+
+    const profile = await this.profile.read();
+    const today = new Date().toISOString().slice(0, 7);
+    const edited = applyResumeEdit(resume.data, edit);
+    let data: TailoredResumeData | null = null;
+    const previous = resume.data.fit;
+    if ((edit.op === 'EDIT_BULLET' || edit.op === 'EDIT_SUMMARY') && previous?.fits) {
+      const pageCount = await this.measure(edited, profile, language, session, previous.selection);
+      if (pageCount <= session.pageBudget) data = { ...edited, fit: { ...previous, pageCount } };
+    }
+    data ??= await this.fit(edited, profile, language, session, today);
+
+    const saved: TailoredResume = { ...resume, data };
+    await this.resumes.save(saved);
+    return saved;
+  }
+
+  /** Fits a CV to the session's page budget, measured on the PDF with its template (RN-04, ADR-05). */
+  private async fit(
+    data: TailoredResumeData,
+    profile: Profile,
+    language: ResumeLanguage,
+    session: StoredSession,
+    today: string,
+  ): Promise<TailoredResumeData> {
+    const fit = await fitToPages(
+      fitCandidates(data, profile),
+      (selection) => this.measure(data, profile, language, session, selection),
+      { pageBudget: session.pageBudget, today },
+    );
+    return {
+      ...data,
+      fit: {
+        ...fit,
+        selection: orderAsWritten(fit.selection, data),
+        pageBudget: session.pageBudget,
+      },
+    };
+  }
+
+  private async measure(
+    data: TailoredResumeData,
+    profile: Profile,
+    language: ResumeLanguage,
+    session: StoredSession,
+    selection: FitSelection,
+  ): Promise<number> {
+    const document = buildResumeDocument({ data, profile, language, paper: PAPER, selection });
+    return (await this.renderer.render(document, session.templateId)).pageCount;
+  }
+
+  /**
    * The generation job's work, per language: the AI writes the CV, the truthfulness guard checks it (RN-01,
    * RN-02), the texts that break a rule go back to the AI once, and what still breaks one is dropped and logged.
    * Then the CV is fitted to the page budget by rendering it (RN-04).
@@ -177,24 +248,8 @@ export class TailoringSessionsService {
         data = applyRewrites(data, issues, rewrites, profile, vocabulary, today);
       }
 
-      // The fit to the page budget, measured on the PDF with the session's template (RN-04, ADR-05).
       report({ step: 'fitting', done: index, total: session.languages.length });
-      const fixed = data;
-      const fit = await fitToPages(
-        fitCandidates(fixed, profile),
-        async (selection) => {
-          const document = buildResumeDocument({
-            data: fixed,
-            profile,
-            language,
-            paper: PAPER,
-            selection,
-          });
-          return (await this.renderer.render(document, session.templateId)).pageCount;
-        },
-        { pageBudget: session.pageBudget, today },
-      );
-      data = { ...fixed, fit: { ...fit, pageBudget: session.pageBudget } };
+      data = await this.fit(data, profile, language, session, today);
       written.push({
         sessionId: id,
         language,

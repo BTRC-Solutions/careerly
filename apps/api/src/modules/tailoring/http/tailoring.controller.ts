@@ -2,6 +2,9 @@ import {
   type ApiErrorCode,
   type CreateTailoringSessionRequest,
   CreateTailoringSessionRequestSchema,
+  type EditTailoredResumeRequest,
+  EditTailoredResumeRequestSchema,
+  type TailoredResume,
   type ResumeLanguage,
   ResumeLanguageSchema,
   type TailoredResumesView,
@@ -21,6 +24,7 @@ import {
   type NestInterceptor,
   NotFoundException,
   Param,
+  Patch,
   Post,
   StreamableFile,
   UseInterceptors,
@@ -30,11 +34,13 @@ import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
 import {
   JobDescriptionNotReadyError,
+  ResumeNotEditableError,
   ResumeRenderFailedError,
   TailoredResumeNotFoundError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
 } from '../application/tailoring.ports.js';
+import { BulletNotFoundError } from '../domain/resume-edits.js';
 import { ResumeWithoutNameError } from '../domain/resume-writing.js';
 import {
   InvalidSessionTransitionError,
@@ -53,14 +59,16 @@ function toHttpError(error: unknown): unknown {
   if (
     error instanceof TailoringSessionNotFoundError ||
     error instanceof TailoringJobPostingNotFoundError ||
-    error instanceof TailoredResumeNotFoundError
+    error instanceof TailoredResumeNotFoundError ||
+    error instanceof BulletNotFoundError
   ) {
     return new NotFoundException(error.message);
   }
   if (
     error instanceof JobDescriptionNotReadyError ||
     error instanceof InvalidSessionTransitionError ||
-    error instanceof ResumeWithoutNameError
+    error instanceof ResumeWithoutNameError ||
+    error instanceof ResumeNotEditableError
   ) {
     return new ConflictException(error.message);
   }
@@ -135,7 +143,17 @@ export class TailoringController {
     return this.sessions.listResumes(id);
   }
 
-  /** The CV of a language as a PDF (not fitted to the page budget yet). */
+  /** One change to a CV under review (RF-TAIL-12); it is fitted to its pages again and returned. */
+  @Patch(':id/resumes/:language')
+  editResume(
+    @Param('id') id: string,
+    @Param('language', new ZodValidationPipe(ResumeLanguageSchema)) language: ResumeLanguage,
+    @Body(new ZodValidationPipe(EditTailoredResumeRequestSchema)) body: EditTailoredResumeRequest,
+  ): Promise<TailoredResume> {
+    return this.sessions.editResume(id, language, body);
+  }
+
+  /** The CV of a language as a PDF, with the bullets its page fit chose. */
   @Get(':id/resumes/:language/preview')
   async resumePdf(
     @Param('id') id: string,

@@ -148,6 +148,31 @@ describe('fitToPages', () => {
     ]);
   });
 
+  it('always keeps the bullets the user pinned, even when the CV no longer fits', async () => {
+    const recent = position('recent', '2020-01', '2021-12', 0.5, 0.2, 0.4, 0.1);
+    // The lowest-scored ones, pinned: they count towards the limit of 3 and are never trimmed.
+    recent.bullets[1]!.pinned = true;
+    recent.bullets[3]!.pinned = true;
+    const old = position('old', '2010-01', '2012-12', 0.9);
+    old.bullets[0]!.pinned = true;
+    const candidates: FitCandidates = {
+      positions: [position('current', '2022-01', null, 0.9, 0.8, 0.7, 0.6, 0.5), recent, old],
+      projects: [],
+    };
+
+    // 2 + 5 + 2 + 3 + 2 + 1 = 15 lines; with 6 per page, even trimming every unpinned bullet but the
+    // minimum leaves 2 + 1 + 2 + 2 + 2 + 1 = 10 lines: two pages.
+    const result = await fitToPages(candidates, fakeMeasure(6), { pageBudget: 1, today: TODAY });
+
+    expect(result).toMatchObject({ pageCount: 2, fits: false });
+    expect(result.selection.positions).toEqual([
+      { id: 'current', bulletIds: ['current-1'] },
+      { id: 'recent', bulletIds: ['recent-2', 'recent-4'] },
+      // Even an old position shows a bullet the user pinned.
+      { id: 'old', bulletIds: ['old-1'] },
+    ]);
+  });
+
   it('fills the remaining space with the best bullets left out', async () => {
     // Two pages hold 20 lines; the old position is kept with no bullets (RN-07).
     const candidates: FitCandidates = {
