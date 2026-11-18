@@ -474,6 +474,17 @@ muestra los bullets de cada experiencia en su orden (el de la IA o el que eligi�
 siga el `score`. La pantalla de la sesión (`features/tailoring`) muestra, en `REVIEW`, cada bullet con su estado
 y sus fuentes al lado de la vista previa del PDF, que se recarga después de cada cambio.
 
+**Regeneración (paso 6.7, RF-TAIL-13, `tailoring/domain/regeneration.ts`):** `POST /tailoring-sessions/:id/regenerate`
+pide, desde `REVIEW`, escribir de nuevo todo el CV, solo el resumen o los bullets de una experiencia, con
+indicaciones opcionales del usuario y en algunos de los idiomas de la sesión. El pedido queda en la sesión
+(`regeneration`, columna JSON) hasta `RESUMES_READY`: así un `FAILED` y su reintento repiten la misma regeneración
+y no una completa. La IA recibe el alcance y las indicaciones (`resume-writing.v2`: sirven para foco, tono y largo,
+nunca agregan hechos); de su respuesta solo se usa lo del alcance (`restrictToScope`), pasa por la guardia de
+veracidad y se combina con el CV actual (`mergeRegenerated`): lo que está fuera del alcance no cambia, ediciones
+incluidas, y dentro del alcance se conservan primero los bullets que el usuario editó o fijó. Toda generación sobre
+un CV ya escrito (también "volver a gaps" y generar) usa esa combinación con alcance completo, así que ningún
+bullet editado o fijado se pierde. Después se vuelve a ajustar a las páginas.
+
 ## 9. Render con Typst (módulo `documents`)
 
 ```
@@ -586,6 +597,7 @@ POST   /tailoring-sessions/:id/gaps                # pasa a las preguntas de gap
 GET    /tailoring-sessions/:id/gaps
 PUT    /tailoring-sessions/:id/gaps                # respuestas
 POST   /tailoring-sessions/:id/generate            # encola la redacción de un CV por idioma
+POST   /tailoring-sessions/:id/regenerate          # { scope, instructions?, languages? }: todo, resumen o una experiencia
 GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
 PATCH  /tailoring-sessions/:id/resumes/:lang       # un cambio (texto, orden, inclusión); vuelve a ajustar
 GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF

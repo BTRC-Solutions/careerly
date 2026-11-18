@@ -111,6 +111,7 @@ describe('TailoringSession state machine', () => {
       status: 'ANALYZING',
       match: null,
       failedStep: null,
+      regeneration: null,
     });
   });
 
@@ -177,6 +178,32 @@ describe('TailoringSession state machine', () => {
       { type: 'FINALIZE' },
     );
     expect(session.status).toBe('FINALIZED');
+  });
+
+  it('keeps a regeneration from the review until the CVs are ready, through a failure (RF-TAIL-13)', () => {
+    const regeneration = {
+      scope: { kind: 'EXPERIENCE' as const, experienceId: 'w1' },
+      instructions: 'More focus on leadership',
+      languages: ['en' as const],
+    };
+    const review = replay(noGaps, { type: 'GENERATE' }, { type: 'RESUMES_READY' });
+    const generating = applySessionEvent(review, { type: 'GENERATE', regeneration });
+    expect(generating).toMatchObject({ status: 'GENERATING', regeneration });
+
+    const retried = applySessionEvent(applySessionEvent(generating, { type: 'FAIL' }), {
+      type: 'RETRY',
+    });
+    expect(retried).toMatchObject({ status: 'GENERATING', regeneration });
+    expect(applySessionEvent(retried, { type: 'RESUMES_READY' }).regeneration).toBeNull();
+
+    // Only from the review, and only in the session's languages.
+    expect(() =>
+      applySessionEvent(situations['matched, no gaps']!, { type: 'GENERATE', regeneration }),
+    ).toThrow(InvalidSessionTransitionError);
+    const spanishOnly = replay(noGaps, { type: 'GENERATE' }, { type: 'RESUMES_READY' });
+    expect(() =>
+      applySessionEvent({ ...spanishOnly, languages: ['es'] }, { type: 'GENERATE', regeneration }),
+    ).toThrow(/only languages of the session/);
   });
 
   it('does not modify the session it is given', () => {

@@ -41,6 +41,7 @@ function toRow(session: TailoringSession): Row {
     status: session.status,
     failedStep: session.failedStep,
     match: session.match === null ? null : JSON.stringify(session.match),
+    regeneration: session.regeneration === null ? null : JSON.stringify(session.regeneration),
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
   };
@@ -52,5 +53,6 @@ function toSession(row: Row): TailoringSession {
     ...row,
     languages: JSON.parse(row.languages) as unknown,
     match: row.match === null ? null : (JSON.parse(row.match) as unknown),
+    regeneration: row.regeneration === null ? null : (JSON.parse(row.regeneration) as unknown),
   });
 }

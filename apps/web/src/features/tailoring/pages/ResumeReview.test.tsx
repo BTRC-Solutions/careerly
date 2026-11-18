@@ -91,6 +91,7 @@ const session = (
   templateId: 'classic',
   status,
   failedStep: null,
+  regeneration: null,
   createdAt: NOW,
   updatedAt: NOW,
   match: {
@@ -173,11 +174,13 @@ let resume: TailoredResume;
 let calls: string[];
 let edits: unknown[];
 let previews: number;
+let regenerations: unknown[];
 
 beforeEach(() => {
   calls = [];
   edits = [];
   previews = 0;
+  regenerations = [];
   resume = RESUME;
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:preview'), revokeObjectURL: vi.fn() });
   apiServer.use(
@@ -191,6 +194,14 @@ beforeEach(() => {
       calls.push('generate');
       view = {
         session: session('GENERATING', true),
+        job: job('tailoring-generate', 'RUNNING', 'writing'),
+      };
+      return HttpResponse.json(view);
+    }),
+    http.post(api(`/tailoring-sessions/${ID}/regenerate`), async ({ request }) => {
+      regenerations.push(await request.json());
+      view = {
+        session: session('GENERATING', false),
         job: job('tailoring-generate', 'RUNNING', 'writing'),
       };
       return HttpResponse.json(view);
@@ -317,5 +328,30 @@ describe('generating and reviewing the CV', () => {
     // The first bullet cannot go up; the last one cannot go down.
     expect(within(rows()[0]!).getByRole('button', { name: 'Subir' })).toBeDisabled();
     expect(within(rows()[1]!).getByRole('button', { name: 'Bajar' })).toBeDisabled();
+  });
+
+  it('regenerates one section with indications (RF-TAIL-13)', async () => {
+    view = { session: session('REVIEW', false), job: job('tailoring-generate', 'SUCCEEDED') };
+    await render();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Regenerar Backend Engineer · Acme' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Regenerar Backend Engineer · Acme' });
+    expect(within(dialog).getByText(/Lo que editaste y el resto del CV no cambian/)).toBeVisible();
+    await userEvent.type(
+      within(dialog).getByRole('textbox', { name: 'Indicaciones (opcional)' }),
+      'Más foco en documentación',
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Regenerar' }));
+
+    expect(await screen.findByText('Escribiendo el CV con la IA…')).toBeVisible();
+    expect(regenerations).toEqual([
+      {
+        scope: { kind: 'EXPERIENCE', experienceId: 'pos-1' },
+        instructions: 'Más foco en documentación',
+        languages: ['en'],
+      },
+    ]);
   });
 });

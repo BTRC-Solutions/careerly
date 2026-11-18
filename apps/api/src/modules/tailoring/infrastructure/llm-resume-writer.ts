@@ -11,7 +11,7 @@ import type { WrittenResume } from '../domain/resume-writing.js';
 import type { TruthIssue, TruthRewrite } from '../domain/truth-guard.js';
 import { describeProfile, parseRef } from './llm-requirement-matcher.js';
 import { RESUME_REWRITING_V1 } from './prompts/resume-rewriting.v1.js';
-import { RESUME_WRITING_V1 } from './prompts/resume-writing.v1.js';
+import { RESUME_WRITING_V2 } from './prompts/resume-writing.v2.js';
 
 /** The answer the model must produce (plain schema: it is also sent as JSON Schema). */
 const ResumeWritingAnswerSchema = z.object({
@@ -44,8 +44,15 @@ export class LlmResumeWriter extends ResumeWriter {
     super();
   }
 
-  async write({ profile, analysis, match, language }: ResumeWritingInput) {
+  async write({ profile, analysis, match, language, scope, instructions }: ResumeWritingInput) {
     const { text: profileText, refs } = describeProfile(profile);
+    const refOf = new Map([...refs].map(([ref, evidence]) => [evidence.id, ref]));
+    const task =
+      scope.kind === 'SUMMARY'
+        ? 'Write only the summary.'
+        : scope.kind === 'EXPERIENCE'
+          ? `Write only the bullets of [${refOf.get(scope.experienceId) ?? '?'}].`
+          : 'Write the whole CV.';
     const status = new Map(match?.requirements.map((r) => [r.requirementId, r.status]));
     const jobText = [
       `Role: ${analysis.roleCategory}, ${analysis.seniority}.`,
@@ -62,7 +69,7 @@ export class LlmResumeWriter extends ResumeWriter {
 
     const { data, usage } = await this.llm.generateStructured({
       task: 'resume-writing',
-      prompt: RESUME_WRITING_V1,
+      prompt: RESUME_WRITING_V2,
       tier: 'large',
       input: [
         // The profile goes first: it is the large, stable part of the session's prompts (caching).
@@ -71,8 +78,18 @@ export class LlmResumeWriter extends ResumeWriter {
         untrustedText('job-description-analysis', jobText),
         {
           type: 'text',
-          text: `Output language: ${LANGUAGE_NAMES[language]}. Write the bullets and the summary in it.`,
+          text: `Output language: ${LANGUAGE_NAMES[language]}. Write the bullets and the summary in it. ${task}`,
         },
+        // The candidate's own words, for this version only: never logged.
+        ...(instructions
+          ? [
+              {
+                type: 'text' as const,
+                text: `Indications from the candidate for this version:
+${instructions}`,
+              },
+            ]
+          : []),
       ],
       schema: ResumeWritingAnswerSchema,
       timeoutMs: TIMEOUT_MS,
@@ -83,7 +100,7 @@ export class LlmResumeWriter extends ResumeWriter {
       `Wrote a ${language} CV with ${resume.experiences.length} experience(s) using ${usage.model} ` +
         `(${usage.attempts} attempt(s)).`,
     );
-    return { resume, promptVersion: RESUME_WRITING_V1.id, model: usage.model };
+    return { resume, promptVersion: RESUME_WRITING_V2.id, model: usage.model };
   }
 
   async rewrite({ profile, language, data, issues }: ResumeRewritingInput) {

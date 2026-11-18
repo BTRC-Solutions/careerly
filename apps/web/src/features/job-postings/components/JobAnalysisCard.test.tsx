@@ -228,6 +228,7 @@ describe('JobAnalysisCard tailoring', () => {
               templateId: 'classic',
               status: 'ANALYZING',
               failedStep: null,
+              regeneration: null,
               match: null,
               createdAt: '2026-11-17T12:00:00.000Z',
               updatedAt: '2026-11-17T12:00:00.000Z',

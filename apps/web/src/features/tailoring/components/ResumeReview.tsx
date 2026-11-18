@@ -1,23 +1,30 @@
 import type {
   BulletInclusion,
   EditTailoredResumeRequest,
+  RegenerationScope,
   ResumeLanguage,
   TailoredResume,
   TailoringSession,
 } from '@careerly/contracts';
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
-import { Select, Textarea } from '../../../shared/ui/form';
-import { ArrowDownIcon, ArrowUpIcon, PencilIcon } from '../../../shared/ui/icons';
+import { Dialog, DialogActions } from '../../../shared/ui/Dialog';
+import { Field, Select, Textarea } from '../../../shared/ui/form';
+import { ArrowDownIcon, ArrowUpIcon, PencilIcon, RefreshIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PdfFrame } from '../../../shared/ui/PdfFrame';
 import { Tag } from '../../../shared/ui/Tag';
 import { useProfile } from '../../profile/api/profile-api';
-import { useEditResume, useResumePreview, useTailoredResumes } from '../api/tailoring-api';
+import {
+  useEditResume,
+  useRegenerateResumes,
+  useResumePreview,
+  useTailoredResumes,
+} from '../api/tailoring-api';
 import {
   type BulletState,
   type ReviewBullet,
@@ -26,6 +33,13 @@ import {
 } from '../lib/resume-review';
 
 type Edit = (edit: EditTailoredResumeRequest) => void;
+
+/** What the user asked to write again, and how to name it in the dialog. */
+interface RegenerationTarget {
+  scope: RegenerationScope;
+  name: string;
+}
+type Regenerate = (target: RegenerationTarget) => void;
 
 /**
  * Review of the tailored CVs (roadmap 6.6, RF-TAIL-12): the PDF preview next to every bullet with its source,
@@ -92,17 +106,24 @@ function ResumeEditor({ session, resume }: { session: TailoringSession; resume: 
   const busy = edit.isPending;
   const apply: Edit = (change) => edit.mutate(change);
   const experiences = profile.data ? reviewExperiences(resume.data, profile.data) : [];
+  const [target, setTarget] = useState<RegenerationTarget | null>(null);
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-4">
-        <FitStatus resume={resume} />
+        <FitStatus
+          resume={resume}
+          busy={busy}
+          onRegenerate={() =>
+            setTarget({ scope: { kind: 'ALL' }, name: t('tailoring.regenerate.names.ALL') })
+          }
+        />
         {edit.error && (
           <InlineError>
             {t('tailoring.review.editError', { message: edit.error.message })}
           </InlineError>
         )}
-        <SummaryCard resume={resume} busy={busy} apply={apply} />
+        <SummaryCard resume={resume} busy={busy} apply={apply} regenerate={setTarget} />
         {profile.isPending && (
           <p role="status" className="text-sm text-steel-text">
             {t('tailoring.loading')}
@@ -114,9 +135,18 @@ function ResumeEditor({ session, resume }: { session: TailoringSession; resume: 
             experience={experience}
             busy={busy}
             apply={apply}
+            regenerate={setTarget}
           />
         ))}
         <GuardNotes resume={resume} />
+        {target && (
+          <RegenerateDialog
+            session={session}
+            language={resume.language}
+            target={target}
+            onClose={() => setTarget(null)}
+          />
+        )}
       </div>
 
       <Card className="flex flex-col gap-3 lg:sticky lg:top-6">
@@ -148,27 +178,41 @@ function ResumeEditor({ session, resume }: { session: TailoringSession; resume: 
   );
 }
 
-function FitStatus({ resume }: { resume: TailoredResume }) {
+function FitStatus({
+  resume,
+  busy,
+  onRegenerate,
+}: {
+  resume: TailoredResume;
+  busy: boolean;
+  onRegenerate: () => void;
+}) {
   const { t } = useTranslation();
   const fit = resume.data.fit;
   if (!fit) return null;
   const leftOut = fit.log.filter((entry) => entry.action === 'LEFT_OUT' && entry.bulletId).length;
   return (
-    <Card className="flex flex-col gap-1">
-      {fit.fits ? (
-        <p className="text-sm text-slate-ink">
-          {t('tailoring.review.fit.fits', { count: fit.pageCount, budget: fit.pageBudget })}
+    <Card className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-1">
+        {fit.fits ? (
+          <p className="text-sm text-slate-ink">
+            {t('tailoring.review.fit.fits', { count: fit.pageCount, budget: fit.pageBudget })}
+          </p>
+        ) : (
+          <InlineError>
+            {t('tailoring.review.fit.over', { count: fit.pageBudget, pages: fit.pageCount })}
+          </InlineError>
+        )}
+        <p className="text-sm text-steel-text">
+          {leftOut > 0
+            ? t('tailoring.review.fit.leftOut', { count: leftOut })
+            : t('tailoring.review.fit.allIn')}
         </p>
-      ) : (
-        <InlineError>
-          {t('tailoring.review.fit.over', { count: fit.pageBudget, pages: fit.pageCount })}
-        </InlineError>
-      )}
-      <p className="text-sm text-steel-text">
-        {leftOut > 0
-          ? t('tailoring.review.fit.leftOut', { count: leftOut })
-          : t('tailoring.review.fit.allIn')}
-      </p>
+      </div>
+      <Button variant="secondary" size="sm" disabled={busy} onClick={onRegenerate}>
+        <RefreshIcon />
+        {t('tailoring.regenerate.all')}
+      </Button>
     </Card>
   );
 }
@@ -177,10 +221,12 @@ function SummaryCard({
   resume,
   busy,
   apply,
+  regenerate,
 }: {
   resume: TailoredResume;
   busy: boolean;
   apply: Edit;
+  regenerate: Regenerate;
 }) {
   const { t } = useTranslation();
   const summary = resume.data.summary?.text ?? '';
@@ -191,10 +237,26 @@ function SummaryCard({
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-section-title text-indigo-navy">{t('tailoring.review.summary')}</h2>
         {draft === null && (
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => setDraft(summary)}>
-            <PencilIcon />
-            {t('tailoring.review.edit')}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" disabled={busy} onClick={() => setDraft(summary)}>
+              <PencilIcon />
+              {t('tailoring.review.edit')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                regenerate({
+                  scope: { kind: 'SUMMARY' },
+                  name: t('tailoring.regenerate.names.SUMMARY'),
+                })
+              }
+            >
+              <RefreshIcon />
+              {t('tailoring.regenerate.action')}
+            </Button>
+          </div>
         )}
       </div>
       {draft === null ? (
@@ -222,15 +284,34 @@ function ExperienceCard({
   experience,
   busy,
   apply,
+  regenerate,
 }: {
   experience: ReviewExperience;
   busy: boolean;
   apply: Edit;
+  regenerate: Regenerate;
 }) {
   const { t } = useTranslation();
   return (
     <Card className="flex flex-col gap-3">
-      <h2 className="text-section-title text-indigo-navy">{experience.title}</h2>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-section-title text-indigo-navy">{experience.title}</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          aria-label={t('tailoring.regenerate.experience', { name: experience.title })}
+          onClick={() =>
+            regenerate({
+              scope: { kind: 'EXPERIENCE', experienceId: experience.id },
+              name: experience.title,
+            })
+          }
+        >
+          <RefreshIcon />
+          {t('tailoring.regenerate.action')}
+        </Button>
+      </div>
       {experience.bullets.length === 0 ? (
         <p className="text-sm text-steel-text">{t('tailoring.review.headerOnly')}</p>
       ) : (
@@ -444,5 +525,73 @@ function GuardNotes({ resume }: { resume: TailoredResume }) {
         )}
       </details>
     </Card>
+  );
+}
+
+/** Writes the target again with optional indications (RF-TAIL-13); the session goes back to generating. */
+function RegenerateDialog({
+  session,
+  language,
+  target,
+  onClose,
+}: {
+  session: TailoringSession;
+  language: ResumeLanguage;
+  target: RegenerationTarget;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const regenerate = useRegenerateResumes(session.id);
+  const [instructions, setInstructions] = useState('');
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    regenerate.mutate(
+      {
+        scope: target.scope,
+        instructions: instructions.trim() || undefined,
+        languages: [language],
+      },
+      { onSuccess: onClose },
+    );
+  };
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={t('tailoring.regenerate.title', { name: target.name })}
+      description={t('tailoring.regenerate.description', {
+        language: t(`tailoring.review.languages.${language}`),
+      })}
+    >
+      <form onSubmit={submit}>
+        <Field
+          label={t('tailoring.regenerate.instructions')}
+          hint={t('tailoring.regenerate.instructionsHint')}
+        >
+          {(control) => (
+            <Textarea
+              {...control}
+              value={instructions}
+              maxLength={500}
+              placeholder={t('tailoring.regenerate.placeholder')}
+              onChange={(event) => setInstructions(event.target.value)}
+            />
+          )}
+        </Field>
+        {regenerate.error && <InlineError>{regenerate.error.message}</InlineError>}
+        <DialogActions>
+          <Button variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={regenerate.isPending}>
+            {t('tailoring.regenerate.submit')}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }

@@ -99,6 +99,13 @@
       "when": 1795013095634,
       "tag": "0013_tailored_resumes",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1795017411741,
+      "tag": "0014_session_regeneration",
+      "breakpoints": true
     }
   ]
 }

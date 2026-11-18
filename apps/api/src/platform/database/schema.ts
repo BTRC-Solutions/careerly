@@ -422,6 +422,8 @@ export const tailoringSessions = sqliteTable(
     failedStep: text('failed_step'),
     /** JSON `MatchResult`: ids and requirement labels, no profile text. */
     match: text('match'),
+    /** JSON `Regeneration` while one is in course (RF-TAIL-13); it holds the user's indications. */
+    regeneration: text('regeneration'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },

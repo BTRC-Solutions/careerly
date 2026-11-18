@@ -269,6 +269,50 @@ export const EditTailoredResumeRequestSchema = z.discriminatedUnion('op', [
 export type EditTailoredResumeRequest = z.infer<typeof EditTailoredResumeRequestSchema>;
 
 // ---------------------------------------------------------------------------
+// Regeneration (RF-TAIL-13)
+// ---------------------------------------------------------------------------
+
+/** What to write again: the whole CV, its summary, or the bullets of one position or project. */
+export const RegenerationScopeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('ALL') }).strict(),
+  z.object({ kind: z.literal('SUMMARY') }).strict(),
+  z.object({ kind: z.literal('EXPERIENCE'), experienceId: z.string().min(1) }).strict(),
+]);
+export type RegenerationScope = z.infer<typeof RegenerationScopeSchema>;
+
+/** The candidate's own indications for a new version ("more focus on leadership"); they never add facts. */
+export const RegenerationInstructionsSchema = z.string().trim().max(500);
+
+/**
+ * A regeneration the session is running, kept until it finishes so a retry repeats it. Bullets edited by the
+ * user are never discarded, and what is outside the scope is not touched.
+ */
+export const RegenerationSchema = z.object({
+  scope: RegenerationScopeSchema,
+  /** `null` without indications. */
+  instructions: RegenerationInstructionsSchema.nullable(),
+  /** The CVs to write again: some of the session's languages. */
+  languages: z.array(ResumeLanguageSchema).min(1),
+});
+export type Regeneration = z.infer<typeof RegenerationSchema>;
+
+/** `POST /tailoring-sessions/:id/regenerate`: from the review; languages default to all of the session's. */
+export const RegenerateResumesRequestSchema = z
+  .object({
+    scope: RegenerationScopeSchema,
+    instructions: RegenerationInstructionsSchema.optional(),
+    languages: z
+      .array(ResumeLanguageSchema)
+      .min(1)
+      .refine((languages) => new Set(languages).size === languages.length, {
+        message: 'Languages must not repeat.',
+      })
+      .optional(),
+  })
+  .strict();
+export type RegenerateResumesRequest = z.infer<typeof RegenerateResumesRequestSchema>;
+
+// ---------------------------------------------------------------------------
 // Session
 // ---------------------------------------------------------------------------
 
@@ -282,6 +326,8 @@ export const TailoringSessionSchema = z.object({
   failedStep: TailoringFailedStepSchema.nullable(),
   /** `null` until the first match finishes. */
   match: MatchResultSchema.nullable(),
+  /** The regeneration in course (RF-TAIL-13); `null` otherwise. */
+  regeneration: RegenerationSchema.nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

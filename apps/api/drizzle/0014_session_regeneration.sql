@@ -1,0 +1,1 @@
+ALTER TABLE `tailoring_sessions` ADD `regeneration` text;

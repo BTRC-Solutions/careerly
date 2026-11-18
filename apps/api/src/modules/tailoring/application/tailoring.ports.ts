@@ -4,6 +4,7 @@ import type {
   JobView,
   MatchResult,
   Profile,
+  RegenerationScope,
   ResumeDocument,
   ResumeLanguage,
   TailoredResume,
@@ -79,6 +80,10 @@ export interface ResumeWritingInput {
   analysis: JobAnalysis;
   match: MatchResult | null;
   language: ResumeLanguage;
+  /** What to write: the whole CV, or only part of it when regenerating (RF-TAIL-13). */
+  scope: RegenerationScope;
+  /** The candidate's indications for this version, if any. */
+  instructions: string | null;
 }
 
 /** What the CV writer gets to fix the texts the truthfulness guard rejected. */
