@@ -18,6 +18,14 @@ export class TailoringSessionNotFoundError extends Error {
   }
 }
 
+/** The session has no match yet, so there are no gaps to ask about (maps to 409). */
+export class SessionNotMatchedError extends Error {
+  constructor(readonly sessionId: string) {
+    super('The session has no match yet; wait for it to finish.');
+    this.name = 'SessionNotMatchedError';
+  }
+}
+
 /** The job description does not exist (maps to 404). */
 export class TailoringJobPostingNotFoundError extends Error {
   constructor(readonly jobPostingId: string) {

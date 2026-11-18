@@ -185,3 +185,33 @@ export const RevertProfileChangesResultSchema = z.object({
   ),
 });
 export type RevertProfileChangesResult = z.infer<typeof RevertProfileChangesResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Gap questions (RF-TAIL-04, ARCHITECTURE §7.2 step 5)
+// ---------------------------------------------------------------------------
+
+/** `MISSING`: nothing in the profile shows it. `PARTIAL`: there is related, weaker evidence (RF-GAP-03). */
+export const GapKindSchema = z.enum(['MISSING', 'PARTIAL']);
+export type GapKind = z.infer<typeof GapKindSchema>;
+
+/**
+ * One question per partial or missing requirement, built without AI. It carries what the question is about,
+ * not its text: the interface words it from templates in its own language.
+ */
+export const GapQuestionSchema = z.object({
+  /** The requirement it asks about; also the question's id within the session. */
+  requirementId: z.string(),
+  label: z.string(),
+  kind: RequirementKindSchema,
+  importance: RequirementImportanceSchema,
+  /** The catalog tool, for tool requirements that resolved to one (the question uses its name). */
+  tool: ToolRefSchema.nullable(),
+  gap: GapKindSchema,
+  /** What the profile already shows that is related; empty when `MISSING`. */
+  relatedEvidence: z.array(EvidenceSchema),
+});
+export type GapQuestion = z.infer<typeof GapQuestionSchema>;
+
+/** `GET /tailoring-sessions/:id/gaps`: required requirements first, then in the job description's order. */
+export const GapQuestionsSchema = z.object({ questions: z.array(GapQuestionSchema) });
+export type GapQuestions = z.infer<typeof GapQuestionsSchema>;

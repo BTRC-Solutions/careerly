@@ -1,5 +1,6 @@
 import {
   type CreateTailoringSessionRequest,
+  type GapQuestions,
   CreateTailoringSessionRequestSchema,
   type RevertProfileChangesRequest,
   RevertProfileChangesRequestSchema,
@@ -30,6 +31,7 @@ import { TailoringSessionsService } from '../application/tailoring-sessions.serv
 import {
   JobDescriptionNotReadyError,
   SessionProfileChangeNotFoundError,
+  SessionNotMatchedError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
 } from '../application/tailoring.ports.js';
@@ -56,6 +58,7 @@ function toHttpError(error: unknown): unknown {
   }
   if (
     error instanceof JobDescriptionNotReadyError ||
+    error instanceof SessionNotMatchedError ||
     error instanceof InvalidSessionTransitionError
   ) {
     return new ConflictException(error.message);
@@ -87,6 +90,12 @@ export class TailoringController {
   @Get(':id')
   get(@Param('id') id: string): Promise<TailoringSessionView> {
     return this.sessions.get(id);
+  }
+
+  /** The gap questions (RF-TAIL-04): partial and missing requirements of the last match. */
+  @Get(':id/gaps')
+  gaps(@Param('id') id: string): Promise<GapQuestions> {
+    return this.sessions.gaps(id);
   }
 
   /** Retries the step that failed. */

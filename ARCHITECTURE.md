@@ -317,6 +317,11 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   ids reales.
 - El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
 
+**Preguntas de gaps (paso 5.4, `tailoring/domain/gap.ts`):** una por requisito parcial o faltante del último match,
+sean herramientas o no (RF-GAP-04), con los obligatorios primero. Se arman sin IA: la API devuelve de qué trata
+cada pregunta (requisito, tipo, herramienta del catálogo y, si es parcial, la evidencia relacionada, RF-GAP-03) y la
+interfaz la redacta con plantillas en su idioma (`tailoring.gaps.templates.<tipo>.<gap>`).
+
 ### 7.2 Pasos
 
 | # | Paso | Tipo |
@@ -525,7 +530,7 @@ POST   /tailoring-sessions                         # { jobPostingId, languages[]
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions/:id/events              # SSE
-GET    /tailoring-sessions/:id/gaps
+GET    /tailoring-sessions/:id/gaps                # preguntas de gaps, desde el último match y sin IA (409 sin match)
 PUT    /tailoring-sessions/:id/gaps                # respuestas
 POST   /tailoring-sessions/:id/generate
 PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones

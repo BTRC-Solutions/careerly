@@ -861,6 +861,32 @@
       "confirmDescription_other": "{{count}} changes to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
       "kept_one": "You edited {{count}} field after this session: your version was kept.",
       "kept_other": "You edited {{count}} fields after this session: your version was kept."
+    },
+    "gaps": {
+      "templates": {
+        "TOOL": {
+          "MISSING": "Have you used {{name}}?",
+          "PARTIAL": "What did you do with {{name}}?"
+        },
+        "SKILL": {
+          "MISSING": "Do you have experience in “{{name}}”?",
+          "PARTIAL": "Do you have more experience in “{{name}}”?"
+        },
+        "LANGUAGE": {
+          "MISSING": "Do you have this language level: “{{name}}”?",
+          "PARTIAL": "Do you reach the level they ask for: “{{name}}”?"
+        },
+        "OTHER": {
+          "MISSING": "Do you meet “{{name}}”?",
+          "PARTIAL": "Do you fully meet “{{name}}”?"
+        }
+      },
+      "partialHint": {
+        "TOOL": "{{name}} is in your profile, but no achievement shows how you used it. This is what is there:",
+        "SKILL": "Your profile has something related, but less than they ask for:",
+        "LANGUAGE": "Your profile has this language, but not at the level they ask for:",
+        "OTHER": "Your profile has something related, but less than they ask for:"
+      }
     }
   }
 }

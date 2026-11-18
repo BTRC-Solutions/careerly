@@ -3,6 +3,7 @@ import {
   type RevertProfileChangesRequest,
   RevertProfileChangesResultSchema,
   SessionProfileChangesSchema,
+  GapQuestionsSchema,
   type TailoringSessionView,
   TailoringSessionViewSchema,
 } from '@careerly/contracts';
@@ -83,5 +84,14 @@ export function useRevertProfileChanges(id: string) {
       queryClient.setQueryData(profileChangesKey(id), { changes });
       void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     },
+  });
+}
+
+/** The gap questions of a matched session (RF-TAIL-04). */
+export function useGapQuestions(id: string, enabled = true) {
+  return useQuery({
+    queryKey: [...sessionKey(id), 'gaps'],
+    queryFn: () => apiGet(`/tailoring-sessions/${id}/gaps`, GapQuestionsSchema),
+    enabled,
   });
 }
