@@ -1,5 +1,6 @@
 import {
   type CreateTailoringSessionRequest,
+  GapQuestionsSchema,
   type TailoringSessionView,
   TailoringSessionViewSchema,
 } from '@careerly/contracts';
@@ -53,5 +54,14 @@ export function useRetryTailoring(id: string) {
   return useMutation({
     mutationFn: () => apiPost(`/tailoring-sessions/${id}/retry`, TailoringSessionViewSchema, {}),
     onSuccess: (view) => queryClient.setQueryData(sessionKey(id), view),
+  });
+}
+
+/** The gap questions of a matched session (RF-TAIL-04). */
+export function useGapQuestions(id: string, enabled = true) {
+  return useQuery({
+    queryKey: [...sessionKey(id), 'gaps'],
+    queryFn: () => apiGet(`/tailoring-sessions/${id}/gaps`, GapQuestionsSchema),
+    enabled,
   });
 }

@@ -1,4 +1,5 @@
 import {
+  GapQuestionsSchema,
   JobAnalysisStateSchema,
   JobPostingSchema,
   type Tool,
@@ -258,6 +259,18 @@ describe('tailoring session match (integration)', () => {
 
     // The session is stored: reading it again gives the same result.
     expect((await view(started.session.id)).session).toEqual(done.session);
+
+    // One question per partial or missing requirement, required ones first, without calling the AI again.
+    const { questions } = GapQuestionsSchema.parse(
+      await json('GET', `/tailoring-sessions/${started.session.id}/gaps`),
+    );
+    expect(questions.map((q) => [q.label, q.gap, q.importance, q.relatedEvidence])).toEqual([
+      ['Postgres', 'MISSING', 'REQUIRED', []],
+      ['Docker', 'PARTIAL', 'REQUIRED', [{ kind: 'POSITION', id: profile.position.id }]],
+      ['FooBarDB', 'MISSING', 'NICE_TO_HAVE', []],
+    ]);
+    expect(gemini!.calls).toHaveLength(2);
+    expect((await api('GET', '/tailoring-sessions/nope/gaps')).status).toBe(404);
   });
 
   it('does not call the AI when the catalog decides every requirement', async () => {
@@ -304,6 +317,8 @@ describe('tailoring session match (integration)', () => {
       match: null,
     });
     expect(failed.job).toMatchObject({ status: 'FAILED', attempts: 1, lastError: 'KEY_REJECTED' });
+    // Without a match there is nothing to ask yet.
+    expect((await api('GET', `/tailoring-sessions/${session.id}/gaps`)).status).toBe(409);
 
     replies.push(ok(EVIDENCE_ANSWER));
     const retry = await api('POST', `/tailoring-sessions/${session.id}/retry`);
