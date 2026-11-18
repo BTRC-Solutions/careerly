@@ -531,7 +531,8 @@ POST   /tailoring-sessions/:id/generate
 PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
 GET    /tailoring-sessions/:id/resumes/:lang/preview
 POST   /tailoring-sessions/:id/finalize
-POST   /tailoring-sessions/:id/revert-profile-changes
+GET    /tailoring-sessions/:id/profile-changes        # lo que la sesión agregó o cambió en el perfil
+POST   /tailoring-sessions/:id/revert-profile-changes # { changeIds? }: deshace esos cambios o todos los pendientes
 
 GET    /resume-versions/:id
 GET    /resume-versions/:id/pdf

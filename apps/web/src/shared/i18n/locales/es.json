@@ -843,6 +843,24 @@
         "LANGUAGE": "Idioma"
       },
       "deleted": "ya no está en tu perfil"
+    },
+    "profileChanges": {
+      "title": "Cambios en tu perfil",
+      "description": "Lo que esta sesión agregó o cambió en tu perfil maestro al responder los gaps. Podés deshacerlo de a uno o todo junto.",
+      "kinds": {
+        "CREATE": "Agregado",
+        "UPDATE": "Modificado"
+      },
+      "gone": "Ya no está en tu perfil.",
+      "undo": "Deshacer",
+      "undoOne": "Deshacer el cambio en «{{name}}»",
+      "undoAll": "Deshacer todos",
+      "undone": "Deshecho",
+      "confirmTitle": "¿Deshacer los cambios de esta sesión?",
+      "confirmDescription_one": "Se va a deshacer {{count}} cambio en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "confirmDescription_other": "Se van a deshacer {{count}} cambios en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "kept_one": "{{count}} campo lo editaste después de esta sesión: se mantuvo tu versión.",
+      "kept_other": "{{count}} campos los editaste después de esta sesión: se mantuvo tu versión."
     }
   }
 }

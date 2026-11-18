@@ -3,6 +3,8 @@ import type {
   JobRequirement,
   JobView,
   Profile,
+  RevertProfileChangesResult,
+  SessionProfileChange,
   TailoringSession as StoredSession,
   ToolRef,
 } from '@careerly/contracts';
@@ -42,6 +44,25 @@ export class JobDescriptionNotReadyError extends Error {
 /** Port: the master profile, read through the profile module's public service. */
 export abstract class ProfileReader {
   abstract read(): Promise<Profile>;
+}
+
+/** A profile change that is not one of the session's (maps to 404). */
+export class SessionProfileChangeNotFoundError extends Error {
+  constructor(readonly changeId: string) {
+    super('Profile change not found in this session.');
+    this.name = 'SessionProfileChangeNotFoundError';
+  }
+}
+
+/** Port: what a session wrote to the master profile, through the profile module (RF-TAIL-06). */
+export abstract class ProfileChangeLog {
+  /** Oldest first, undone ones included. */
+  abstract list(sessionId: string): Promise<SessionProfileChange[]>;
+  /** Undoes the session's pending changes, or only `changeIds`; returns the fields the user's edits kept. */
+  abstract revert(
+    sessionId: string,
+    changeIds?: string[],
+  ): Promise<RevertProfileChangesResult['keptFields']>;
 }
 
 /** Port: a job description's analysis, through the job-postings module. */

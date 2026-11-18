@@ -1,4 +1,12 @@
-import type { JobAnalysis, JobView, Profile, ToolRef } from '@careerly/contracts';
+import type {
+  JobAnalysis,
+  JobView,
+  Profile,
+  ProfileChangeEntity,
+  RevertProfileChangesResult,
+  SessionProfileChange,
+  ToolRef,
+} from '@careerly/contracts';
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import {
   AiBlockedError,
@@ -8,12 +16,13 @@ import {
 } from '../../ai/index.js';
 import { JobAnalysisService, JobPostingNotFoundError } from '../../job-postings/index.js';
 import { JobQueue, JobRunner, PermanentJobError } from '../../jobs/index.js';
-import { ProfileService, ToolCatalogService } from '../../profile/index.js';
+import { ProfileChangesService, ProfileService, ToolCatalogService } from '../../profile/index.js';
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
 import {
   JobDescriptionNotReadyError,
   JobDescriptionReader,
   MatchQueue,
+  ProfileChangeLog,
   ProfileReader,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
@@ -33,6 +42,43 @@ export class ProfileModuleReader extends ProfileReader {
 
   read(): Promise<Profile> {
     return this.profile.getProfile();
+  }
+}
+
+const ENTITIES = {
+  position: 'POSITION',
+  project: 'PROJECT',
+  achievement: 'ACHIEVEMENT',
+} as const satisfies Record<string, ProfileChangeEntity>;
+
+/** The session's profile writes through the profile module's change log. */
+@Injectable()
+export class ProfileModuleChangeLog extends ProfileChangeLog {
+  constructor(private readonly changes: ProfileChangesService) {
+    super();
+  }
+
+  async list(sessionId: string): Promise<SessionProfileChange[]> {
+    return (await this.changes.listChanges(sessionId)).map((change) => ({
+      id: change.id,
+      entity: ENTITIES[change.entity],
+      entityId: change.entityId,
+      kind: change.kind,
+      createdAt: change.createdAt,
+      revertedAt: change.revertedAt,
+    }));
+  }
+
+  async revert(
+    sessionId: string,
+    changeIds?: string[],
+  ): Promise<RevertProfileChangesResult['keptFields']> {
+    const plan = await this.changes.revert(sessionId, changeIds);
+    return plan.keptFields.map(({ entity, entityId, fields }) => ({
+      entity: ENTITIES[entity],
+      entityId,
+      fields,
+    }));
   }
 }
 
