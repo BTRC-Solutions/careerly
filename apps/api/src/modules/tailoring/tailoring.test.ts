@@ -346,4 +346,72 @@ describe('tailoring session match (integration)', () => {
     ).toBe(400);
     expect((await api('GET', '/tailoring-sessions/nope')).status).toBe(404);
   });
+
+  it('stores the gap questions when asked and their answers, in any order', async () => {
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER)]);
+    const profile = await createProfile();
+    const posting = await analyzedPosting();
+    const { session } = TailoringSessionViewSchema.parse(
+      await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+    );
+    await waitFor(settled(session.id));
+    const route = `/tailoring-sessions/${session.id}`;
+    const gaps = async () => GapQuestionsSchema.parse(await json('GET', `${route}/gaps`)).questions;
+
+    // Answering needs the questions to be asked first.
+    expect((await api('PUT', `${route}/gaps/x`, { answer: 'NOT_USED' })).status).toBe(409);
+    const asked = GapQuestionsSchema.parse(await json('POST', `${route}/ask-gaps`)).questions;
+    expect(asked.map((q) => [q.label, q.answer])).toEqual([
+      ['Postgres', null],
+      ['Docker', null],
+      ['FooBarDB', null],
+    ]);
+    expect((await view(session.id)).session.status).toBe('AWAITING_ANSWERS');
+    const [postgres, docker, foobar] = asked;
+
+    // In any order; an answer can change.
+    const put = (requirementId: string, body: unknown) =>
+      api('PUT', `${route}/gaps/${requirementId}`, body).then((r) => r.status);
+    expect(await put(foobar!.requirementId, { answer: 'SKIPPED' })).toBe(200);
+    expect(
+      await put(postgres!.requirementId, {
+        answer: 'USED_AT_WORK',
+        positionIds: [profile.position.id],
+        detail: 'Tuned the queries of the billing service.',
+      }),
+    ).toBe(200);
+    expect(await put(foobar!.requirementId, { answer: 'NOT_USED' })).toBe(200);
+    expect(
+      await put(docker!.requirementId, {
+        answer: 'USED_ELSEWHERE',
+        project: { name: 'Homelab', kind: 'PERSONAL' },
+        detail: 'Ran my services in containers.',
+        includeInResume: false,
+      }),
+    ).toBe(200);
+
+    const answered = await gaps();
+    expect(answered.map((q) => q.answer?.answer)).toEqual([
+      'USED_AT_WORK',
+      'USED_ELSEWHERE',
+      'NOT_USED',
+    ]);
+    expect(answered.every((q) => q.answeredAt !== null)).toBe(true);
+
+    // Answers must point to the profile, and to a question of this session.
+    expect(
+      await put(postgres!.requirementId, {
+        answer: 'USED_AT_WORK',
+        positionIds: ['nope'],
+        detail: 'x',
+      }),
+    ).toBe(400);
+    expect(await put(postgres!.requirementId, { answer: 'USED_AT_WORK' })).toBe(400);
+    expect(await put('not-a-question', { answer: 'NOT_USED' })).toBe(404);
+
+    // A "No" is not written to the profile (RN-11): it lives only in the session.
+    const profileAfter = JSON.stringify(await json('GET', '/profile'));
+    expect(profileAfter).not.toContain('FooBarDB');
+    expect((await gaps())[2]!.answer).toEqual({ answer: 'NOT_USED' });
+  });
 });

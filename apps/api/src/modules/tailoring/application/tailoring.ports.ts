@@ -1,4 +1,6 @@
 import type {
+  GapAnswer,
+  GapQuestion,
   JobAnalysis,
   JobRequirement,
   JobView,
@@ -72,6 +74,28 @@ export abstract class RequirementMatcher {
     requirements: JobRequirement[],
     profile: Profile,
   ): Promise<{ answers: SemanticAnswer[]; promptVersion: string; model: string }>;
+}
+
+/** The session has no gap question for this requirement (maps to 404). */
+export class GapQuestionNotFoundError extends Error {
+  constructor(readonly requirementId: string) {
+    super('Gap question not found in this session.');
+    this.name = 'GapQuestionNotFoundError';
+  }
+}
+
+/** Port: the gap questions asked in a session and their answers. */
+export abstract class GapQuestionRepository {
+  /** Replaces the session's questions (with whatever answers they carry), in order. */
+  abstract replace(sessionId: string, questions: GapQuestion[]): Promise<void>;
+  /** In order; empty until the session asks its gaps. */
+  abstract list(sessionId: string): Promise<GapQuestion[]>;
+  abstract saveAnswer(
+    sessionId: string,
+    requirementId: string,
+    answer: GapAnswer,
+    answeredAt: string,
+  ): Promise<void>;
 }
 
 /** Port: stored sessions. */

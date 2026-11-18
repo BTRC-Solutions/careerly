@@ -321,6 +321,9 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
 sean herramientas o no (RF-GAP-04), con los obligatorios primero. Se arman sin IA: la API devuelve de qué trata
 cada pregunta (requisito, tipo, herramienta del catálogo y, si es parcial, la evidencia relacionada, RF-GAP-03) y la
 interfaz la redacta con plantillas en su idioma (`tailoring.gaps.templates.<tipo>.<gap>`).
+Al empezar a responder (paso 5.5) las preguntas se guardan en `gap_questions` con su respuesta: así la lista no
+cambia mientras el usuario responde en cualquier orden, y volver desde la revisión conserva lo ya respondido. Un
+"No" o una pregunta salteada viven solo ahí, nunca en el perfil (RN-11, RN-12).
 
 ### 7.2 Pasos
 
@@ -531,7 +534,8 @@ GET    /tailoring-sessions/:id                     # sesión (con el match) + ta
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions/:id/events              # SSE
 GET    /tailoring-sessions/:id/gaps                # preguntas de gaps, desde el último match y sin IA (409 sin match)
-PUT    /tailoring-sessions/:id/gaps                # respuestas
+POST   /tailoring-sessions/:id/ask-gaps            # pasa a AWAITING_ANSWERS y guarda las preguntas (conserva respuestas previas)
+PUT    /tailoring-sessions/:id/gaps/:requirementId # respuesta a una pregunta (trabajo / proyecto o curso / no / salteada)
 POST   /tailoring-sessions/:id/generate
 PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
 GET    /tailoring-sessions/:id/resumes/:lang/preview
