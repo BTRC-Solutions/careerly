@@ -233,6 +233,7 @@ describe('buildResumeDocument', () => {
     ],
     toolIds: ['node', 'unknown', 'docker'],
     guard: { rewritten: 0, dropped: [] },
+    fit: null,
   };
 
   it('copies the facts from the profile and the wording from the tailored CV (RN-03, RN-06, RN-07)', () => {

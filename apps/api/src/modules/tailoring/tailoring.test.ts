@@ -367,164 +367,245 @@ describe('tailoring session match (integration)', () => {
 
   const NODE_ONLY = { ...JD_ANALYSIS, requirements: JD_ANALYSIS.requirements.slice(0, 1) };
 
-  it('writes one CV per language with sources from the profile (RF-TAIL-10, RF-TAIL-11)', async () => {
-    await start([ok(NODE_ONLY), ok(writing('es')), ok(writing('en'))]);
-    const id = await matchedWithoutGaps(['es', 'en']);
-    const profile = await json<{ positions: { id: string; achievements: { id: string }[] }[] }>(
-      'GET',
-      '/profile',
-    );
-    const position = profile.positions[0]!;
-    const achievement = position.achievements[0]!;
+  // Generating fits the CV to its pages by rendering it with Typst (CI always has it).
+  it.runIf(HAS_TYPST)(
+    'writes one CV per language with sources from the profile (RF-TAIL-10, RF-TAIL-11)',
+    async () => {
+      await start([ok(NODE_ONLY), ok(writing('es')), ok(writing('en'))]);
+      const id = await matchedWithoutGaps(['es', 'en']);
+      const profile = await json<{ positions: { id: string; achievements: { id: string }[] }[] }>(
+        'GET',
+        '/profile',
+      );
+      const position = profile.positions[0]!;
+      const achievement = position.achievements[0]!;
 
-    // Nothing to read yet.
-    expect(await resumesOf(id)).toEqual([]);
-    expect((await api('GET', `/tailoring-sessions/${id}/resumes/es/preview`)).status).toBe(404);
+      // Nothing to read yet.
+      expect(await resumesOf(id)).toEqual([]);
+      expect((await api('GET', `/tailoring-sessions/${id}/resumes/es/preview`)).status).toBe(404);
 
-    const response = await api('POST', `/tailoring-sessions/${id}/generate`);
-    expect(response.status).toBe(200);
-    const started = TailoringSessionViewSchema.parse(await response.json());
-    expect(started.session.status).toBe('GENERATING');
-    expect(started.job?.type).toBe('tailoring-generate');
+      const response = await api('POST', `/tailoring-sessions/${id}/generate`);
+      expect(response.status).toBe(200);
+      const started = TailoringSessionViewSchema.parse(await response.json());
+      expect(started.session.status).toBe('GENERATING');
+      expect(started.job?.type).toBe('tailoring-generate');
 
-    const done = await waitFor(generated(id));
-    expect(done.session.status).toBe('REVIEW');
-    expect(done.job).toMatchObject({ type: 'tailoring-generate', status: 'SUCCEEDED' });
+      const done = await waitFor(generated(id));
+      expect(done.session.status).toBe('REVIEW');
+      expect(done.job).toMatchObject({ type: 'tailoring-generate', status: 'SUCCEEDED' });
 
-    const resumes = await resumesOf(id);
-    expect(resumes.map((r) => [r.language, r.promptVersion])).toEqual([
-      ['es', 'resume-writing.v1'],
-      ['en', 'resume-writing.v1'],
-    ]);
-    const [es, en] = resumes;
-    // The invented source, the unknown experience and the summary's unknown reference are dropped.
-    expect(es!.data.summary).toEqual({
-      text: 'Ingeniero backend con APIs públicas.',
-      sourceIds: [position.id, achievement.id],
-    });
-    expect(es!.data.experiences).toEqual([
-      {
-        kind: 'POSITION',
-        sourceId: position.id,
-        bullets: [
-          {
-            id: expect.any(String),
-            text: 'Diseñé la API REST pública que usan 40 partners',
-            sourceIds: [achievement.id],
-            score: null,
-            editedByUser: false,
-          },
-        ],
-      },
-    ]);
-    expect(en!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
-      'Designed the public REST API used by 40 partners',
-    ]);
-    // Skills: the tool the job description asks for first (Node.js), then Docker.
-    const [node, docker] = [await tool('Node.js'), await tool('Docker')];
-    expect(es!.data.toolIds).toEqual([node.id, docker.id]);
+      const resumes = await resumesOf(id);
+      expect(resumes.map((r) => [r.language, r.promptVersion])).toEqual([
+        ['es', 'resume-writing.v1'],
+        ['en', 'resume-writing.v1'],
+      ]);
+      const [es, en] = resumes;
+      // The invented source, the unknown experience and the summary's unknown reference are dropped.
+      expect(es!.data.summary).toEqual({
+        text: 'Ingeniero backend con APIs públicas.',
+        sourceIds: [position.id, achievement.id],
+      });
+      expect(es!.data.experiences).toEqual([
+        {
+          kind: 'POSITION',
+          sourceId: position.id,
+          bullets: [
+            {
+              id: expect.any(String),
+              text: 'Diseñé la API REST pública que usan 40 partners',
+              sourceIds: [achievement.id],
+              score: null,
+              editedByUser: false,
+            },
+          ],
+        },
+      ]);
+      expect(en!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
+        'Designed the public REST API used by 40 partners',
+      ]);
+      // Skills: the tool the job description asks for first (Node.js), then Docker.
+      const [node, docker] = [await tool('Node.js'), await tool('Docker')];
+      expect(es!.data.toolIds).toEqual([node.id, docker.id]);
 
-    // One call per language, the profile first and the job description as untrusted data.
-    expect(gemini!.calls).toHaveLength(3);
-    const [, toSpanish, toEnglish] = gemini!.calls;
-    expect(toSpanish).toMatch(/^Master profile of the candidate:/);
-    expect(toSpanish).toMatch(/\[A1\] Designed the public REST API/);
-    expect(toSpanish).toMatch(
-      /<untrusted source="job-description-analysis">[\s\S]*- \[COVERED\] \(TOOL, REQUIRED\) Node\.js/,
-    );
-    expect(toSpanish).toMatch(/Output language: Spanish\./);
-    expect(toEnglish).toMatch(/Output language: English\./);
-    // Neither the profile nor what was written is logged.
-    expect(logs.output()).not.toContain('Designed the public REST API');
-    expect(logs.output()).not.toContain('Diseñé');
+      // One call per language, the profile first and the job description as untrusted data.
+      expect(gemini!.calls).toHaveLength(3);
+      const [, toSpanish, toEnglish] = gemini!.calls;
+      expect(toSpanish).toMatch(/^Master profile of the candidate:/);
+      expect(toSpanish).toMatch(/\[A1\] Designed the public REST API/);
+      expect(toSpanish).toMatch(
+        /<untrusted source="job-description-analysis">[\s\S]*- \[COVERED\] \(TOOL, REQUIRED\) Node\.js/,
+      );
+      expect(toSpanish).toMatch(/Output language: Spanish\./);
+      expect(toEnglish).toMatch(/Output language: English\./);
+      // Neither the profile nor what was written is logged.
+      expect(logs.output()).not.toContain('Designed the public REST API');
+      expect(logs.output()).not.toContain('Diseñé');
 
-    if (HAS_TYPST) {
+      // Fitted to one page: everything fits, nothing left out.
+      expect(es!.data.fit).toMatchObject({ pageCount: 1, pageBudget: 1, fits: true, log: [] });
       const pdf = await api('GET', `/tailoring-sessions/${id}/resumes/en/preview`);
       expect(pdf.status).toBe(200);
       expect(pdf.headers.get('content-type')).toBe('application/pdf');
       const document = await PDFDocument.load(new Uint8Array(await pdf.arrayBuffer()));
-      expect(document.getPageCount()).toBeGreaterThanOrEqual(1);
-    }
-    expect((await api('GET', `/tailoring-sessions/${id}/resumes/fr/preview`)).status).toBe(400);
-  });
+      expect(document.getPageCount()).toBe(1);
+      expect((await api('GET', `/tailoring-sessions/${id}/resumes/fr/preview`)).status).toBe(400);
+    },
+  );
 
-  it('rewrites once what breaks the truthfulness guard and drops what still does (RN-02)', async () => {
-    const invented = {
-      summary: 'Backend engineer.',
-      summarySources: ['W1'],
-      experiences: [
-        {
-          experience: 'W1',
-          bullets: [
-            // Kubernetes is in the catalog but not in the profile; 12 is in no source.
-            { text: 'Designed the public REST API on Kubernetes', sources: ['A1'] },
-            { text: 'Led 12 engineers building the API', sources: ['A1'] },
-            { text: 'Designed the public REST API used by 40 partners', sources: ['A1'] },
-          ],
-        },
-      ],
-    };
-    const rewrites = {
-      rewrites: [
-        { item: '[B1]', text: 'Designed the public REST API in Node.js', sources: ['A1'] },
-        { item: 'B2', text: 'Led 10 engineers building the API', sources: ['A1'] },
-      ],
-    };
-    await start([ok(NODE_ONLY), ok(invented), ok(rewrites)]);
-    const id = await matchedWithoutGaps(['en']);
+  // Generating fits the CV to its pages by rendering it with Typst (CI always has it).
+  it.runIf(HAS_TYPST)(
+    'rewrites once what breaks the truthfulness guard and drops what still does (RN-02)',
+    async () => {
+      const invented = {
+        summary: 'Backend engineer.',
+        summarySources: ['W1'],
+        experiences: [
+          {
+            experience: 'W1',
+            bullets: [
+              // Kubernetes is in the catalog but not in the profile; 12 is in no source.
+              { text: 'Designed the public REST API on Kubernetes', sources: ['A1'] },
+              { text: 'Led 12 engineers building the API', sources: ['A1'] },
+              { text: 'Designed the public REST API used by 40 partners', sources: ['A1'] },
+            ],
+          },
+        ],
+      };
+      const rewrites = {
+        rewrites: [
+          { item: '[B1]', text: 'Designed the public REST API in Node.js', sources: ['A1'] },
+          { item: 'B2', text: 'Led 10 engineers building the API', sources: ['A1'] },
+        ],
+      };
+      await start([ok(NODE_ONLY), ok(invented), ok(rewrites)]);
+      const id = await matchedWithoutGaps(['en']);
 
-    await api('POST', `/tailoring-sessions/${id}/generate`);
-    const done = await waitFor(generated(id));
-    expect(done.session.status).toBe('REVIEW');
+      await api('POST', `/tailoring-sessions/${id}/generate`);
+      const done = await waitFor(generated(id));
+      expect(done.session.status).toBe('REVIEW');
 
-    const [resume] = await resumesOf(id);
-    expect(resume!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
-      'Designed the public REST API in Node.js',
-      'Designed the public REST API used by 40 partners',
-    ]);
-    expect(resume!.data.guard).toEqual({
-      rewritten: 1,
-      dropped: [
-        {
-          kind: 'BULLET',
-          experienceId: expect.any(String),
-          text: 'Led 10 engineers building the API',
-          reasons: ['NUMBER_NOT_IN_SOURCES'],
-        },
-      ],
-    });
+      const [resume] = await resumesOf(id);
+      expect(resume!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
+        'Designed the public REST API in Node.js',
+        'Designed the public REST API used by 40 partners',
+      ]);
+      expect(resume!.data.guard).toEqual({
+        rewritten: 1,
+        dropped: [
+          {
+            kind: 'BULLET',
+            experienceId: expect.any(String),
+            text: 'Led 10 engineers building the API',
+            reasons: ['NUMBER_NOT_IN_SOURCES'],
+          },
+        ],
+      });
 
-    // Only the texts with issues went back, as untrusted data, with what broke the rules.
-    expect(gemini!.calls).toHaveLength(3);
-    const rewriteCall = gemini!.calls[2]!;
-    expect(rewriteCall).toMatch(/^Master profile of the candidate:/);
-    expect(rewriteCall).toMatch(
-      /<untrusted source="cv-texts">\n\[B1\] A bullet of \[W1\], citing \[A1\]\n {2}Text: Designed the public REST API on Kubernetes\n {2}Problems: it mentions Kubernetes, which its sources do not show\./,
-    );
-    expect(rewriteCall).toMatch(
-      /Problems: it has the number\(s\) 12, which its sources do not have\./,
-    );
-    expect(rewriteCall.split('<untrusted source="cv-texts">')[1]).not.toMatch(/40 partners/);
-    expect(logs.output()).not.toContain('Kubernetes');
-  });
+      // Only the texts with issues went back, as untrusted data, with what broke the rules.
+      expect(gemini!.calls).toHaveLength(3);
+      const rewriteCall = gemini!.calls[2]!;
+      expect(rewriteCall).toMatch(/^Master profile of the candidate:/);
+      expect(rewriteCall).toMatch(
+        /<untrusted source="cv-texts">\n\[B1\] A bullet of \[W1\], citing \[A1\]\n {2}Text: Designed the public REST API on Kubernetes\n {2}Problems: it mentions Kubernetes, which its sources do not show\./,
+      );
+      expect(rewriteCall).toMatch(
+        /Problems: it has the number\(s\) 12, which its sources do not have\./,
+      );
+      expect(rewriteCall.split('<untrusted source="cv-texts">')[1]).not.toMatch(/40 partners/);
+      expect(logs.output()).not.toContain('Kubernetes');
+    },
+  );
 
-  it('fails the generation when the key is rejected, and writes again on retry', async () => {
-    const replies = [ok(NODE_ONLY)];
-    await start(replies);
-    const id = await matchedWithoutGaps(['en']);
+  // Generating fits the CV to its pages by rendering it with Typst (CI always has it).
+  it.runIf(HAS_TYPST)(
+    'fails the generation when the key is rejected, and writes again on retry',
+    async () => {
+      const replies = [ok(NODE_ONLY)];
+      await start(replies);
+      const id = await matchedWithoutGaps(['en']);
 
-    await api('POST', `/tailoring-sessions/${id}/generate`);
-    const failed = await waitFor(generated(id));
-    expect(failed.session).toMatchObject({ status: 'FAILED', failedStep: 'GENERATING' });
-    expect(failed.job).toMatchObject({ type: 'tailoring-generate', lastError: 'KEY_REJECTED' });
-    expect(await resumesOf(id)).toEqual([]);
+      await api('POST', `/tailoring-sessions/${id}/generate`);
+      const failed = await waitFor(generated(id));
+      expect(failed.session).toMatchObject({ status: 'FAILED', failedStep: 'GENERATING' });
+      expect(failed.job).toMatchObject({ type: 'tailoring-generate', lastError: 'KEY_REJECTED' });
+      expect(await resumesOf(id)).toEqual([]);
 
-    replies.push(ok(writing('en')));
-    expect((await api('POST', `/tailoring-sessions/${id}/retry`)).status).toBe(200);
-    const done = await waitFor(generated(id));
-    expect(done.session).toMatchObject({ status: 'REVIEW', failedStep: null });
-    expect((await resumesOf(id)).map((r) => r.language)).toEqual(['en']);
-  });
+      replies.push(ok(writing('en')));
+      expect((await api('POST', `/tailoring-sessions/${id}/retry`)).status).toBe(200);
+      const done = await waitFor(generated(id));
+      expect(done.session).toMatchObject({ status: 'REVIEW', failedStep: null });
+      expect((await resumesOf(id)).map((r) => r.language)).toEqual(['en']);
+    },
+  );
+
+  it.runIf(HAS_TYPST)(
+    'fits a long CV to the page budget, leaving out the least relevant bullets (RN-04)',
+    async () => {
+      const replies = [ok(NODE_ONLY)];
+      await start(replies);
+      await api('PATCH', '/profile/personal-info', { firstNames: 'Ana', lastNames: 'García' });
+      const node = await tool('Node.js');
+      // Four recent positions with one achievement each; the writer gives each six long bullets.
+      for (const [index, year] of [2022, 2019, 2017, 2016].entries()) {
+        const position = await json<{ id: string }>('POST', '/profile/positions', {
+          company: `Company ${index + 1}`,
+          title: 'Backend Engineer',
+          startDate: `${year}-01`,
+          endDate: index === 0 ? null : `${year + 2}-12`,
+          toolIds: [node.id],
+        });
+        await api('POST', `/profile/positions/${position.id}/achievements`, {
+          text: 'Designed and maintained the services that handle payments, reviews and onboarding.',
+          toolIds: [node.id],
+        });
+      }
+      const long = (n: number) =>
+        `Bullet ${'abcdefghij'[n]}: designed and maintained the services that handle payments, reviews and ` +
+        'onboarding for the whole company, working with product, design and support on every release ' +
+        'and keeping the services documented, monitored and easy to change for the next team.';
+      const writingLong = {
+        summary: 'Backend engineer.',
+        summarySources: ['W1'],
+        experiences: [1, 2, 3, 4].map((w) => ({
+          experience: `W${w}`,
+          bullets: [0, 1, 2, 3, 4, 5].map((n) => ({ text: long(n), sources: [`A${w}`] })),
+        })),
+      };
+      replies.push(ok(writingLong));
+      const posting = await analyzedPosting();
+      const { session } = TailoringSessionViewSchema.parse(
+        await json('POST', '/tailoring-sessions', {
+          jobPostingId: posting.id,
+          languages: ['en'],
+          pageBudget: 1,
+        }),
+      );
+      await waitFor(settled(session.id));
+      await api('POST', `/tailoring-sessions/${session.id}/generate`);
+      const done = await waitFor(generated(session.id));
+      expect(done.session.status).toBe('REVIEW');
+
+      const [resume] = await resumesOf(session.id);
+      const fit = resume!.data.fit!;
+      expect(fit).toMatchObject({ pageCount: 1, pageBudget: 1, fits: true });
+      // Every position is kept, the current one with the most bullets; the trimmed ones are logged.
+      expect(fit.selection.positions).toHaveLength(4);
+      const kept = fit.selection.positions.map((p) => p.bulletIds.length);
+      expect(kept[0]).toBeGreaterThanOrEqual(Math.max(...kept.slice(1)));
+      expect(kept.every((count) => count >= 1)).toBe(true);
+      expect(fit.log.some((entry) => entry.reason === 'OVER_BUDGET')).toBe(true);
+      expect(fit.log.some((entry) => entry.reason === 'SECTION_LIMIT')).toBe(true);
+      // The first bullet of each position (the most relevant) stays.
+      const firstIds = resume!.data.experiences.map((e) => e.bullets[0]!.id);
+      expect(fit.selection.positions.flatMap((p) => p.bulletIds)).toEqual(
+        expect.arrayContaining(firstIds),
+      );
+
+      const pdf = await api('GET', `/tailoring-sessions/${session.id}/resumes/en/preview`);
+      const document = await PDFDocument.load(new Uint8Array(await pdf.arrayBuffer()));
+      expect(document.getPageCount()).toBe(1);
+    },
+  );
 
   it('does not generate while there are gaps to answer', async () => {
     await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER)]);

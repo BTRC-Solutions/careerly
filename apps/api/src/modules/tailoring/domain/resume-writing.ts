@@ -12,6 +12,7 @@
  */
 
 import type {
+  FitSelection,
   GuardDrop,
   MatchResult,
   Position,
@@ -90,6 +91,7 @@ export function tailoredResumeData(
     experiences: [...experiences.values()],
     toolIds: selectSkills(profile, match),
     guard: { rewritten: 0, dropped },
+    fit: null,
   };
 }
 
@@ -154,6 +156,11 @@ export interface BuildResumeInput {
   profile: Profile;
   language: ResumeLanguage;
   paper: ResumePaper;
+  /**
+   * The bullets to show, in order (the page fit). Defaults to the CV's own fit; without one, every bullet in
+   * the order written and every project with bullets.
+   */
+  selection?: FitSelection | null;
 }
 
 /** The document a template renders. Throws `ResumeWithoutNameError` when the profile has no name. */
@@ -162,16 +169,24 @@ export function buildResumeDocument({
   profile,
   language,
   paper,
+  selection = data.fit?.selection ?? null,
 }: BuildResumeInput): ResumeDocument {
   const info = profile.personalInfo;
   const name = [info.firstNames, info.lastNames].map(orNull).filter(Boolean).join(' ');
   if (name === '') throw new ResumeWithoutNameError();
 
-  const bulletsOf = (kind: TailoredExperience['kind'], id: string) =>
-    data.experiences
-      .find((e) => e.kind === kind && e.sourceId === id)
-      ?.bullets.map((b) => b.text.trim())
-      .filter((text) => text !== '') ?? [];
+  const written = (kind: TailoredExperience['kind'], id: string) =>
+    data.experiences.find((e) => e.kind === kind && e.sourceId === id)?.bullets ?? [];
+  const selected = (kind: TailoredExperience['kind'], id: string) =>
+    (kind === 'POSITION' ? selection?.positions : selection?.projects)?.find((s) => s.id === id);
+  const bulletsOf = (kind: TailoredExperience['kind'], id: string) => {
+    const bullets = written(kind, id);
+    const chosen = selected(kind, id);
+    const ordered = !selection
+      ? bullets
+      : (chosen?.bulletIds ?? []).flatMap((bulletId) => bullets.filter((b) => b.id === bulletId));
+    return ordered.map((b) => b.text.trim()).filter((text) => text !== '');
+  };
 
   const toolNames = new Map(
     [...profile.positions, ...profile.projects].flatMap((e) => [
@@ -206,7 +221,11 @@ export function buildResumeDocument({
     })),
     projects: [...profile.projects]
       .map((p) => ({ project: p, bullets: bulletsOf('PROJECT', p.id) }))
-      .filter(({ bullets }) => bullets.length > 0)
+      .filter(({ project, bullets }) =>
+        selection
+          ? selected('PROJECT', project.id) !== undefined && bullets.length > 0
+          : bullets.length > 0,
+      )
       .sort((a, b) => byRecency(a.project, b.project))
       .map(({ project: p, bullets }) => ({
         name: p.name,

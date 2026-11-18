@@ -121,6 +121,7 @@ function cv(
     ],
     toolIds: [],
     guard: { rewritten: 0, dropped: [] },
+    fit: null,
   };
 }
 

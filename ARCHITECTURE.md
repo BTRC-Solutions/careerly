@@ -334,8 +334,8 @@ la sesión a `AWAITING_ANSWERS` y desde ahí se genera salteándolos.
   la JD, después las más usadas). Regenerar los reemplaza.
 - `buildResumeDocument` arma el `ResumeDocument` copiando del perfil empresas, títulos, fechas, educación,
   certificaciones e idiomas (RN-03), con todos los puestos en orden cronológico inverso (RN-06, RN-07) y solo los
-  proyectos con bullets. `GET /tailoring-sessions/:id/resumes/:lang/preview` lo renderiza con la plantilla de la
-  sesión, todavía sin ajuste de páginas (paso 6.5).
+  proyectos con bullets (o, si ya hay ajuste, solo los bullets y proyectos que eligió, en su orden).
+  `GET /tailoring-sessions/:id/resumes/:lang/preview` lo renderiza con la plantilla de la sesión.
 
 **Guardia de veracidad (paso 6.4, `tailoring/domain/truth-guard.ts`):** determinística, compara lo redactado
 con el perfil, nunca con la JD. Corre sobre cada CV antes de guardarlo; los bullets editados por el usuario no se
@@ -454,6 +454,15 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 - **Relleno sin medir el espacio libre:** como `measure` solo devuelve páginas, el paso 4 agrega a los
   candidatos descartados de mayor score mientras el CV siga entrando, en vez de usar el umbral del 85 %.
   Medir cuánto se llena la última página se puede sumar más adelante si los CVs quedan demasiado cargados.
+
+**En el pipeline (paso 6.5):** después de la guardia de veracidad, cada CV se ajusta al `pageBudget` de la sesión.
+`measure` arma el `ResumeDocument` con la selección y lo renderiza con la plantilla de la sesión (Typst, `pdf-lib`
+cuenta las páginas). `fitCandidates` (`tailoring/domain/resume-fit.ts`) pasa todos los puestos del perfil y los
+proyectos con bullets (los relevantes: el prompt de redacción ya saltea los demás). Mientras no haya puntaje de
+relevancia (paso 6.2), el `score` de cada bullet sale del orden en que la IA los escribió dentro de su experiencia
+(1 el primero, casi 0 el último). El resultado (`selection`, `pageCount`, `fits`, `pageBudget` y el `fitLog`) queda
+en `TailoredResumeData.fit`, y la vista previa renderiza esa selección. Un perfil sin nombre, Typst ausente o una
+plantilla rota hacen fallar la generación sin reintentos; un render que tarda demasiado se reintenta.
 
 ## 9. Render con Typst (módulo `documents`)
 
@@ -728,7 +737,8 @@ fiel; verifica solo que **todo bullet tenga fuentes y que existan** en el perfil
 termina con 1). `--model` elige el modelo grande. Deja el reporte en `.data/evals/resume-*.json` y los PDF en
 `.data/evals/resume-*/`. Lo común con `evals:match` vive en `apps/api/scripts/eval-support.mjs`. Desde el 6.4 también
 muestra qué hizo la guardia (textos reescritos y descartados, con motivo): los CVs no conservan nada inventado,
-así que esos números miden cuánto inventa el prompt.
+así que esos números miden cuánto inventa el prompt. Desde el 6.5 verifica que cada PDF respete el límite de
+páginas (`--pages 1|2`, por defecto 1) y coincida con lo que midió el ajuste; si no, termina con 1.
 
 ## 16. Distribución y actualizaciones
 
