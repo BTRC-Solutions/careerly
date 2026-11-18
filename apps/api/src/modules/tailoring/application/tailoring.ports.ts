@@ -7,11 +7,13 @@ import type {
   ResumeDocument,
   ResumeLanguage,
   TailoredResume,
+  TailoredResumeData,
   TailoringSession as StoredSession,
   ToolRef,
 } from '@careerly/contracts';
 import type { SemanticAnswer } from '../domain/match.js';
 import type { WrittenResume } from '../domain/resume-writing.js';
+import type { ToolTerm, TruthIssue, TruthRewrite } from '../domain/truth-guard.js';
 
 /** The session does not exist (maps to 404). */
 export class TailoringSessionNotFoundError extends Error {
@@ -79,11 +81,28 @@ export interface ResumeWritingInput {
   language: ResumeLanguage;
 }
 
-/** Port: the AI that words bullets and summary for one language (ARCHITECTURE §7.2, step 8). */
+/** What the CV writer gets to fix the texts the truthfulness guard rejected. */
+export interface ResumeRewritingInput {
+  profile: Profile;
+  language: ResumeLanguage;
+  /** The CV as written, for the sources of each text. */
+  data: TailoredResumeData;
+  issues: TruthIssue[];
+}
+
+/** Port: the AI that words bullets and summary for one language (ARCHITECTURE §7.2, steps 8 and 9). */
 export abstract class ResumeWriter {
   abstract write(
     input: ResumeWritingInput,
   ): Promise<{ resume: WrittenResume; promptVersion: string; model: string }>;
+
+  /** Rewrites, once, the texts that broke a rule; one that cannot be fixed comes back empty. */
+  abstract rewrite(input: ResumeRewritingInput): Promise<{ rewrites: TruthRewrite[] }>;
+}
+
+/** Port: every name and alias of the tool catalog, to find tools mentioned in a text (RN-02). */
+export abstract class ToolVocabulary {
+  abstract terms(): Promise<ToolTerm[]>;
 }
 
 /** Port: the session's tailored CVs, one per language. */

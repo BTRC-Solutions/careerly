@@ -15,6 +15,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
+import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
 import {
   applySessionEvent,
   startTailoringSession,
@@ -34,6 +35,7 @@ import {
   TailoringSessionNotFoundError,
   TailoringSessionRepository,
   ToolResolver,
+  ToolVocabulary,
 } from './tailoring.ports.js';
 
 const DEFAULT_TEMPLATE_ID = 'classic';
@@ -62,6 +64,7 @@ export class TailoringSessionsService {
     private readonly resumes: TailoredResumeRepository,
     private readonly generation: GenerateQueue,
     private readonly renderer: ResumePdfRenderer,
+    private readonly vocabulary: ToolVocabulary,
   ) {}
 
   async start(request: CreateTailoringSessionRequest): Promise<TailoringSessionView> {
@@ -140,8 +143,9 @@ export class TailoringSessionsService {
   }
 
   /**
-   * The generation job's work: one AI call per language, saved as it finishes. Idempotent: a session that is
-   * no longer generating is left as it is.
+   * The generation job's work, per language: the AI writes the CV, the truthfulness guard checks it (RN-01,
+   * RN-02), the texts that break a rule go back to the AI once, and what still breaks one is dropped and logged.
+   * Idempotent: a session that is no longer generating is left as it is.
    */
   async runGenerate(
     id: string,
@@ -151,16 +155,24 @@ export class TailoringSessionsService {
     if (session.status !== 'GENERATING') return;
 
     report({ step: 'reading' });
-    const [analysis, profile] = await Promise.all([
+    const [analysis, profile, vocabulary] = await Promise.all([
       this.jobDescriptions.analysis(session.jobPostingId),
       this.profile.read(),
+      this.vocabulary.terms(),
     ]);
+    const today = new Date().toISOString().slice(0, 7);
 
     const written: TailoredResume[] = [];
     for (const [index, language] of session.languages.entries()) {
       report({ step: 'writing', done: index, total: session.languages.length });
       const answer = await this.writer.write({ profile, analysis, match: session.match, language });
-      const { data } = tailoredResumeData(answer.resume, profile, session.match, randomUUID);
+      let data = tailoredResumeData(answer.resume, profile, session.match, randomUUID);
+      const issues = findTruthIssues(data, profile, vocabulary, today);
+      if (issues.length > 0) {
+        report({ step: 'checking', done: index, total: session.languages.length });
+        const { rewrites } = await this.writer.rewrite({ profile, language, data, issues });
+        data = applyRewrites(data, issues, rewrites, profile, vocabulary, today);
+      }
       written.push({
         sessionId: id,
         language,

@@ -4,6 +4,8 @@
  * the same profile, as the app does (gaps are skipped until they can be answered). It prints every bullet with
  * the achievements it cites, to judge by eye whether the wording is faithful, and saves both PDFs. It also
  * checks what can be checked without judgment: every bullet has sources and they all exist in the profile.
+ * It also shows what the truthfulness guard (roadmap 6.4) had to fix: texts rewritten once and texts dropped,
+ * with their reasons. The CVs never keep an invented tool or number; those counts measure the prompt.
  *
  *   npm run evals:resume -- --provider gemini [--model <id>] [--only <text>] [--profile-db <careerly.db>]
  *
@@ -11,7 +13,8 @@
  * Each run writes a JSON report and the PDFs to `.data/evals/`. It exits with 1 if a CV cannot be written or
  * any source does not exist.
  *
- * Calls cost tokens on the user's key: two small-model calls and two large-model calls per job description.
+ * Calls cost tokens on the user's key: two small-model calls and two to four large-model calls per job
+ * description (one more per language when the guard asks for a rewrite).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -83,9 +86,24 @@ try {
     r.resumes.flatMap((resume) => resume.data.experiences.flatMap((e) => e.bullets)),
   );
   const invalid = written.reduce((sum, r) => sum + r.invalidSources.length, 0);
+  const guards = written.flatMap((r) => r.resumes.map((resume) => resume.data.guard));
+  const rewritten = guards.reduce((sum, g) => sum + g.rewritten, 0);
+  const dropped = guards.flatMap((g) => g.dropped);
+  const byReason = Object.entries(
+    Object.groupBy(
+      dropped.flatMap((d) => d.reasons),
+      (reason) => reason,
+    ),
+  )
+    .map(([reason, list]) => `${list.length} ${reason}`)
+    .join(', ');
   console.log(
     `\nTotal (${results.length} case(s), ${seconds}s): ${written.length} written, ` +
       `${bullets.length} bullet(s), ${invalid} invalid source(s). PDFs in ${path.relative(repoRoot, runDir)}`,
+  );
+  // What the model invented before the guard: the CVs keep none of it, but it is the measure of the prompt.
+  console.log(
+    `Guard: ${rewritten} text(s) rewritten, ${dropped.length} dropped${byReason ? ` (${byReason})` : ''}.`,
   );
 
   writeReport(args.out, 'resume', {
@@ -181,6 +199,11 @@ function printResult(result, elements) {
         console.log(`      • ${bullet.text}`);
         for (const id of bullet.sourceIds) console.log(`          ← ${describe(id)}`);
       }
+    }
+    const { guard } = resume.data;
+    if (guard.rewritten > 0) console.log(`    guard: ${guard.rewritten} text(s) rewritten`);
+    for (const drop of guard.dropped) {
+      console.log(`    guard dropped (${drop.reasons.join(', ')}): ${drop.text}`);
     }
   }
   console.log('');

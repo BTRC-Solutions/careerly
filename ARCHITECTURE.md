@@ -327,9 +327,8 @@ la sesión a `AWAITING_ANSWERS` y desde ahí se genera salteándolos.
   dato no confiable. El modelo devuelve el resumen y, por experiencia (`[W1]`, `[P1]`), los bullets con las
   referencias de los logros que usa.
 - `tailoredResumeData` se queda solo con lo trazable (RN-01): experiencias que existen y bullets cuyas fuentes son
-  logros de esa misma experiencia (o el propio proyecto); un bullet sin fuentes se descarta. Máximo 6 bullets por
-  experiencia. La guardia completa (herramientas, regeneración) es el paso 6.4, y el `score` queda en `null`
-  hasta el 6.2.
+  logros de esa misma experiencia (o el propio proyecto); un bullet sin fuentes se descarta sin reintento. Máximo
+  6 bullets por experiencia. El `score` queda en `null` hasta el 6.2.
 - `TailoredResume` (tabla `tailored_resumes`, uno por sesión e idioma) guarda solo lo redactado e ids: resumen,
   bullets con `sourceIds` y las herramientas de la sección de habilidades (`selectSkills`: primero las que pide
   la JD, después las más usadas). Regenerar los reemplaza.
@@ -337,6 +336,24 @@ la sesión a `AWAITING_ANSWERS` y desde ahí se genera salteándolos.
   certificaciones e idiomas (RN-03), con todos los puestos en orden cronológico inverso (RN-06, RN-07) y solo los
   proyectos con bullets. `GET /tailoring-sessions/:id/resumes/:lang/preview` lo renderiza con la plantilla de la
   sesión, todavía sin ajuste de páginas (paso 6.5).
+
+**Guardia de veracidad (paso 6.4, `tailoring/domain/truth-guard.ts`):** determinística, compara lo redactado
+con el perfil, nunca con la JD. Corre sobre cada CV antes de guardarlo; los bullets editados por el usuario no se
+revisan (RN-05).
+
+- **Herramientas (RN-02):** busca en el texto los nombres y alias del catálogo (`ToolVocabulary`, de hasta 4
+  palabras, con la misma normalización que el catálogo). Un bullet solo puede nombrar herramientas que muestren sus
+  fuentes: etiquetadas en la experiencia o en los logros que cita, o nombradas en el texto de esas fuentes. El
+  resumen, cualquiera del perfil. Los términos que también son palabras comunes o de 1–2 letras ("Go", "REST", "R")
+  cuentan solo escritos tal cual.
+- **Números:** toda cifra del texto tiene que estar en las fuentes (`50k`, `50.000` y `50,000` son lo mismo; también
+  "tres" o "three" hasta diez) o ser años que las fechas permiten ("5+ años" en un puesto que empezó hace 5).
+- **RN-03** no se revisa en el texto: empresas, títulos y fechas se copian del perfil al armar el CV.
+- Lo que falla vuelve **una vez** a la IA (`resume-rewriting.v1`, modelo grande), con sus problemas y como dato
+  no confiable. Si la reescritura falta, viene vacía, no cita fuentes propias o sigue fallando, el texto se
+  descarta. `TailoredResumeData.guard` guarda cuántos se reescribieron y qué se descartó, con el texto y los
+  motivos (`NO_SOURCE`, `UNKNOWN_EXPERIENCE`, `TOOL_NOT_IN_SOURCES`, `NUMBER_NOT_IN_SOURCES`), para la
+  revisión (paso 6.6).
 
 ### 7.2 Pasos
 
@@ -709,7 +726,9 @@ existen** en el perfil: si alguna no, o si un match falla, el script termina con
 el mismo perfil y guarda los dos PDF. Imprime cada bullet con los logros que cita, para juzgar si la redacción es
 fiel; verifica solo que **todo bullet tenga fuentes y que existan** en el perfil (si no, o si una redacción falla,
 termina con 1). `--model` elige el modelo grande. Deja el reporte en `.data/evals/resume-*.json` y los PDF en
-`.data/evals/resume-*/`. Lo común con `evals:match` vive en `apps/api/scripts/eval-support.mjs`.
+`.data/evals/resume-*/`. Lo común con `evals:match` vive en `apps/api/scripts/eval-support.mjs`. Desde el 6.4 también
+muestra qué hizo la guardia (textos reescritos y descartados, con motivo): los CVs no conservan nada inventado,
+así que esos números miden cuánto inventa el prompt.
 
 ## 16. Distribución y actualizaciones
 

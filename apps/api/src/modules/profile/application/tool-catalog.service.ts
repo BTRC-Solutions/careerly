@@ -27,6 +27,11 @@ export class ToolCatalogService {
     return this.repository.search(normalized || undefined, limit);
   }
 
+  /** Every tool of the catalog, with its aliases. */
+  all(): Promise<Tool[]> {
+    return this.repository.search(undefined, Number.MAX_SAFE_INTEGER);
+  }
+
   findById(id: string): Promise<Tool | undefined> {
     return this.repository.findById(id);
   }

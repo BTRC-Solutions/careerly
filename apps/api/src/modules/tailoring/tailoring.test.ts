@@ -448,6 +448,66 @@ describe('tailoring session match (integration)', () => {
     expect((await api('GET', `/tailoring-sessions/${id}/resumes/fr/preview`)).status).toBe(400);
   });
 
+  it('rewrites once what breaks the truthfulness guard and drops what still does (RN-02)', async () => {
+    const invented = {
+      summary: 'Backend engineer.',
+      summarySources: ['W1'],
+      experiences: [
+        {
+          experience: 'W1',
+          bullets: [
+            // Kubernetes is in the catalog but not in the profile; 12 is in no source.
+            { text: 'Designed the public REST API on Kubernetes', sources: ['A1'] },
+            { text: 'Led 12 engineers building the API', sources: ['A1'] },
+            { text: 'Designed the public REST API used by 40 partners', sources: ['A1'] },
+          ],
+        },
+      ],
+    };
+    const rewrites = {
+      rewrites: [
+        { item: '[B1]', text: 'Designed the public REST API in Node.js', sources: ['A1'] },
+        { item: 'B2', text: 'Led 10 engineers building the API', sources: ['A1'] },
+      ],
+    };
+    await start([ok(NODE_ONLY), ok(invented), ok(rewrites)]);
+    const id = await matchedWithoutGaps(['en']);
+
+    await api('POST', `/tailoring-sessions/${id}/generate`);
+    const done = await waitFor(generated(id));
+    expect(done.session.status).toBe('REVIEW');
+
+    const [resume] = await resumesOf(id);
+    expect(resume!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
+      'Designed the public REST API in Node.js',
+      'Designed the public REST API used by 40 partners',
+    ]);
+    expect(resume!.data.guard).toEqual({
+      rewritten: 1,
+      dropped: [
+        {
+          kind: 'BULLET',
+          experienceId: expect.any(String),
+          text: 'Led 10 engineers building the API',
+          reasons: ['NUMBER_NOT_IN_SOURCES'],
+        },
+      ],
+    });
+
+    // Only the texts with issues went back, as untrusted data, with what broke the rules.
+    expect(gemini!.calls).toHaveLength(3);
+    const rewriteCall = gemini!.calls[2]!;
+    expect(rewriteCall).toMatch(/^Master profile of the candidate:/);
+    expect(rewriteCall).toMatch(
+      /<untrusted source="cv-texts">\n\[B1\] A bullet of \[W1\], citing \[A1\]\n {2}Text: Designed the public REST API on Kubernetes\n {2}Problems: it mentions Kubernetes, which its sources do not show\./,
+    );
+    expect(rewriteCall).toMatch(
+      /Problems: it has the number\(s\) 12, which its sources do not have\./,
+    );
+    expect(rewriteCall.split('<untrusted source="cv-texts">')[1]).not.toMatch(/40 partners/);
+    expect(logs.output()).not.toContain('Kubernetes');
+  });
+
   it('fails the generation when the key is rejected, and writes again on retry', async () => {
     const replies = [ok(NODE_ONLY)];
     await start(replies);
