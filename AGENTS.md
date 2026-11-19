@@ -30,16 +30,17 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 
 ## Estado actual
 
-- **Fases 0 a 5** cerradas (`v0.5.0`): configuración, API key por proveedor, backups, instalador de Windows,
+- **Fases 0 a 6** cerradas (`v0.6.0`): configuración, API key por proveedor, backups, instalador de Windows,
   telemetría base (sin envío) y versionado con release-please;
   perfil maestro completo con origen y registro de cambios por sesión, importación de CVs y sugerencias de
   redacción de logros; CV en PDF con Typst (plantilla `classic` y plantillas propias, ajuste determinístico
   a 1–2 páginas); módulo de IA (Gemini y Claude, elección de modelos, pantalla de consumo), cola de tareas en
   segundo plano, JDs con análisis por IA corregible y evals; sesiones de adaptación con match (catálogo + IA),
-  preguntas de gaps sin IA, respuestas que se agregan al perfil y se pueden deshacer. Sigue la **Fase 6**
-  (generación del CV adaptado).
+  preguntas de gaps sin IA, respuestas que se agregan al perfil y se pueden deshacer; generación del CV
+  adaptado (opciones de la sesión, relevancia, redacción por idioma con guardia de veracidad, ajuste de
+  páginas, pantalla de revisión, regeneración con indicaciones, sesiones retomables). Sigue la **Fase 7** (snapshots y postulaciones).
 - Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
-  Fase 6 larga `v0.6.0`.
+  Fase 7 larga `v0.7.0`.
 - La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
   mergeado**, junto con la tarjeta de Trello ("En proceso" al abrir el PR, "Hecho" al mergear).
 

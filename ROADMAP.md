@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-18
+> Estado: borrador v0.4 · Última actualización: 2026-11-19
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -106,17 +106,17 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ✅ (PR #71, en `main` con #75) |
 | 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ✅ (PR #66) |
 
-## Fase 6 — Generación del CV adaptado · `v0.6.0`
+## Fase 6 — Generación del CV adaptado · `v0.6.0` · ✅ cerrada (2026-11-19)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
 | 6.1 | Opciones de la sesión: idiomas de salida, límite de páginas (con valor por defecto por años de experiencia) y plantilla. `[RF-TAIL-07, RF-TAIL-08, RF-TAIL-09]` | Se persisten y se respetan en la generación. | ✅ (#67) |
 | 6.2 | Puntuación de relevancia de logros y proyectos. | Scores guardados por candidato. | ✅ (#68) |
-| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | 🟨 (mergeado en #72; falta correr `npm run evals:resume` con una key real y revisar los CVs) |
-| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | 🟨 (mergeado en #73; falta correr `npm run evals:resume` con una key real: 0 bullets inventados) |
-| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | 🟨 (mergeado en #74; falta correr `npm run evals:resume` con una key real: todos dentro del límite) |
+| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | ✅ (PR #72; evals con key real: CVs en ES y EN desde el mismo perfil) |
+| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | ✅ (PR #73; evals con key real: 0 bullets inventados) |
+| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | ✅ (PR #74; evals con key real: todos dentro del límite) |
 | 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | ✅ (#76) |
-| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (mergeado en #78; falta probarlo con una key real) |
+| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | ✅ (PR #78; probado con una key real) |
 | 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ✅ (#79) |
 | 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ✅ (#80) |
 
