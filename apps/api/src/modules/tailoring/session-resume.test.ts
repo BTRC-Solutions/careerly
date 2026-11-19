@@ -112,7 +112,9 @@ describe('resuming tailoring sessions (integration)', () => {
       testConfig(temp!.dir, {
         CAREERLY_CONTROL_TOKEN: CONTROL_TOKEN,
         CAREERLY_GEMINI_BASE_URL: gemini!.url,
-        CAREERLY_JOB_RETRY_BASE_MS: '20',
+        // A resumed job can run before the key arrives and is retried (2 attempts are left): the delay leaves
+        // the key time to come even on a slow machine, as the default 2 s does in the app.
+        CAREERLY_JOB_RETRY_BASE_MS: '500',
       }),
     );
     await fetch(`http://127.0.0.1:${server.port}/internal/ai-credentials`, {
