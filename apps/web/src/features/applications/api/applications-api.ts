@@ -5,23 +5,29 @@ import {
   ApplicationEventSchema,
   ApplicationListSchema,
   ApplicationSchema,
+  type ContactInput,
+  ContactListSchema,
+  ContactSchema,
   type CreateApplicationRequest,
   type MoveApplicationRequest,
   ResumeVersionListSchema,
   type SendApplicationRequest,
+  type UpdateApplicationRequest,
 } from '@careerly/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiDelete, apiGet, apiPost } from '../../../shared/api/client';
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../../../shared/api/client';
 
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02): one per job description, created saved or already
- * sent with finalized CVs of that job description, and their timeline (roadmap 7.5, RF-APP-04).
+ * sent with finalized CVs of that job description, their timeline (roadmap 7.5, RF-APP-04), and their
+ * contacts and extra data (roadmap 7.6, RF-APP-05, RF-APP-07).
  */
 
 export const APPLICATIONS_QUERY_KEY = ['applications'] as const;
 const listKey = [...APPLICATIONS_QUERY_KEY, 'list'] as const;
 const applicationKey = (id: string) => [...APPLICATIONS_QUERY_KEY, id] as const;
 const eventsKey = (id: string) => [...applicationKey(id), 'events'] as const;
+const contactsKey = (id: string) => [...applicationKey(id), 'contacts'] as const;
 const ofPostingKey = (jobPostingId: string) =>
   [...APPLICATIONS_QUERY_KEY, 'of', jobPostingId] as const;
 
@@ -105,6 +111,44 @@ export function useMoveApplication() {
     mutationFn: ({ id, ...request }: MoveApplicationRequest & { id: string }) =>
       apiPost(`/applications/${id}/status`, ApplicationSchema, request),
     onSuccess: refresh,
+  });
+}
+
+/** Changes the extra data (RF-APP-07): `null` clears a field. */
+export function useUpdateApplication(id: string) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (request: UpdateApplicationRequest) =>
+      apiPatch(`/applications/${id}`, ApplicationSchema, request),
+    onSuccess: refresh,
+  });
+}
+
+/** The contacts (RF-APP-05), in the order they were added. */
+export function useContacts(id: string) {
+  return useQuery({
+    queryKey: contactsKey(id),
+    queryFn: () => apiGet(`/applications/${id}/contacts`, ContactListSchema),
+  });
+}
+
+/** Adds a contact, or replaces one when `contactId` is given. */
+export function useSaveContact(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contactId, ...input }: ContactInput & { contactId?: string }) =>
+      contactId
+        ? apiPut(`/applications/${id}/contacts/${contactId}`, ContactSchema, input)
+        : apiPost(`/applications/${id}/contacts`, ContactSchema, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: contactsKey(id) }),
+  });
+}
+
+export function useDeleteContact(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (contactId: string) => apiDelete(`/applications/${id}/contacts/${contactId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: contactsKey(id) }),
   });
 }
 

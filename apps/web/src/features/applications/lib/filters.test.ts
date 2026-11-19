@@ -17,6 +17,7 @@ const summary = (
   status,
   ghostedFrom: null,
   appliedAt,
+  priority: null,
   createdAt: NOW,
   updatedAt: NOW,
 });

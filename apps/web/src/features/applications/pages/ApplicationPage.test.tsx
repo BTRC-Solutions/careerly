@@ -3,6 +3,7 @@ import type {
   Application,
   ApplicationEvent,
   ApplicationSummary,
+  Contact,
   ResumeVersion,
 } from '@careerly/contracts';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -18,7 +19,7 @@ import { ApplicationPage } from './ApplicationPage';
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08) against a mocked API: creating one from a job
  * description or a finalized session, recording what was sent, opening exactly the PDF that was sent, and the
- * timeline (roadmap 7.5, RF-APP-04).
+ * timeline (roadmap 7.5, RF-APP-04), and the contacts and extra data (roadmap 7.6, RF-APP-05, RF-APP-07).
  */
 
 setupApiServer();
@@ -58,6 +59,10 @@ const APPLICATION: Application = {
       sentAt: '2026-11-18',
     },
   ],
+  channel: null,
+  priority: null,
+  salaryExpected: null,
+  salaryOffered: null,
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -68,6 +73,9 @@ let sends: unknown[];
 let pdfs: string[];
 let events: ApplicationEvent[];
 let added: unknown[];
+let contacts: Contact[];
+let patches: unknown[];
+let contactCalls: string[];
 
 beforeEach(() => {
   existing = null;
@@ -76,6 +84,9 @@ beforeEach(() => {
   pdfs = [];
   events = [];
   added = [];
+  contacts = [];
+  patches = [];
+  contactCalls = [];
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:pdf'), revokeObjectURL: vi.fn() });
   apiServer.use(
     http.get(api('/applications'), ({ request }) => {
@@ -101,6 +112,31 @@ beforeEach(() => {
     }),
     http.get(api('/applications/app-1'), () => HttpResponse.json(existing)),
     http.get(api('/applications/app-1/events'), () => HttpResponse.json({ events })),
+    http.patch(api('/applications/app-1'), async ({ request }) => {
+      const body = (await request.json()) as Partial<Application>;
+      patches.push(body);
+      existing = { ...existing!, ...body };
+      return HttpResponse.json(existing);
+    }),
+    http.get(api('/applications/app-1/contacts'), () => HttpResponse.json({ contacts })),
+    http.post(api('/applications/app-1/contacts'), async ({ request }) => {
+      const body = (await request.json()) as Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>;
+      contactCalls.push(`POST ${JSON.stringify(body)}`);
+      const contact = { ...body, id: `c-${contacts.length + 1}`, createdAt: NOW, updatedAt: NOW };
+      contacts = [...contacts, contact];
+      return HttpResponse.json(contact, { status: 201 });
+    }),
+    http.put(api('/applications/app-1/contacts/:contactId'), async ({ params, request }) => {
+      const body = (await request.json()) as Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>;
+      contactCalls.push(`PUT ${String(params.contactId)} ${JSON.stringify(body)}`);
+      contacts = contacts.map((c) => (c.id === params.contactId ? { ...c, ...body } : c));
+      return HttpResponse.json(contacts.find((c) => c.id === params.contactId));
+    }),
+    http.delete(api('/applications/app-1/contacts/:contactId'), ({ params }) => {
+      contactCalls.push(`DELETE ${String(params.contactId)}`);
+      contacts = contacts.filter((c) => c.id !== params.contactId);
+      return new HttpResponse(null, { status: 204 });
+    }),
     http.post(api('/applications/app-1/events'), async ({ request }) => {
       const body = (await request.json()) as { type: 'NOTE'; text: string };
       added.push(body);
@@ -378,6 +414,83 @@ describe('the timeline (roadmap 7.5, RF-APP-04)', () => {
         outcome: 'PENDING',
         interviewers: ['Grace Hopper', 'Alan'],
         occurredAt: new Date('2026-11-20T10:30').toISOString(),
+      },
+    ]);
+  });
+});
+
+describe('contacts and extra data (roadmap 7.6, RF-APP-05, RF-APP-07)', () => {
+  const renderDetail = () =>
+    renderScreen(
+      <Routes>
+        <Route path="/applications/:id" element={<ApplicationPage />} />
+      </Routes>,
+      { path: '/applications/app-1' },
+    );
+
+  it('adds, edits and deletes contacts', async () => {
+    existing = APPLICATION;
+    const { user } = await renderDetail();
+    expect(
+      await screen.findByText('Todavía no agregaste contactos de esta postulación.'),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar contacto' }));
+    let dialog = await screen.findByRole('dialog', { name: 'Agregar contacto' });
+    await user.type(within(dialog).getByLabelText('Nombre'), '  Laura Gómez ');
+    await user.type(within(dialog).getByLabelText('Email (opcional)'), 'laura@acme.test');
+    await user.type(
+      within(dialog).getByLabelText('LinkedIn (opcional)'),
+      'https://www.linkedin.com/in/laura',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
+
+    const list = await screen.findByRole('list', { name: 'Contactos' });
+    expect(within(list).getByText('laura@acme.test')).toBeVisible();
+    expect(within(list).getByRole('link', { name: 'Ver perfil de LinkedIn' })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/laura',
+    );
+
+    await user.click(within(list).getByRole('button', { name: 'Editar a Laura Gómez' }));
+    dialog = await screen.findByRole('dialog', { name: 'Editar contacto' });
+    await user.selectOptions(within(dialog).getByLabelText('Rol'), 'Hiring manager');
+    await user.clear(within(dialog).getByLabelText('Email (opcional)'));
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
+    expect(await within(list).findByText(/Hiring manager/)).toBeVisible();
+
+    await user.click(within(list).getByRole('button', { name: 'Borrar a Laura Gómez' }));
+    const confirm = await screen.findByRole('dialog', { name: '¿Borrar a Laura Gómez?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Eliminar' }));
+    expect(
+      await screen.findByText('Todavía no agregaste contactos de esta postulación.'),
+    ).toBeVisible();
+
+    expect(contactCalls).toEqual([
+      'POST {"name":"Laura Gómez","role":"RECRUITER","email":"laura@acme.test","linkedinUrl":"https://www.linkedin.com/in/laura"}',
+      'PUT c-1 {"name":"Laura Gómez","role":"HIRING_MANAGER","email":null,"linkedinUrl":"https://www.linkedin.com/in/laura"}',
+      'DELETE c-1',
+    ]);
+  });
+
+  it('saves the channel, priority and salaries, clearing what is left empty', async () => {
+    existing = { ...APPLICATION, salaryOffered: 'USD 3.000' };
+    const { user } = await renderDetail();
+    await screen.findByRole('heading', { name: 'Datos adicionales' });
+
+    await user.selectOptions(screen.getByLabelText('Canal de postulación'), 'Referido');
+    await user.selectOptions(screen.getByLabelText('Prioridad'), 'Alta');
+    await user.type(screen.getByLabelText('Salario pretendido'), ' USD 4.000/mes ');
+    await user.clear(screen.getByLabelText('Salario ofrecido'));
+    await user.click(screen.getByRole('button', { name: 'Guardar datos' }));
+
+    expect(await screen.findByText('Guardado.')).toBeVisible();
+    expect(patches).toEqual([
+      {
+        channel: 'REFERRAL',
+        priority: 'HIGH',
+        salaryExpected: 'USD 4.000/mes',
+        salaryOffered: null,
       },
     ]);
   });

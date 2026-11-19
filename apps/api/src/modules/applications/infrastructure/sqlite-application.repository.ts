@@ -1,7 +1,9 @@
 import {
   ACTIVE_APPLICATION_STATUSES,
+  ApplicationChannelSchema,
   type ApplicationEvent,
   ApplicationEventSchema,
+  ApplicationPrioritySchema,
   ApplicationStatusSchema,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
@@ -36,10 +38,12 @@ export class SqliteApplicationRepository extends ApplicationRepository {
     inTransaction(db, () => {
       db.prepare(
         `INSERT INTO applications (id, job_posting_id, status, ghosted_from, applied_at,
-           sent_without_careerly_cv, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           sent_without_careerly_cv, channel, priority, salary_expected, salary_offered, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET status = excluded.status, ghosted_from = excluded.ghosted_from,
            applied_at = excluded.applied_at, sent_without_careerly_cv = excluded.sent_without_careerly_cv,
+           channel = excluded.channel, priority = excluded.priority,
+           salary_expected = excluded.salary_expected, salary_offered = excluded.salary_offered,
            updated_at = excluded.updated_at`,
       ).run(
         application.id,
@@ -48,6 +52,10 @@ export class SqliteApplicationRepository extends ApplicationRepository {
         application.ghostedFrom,
         application.appliedAt,
         application.sentWithoutCareerlyCv ? 1 : 0,
+        application.channel,
+        application.priority,
+        application.salaryExpected,
+        application.salaryOffered,
         application.createdAt,
         application.updatedAt,
       );
@@ -158,6 +166,10 @@ export class SqliteApplicationRepository extends ApplicationRepository {
         sentWithoutCareerlyCv: row.sentWithoutCareerlyCv,
         sentResumeCount: resumes.length,
         sentResumes: resumes,
+        channel: ApplicationChannelSchema.nullable().parse(row.channel),
+        priority: ApplicationPrioritySchema.nullable().parse(row.priority),
+        salaryExpected: row.salaryExpected,
+        salaryOffered: row.salaryOffered,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       };

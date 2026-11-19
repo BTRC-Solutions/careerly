@@ -13,6 +13,7 @@ import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useDownloadResumeVersion, useResumeVersionPdf } from '../../tailoring/api/tailoring-api';
 import { useApplication, useDeleteApplication } from '../api/applications-api';
 import { StatusTag } from '../components/ApplicationCard';
+import { ApplicationDetailsCard, ContactsCard } from '../components/ApplicationExtras';
 import { useMoveFlow } from '../components/MoveFlow';
 import { MoveMenu } from '../components/MoveMenu';
 import { SendApplicationDialog } from '../components/SendApplicationDialog';
@@ -21,7 +22,8 @@ import { formatDay } from '../lib/dates';
 
 /**
  * One application (roadmap 7.3): the job it is for, its state, the finalized CVs sent with it, to open and
- * download exactly as they were sent (RF-APP-08), and its timeline (roadmap 7.5, RF-APP-04).
+ * download exactly as they were sent (RF-APP-08), its timeline (roadmap 7.5, RF-APP-04), and its contacts and
+ * extra data (roadmap 7.6, RF-APP-05, RF-APP-07).
  */
 export function ApplicationPage() {
   const { t } = useTranslation();
@@ -134,6 +136,8 @@ function ApplicationDetail({ application }: { application: Application }) {
       </Card>
 
       <Timeline applicationId={application.id} />
+      <ContactsCard applicationId={application.id} />
+      <ApplicationDetailsCard application={application} />
 
       {flow.dialogs}
       {sending && (

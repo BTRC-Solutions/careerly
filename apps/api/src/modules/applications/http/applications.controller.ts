@@ -5,6 +5,10 @@ import {
   type ApplicationEvent,
   type ApplicationEventList,
   type ApplicationList,
+  type Contact,
+  type ContactInput,
+  ContactInputSchema,
+  type ContactList,
   type CreateApplicationRequest,
   CreateApplicationRequestSchema,
   type ListApplicationsQuery,
@@ -14,6 +18,8 @@ import {
   type ResumeVersionList,
   type SendApplicationRequest,
   SendApplicationRequestSchema,
+  type UpdateApplicationRequest,
+  UpdateApplicationRequestSchema,
 } from '@careerly/contracts';
 import {
   BadRequestException,
@@ -29,7 +35,9 @@ import {
   type NestInterceptor,
   NotFoundException,
   Param,
+  Patch,
   Post,
+  Put,
   Query,
   UseInterceptors,
 } from '@nestjs/common';
@@ -41,6 +49,7 @@ import {
   ApplicationAlreadyExistsError,
   ApplicationJobPostingNotFoundError,
   ApplicationNotFoundError,
+  ContactNotFoundError,
   UnknownResumeVersionError,
 } from '../application/applications.ports.js';
 import { InvalidApplicationTransitionError } from '../domain/application.js';
@@ -56,7 +65,8 @@ class ApplicationsErrorsInterceptor implements NestInterceptor {
 function toHttpError(error: unknown): unknown {
   if (
     error instanceof ApplicationNotFoundError ||
-    error instanceof ApplicationJobPostingNotFoundError
+    error instanceof ApplicationJobPostingNotFoundError ||
+    error instanceof ContactNotFoundError
   ) {
     return new NotFoundException(error.message);
   }
@@ -107,6 +117,44 @@ export class ApplicationsController {
     return this.applications.get(id);
   }
 
+  /** The extra data (RF-APP-07): channel, priority and salaries. */
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateApplicationRequestSchema)) body: UpdateApplicationRequest,
+  ): Promise<Application> {
+    return this.applications.update(id, body);
+  }
+
+  /** The contacts (RF-APP-05). */
+  @Get(':id/contacts')
+  contacts(@Param('id') id: string): Promise<ContactList> {
+    return this.applications.contacts(id);
+  }
+
+  @Post(':id/contacts')
+  addContact(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(ContactInputSchema)) body: ContactInput,
+  ): Promise<Contact> {
+    return this.applications.addContact(id, body);
+  }
+
+  @Put(':id/contacts/:contactId')
+  updateContact(
+    @Param('id') id: string,
+    @Param('contactId') contactId: string,
+    @Body(new ZodValidationPipe(ContactInputSchema)) body: ContactInput,
+  ): Promise<Contact> {
+    return this.applications.updateContact(id, contactId, body);
+  }
+
+  @Delete(':id/contacts/:contactId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteContact(@Param('id') id: string, @Param('contactId') contactId: string): Promise<void> {
+    return this.applications.deleteContact(id, contactId);
+  }
+
   /** It was sent (RF-APP-02): a saved application becomes `APPLIED`; one already sent gets the new CVs. */
   @Post(':id/sent-resumes')
   @HttpCode(HttpStatus.OK)
@@ -149,7 +197,7 @@ export class ApplicationsController {
     return this.applications.addEvent(id, body);
   }
 
-  /** Deletes the application, its timeline and the record of what was sent; the finalized CVs stay. */
+  /** Deletes the application, its timeline, contacts and the record of what was sent; the finalized CVs stay. */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: string): Promise<void> {

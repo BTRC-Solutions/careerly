@@ -903,6 +903,51 @@
         "message": "Message",
         "save": "Save"
       }
+    },
+    "details": {
+      "title": "Extra data",
+      "channel": "How you applied",
+      "priority": "Priority",
+      "salaryExpected": "Expected salary",
+      "salaryOffered": "Offered salary",
+      "salaryHint": "However you like to write it, e.g. “USD 4,000 gross/month”.",
+      "unknown": "Not set",
+      "save": "Save data",
+      "saved": "Saved.",
+      "channels": {
+        "PORTAL": "Job board",
+        "REFERRAL": "Referral",
+        "DIRECT_CONTACT": "Direct contact",
+        "OTHER": "Other"
+      },
+      "priorities": {
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High"
+      }
+    },
+    "contacts": {
+      "title": "Contacts",
+      "add": "Add contact",
+      "editTitle": "Edit contact",
+      "none": "You have not added contacts to this application yet.",
+      "loadError": "The contacts could not be loaded.",
+      "name": "Name",
+      "role": "Role",
+      "email": "Email (optional)",
+      "linkedinUrl": "LinkedIn (optional)",
+      "linkedin": "View LinkedIn profile",
+      "save": "Save",
+      "edit": "Edit {{name}}",
+      "delete": "Delete {{name}}",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteDescription": "The contact is deleted from this application. The timeline does not change.",
+      "roles": {
+        "RECRUITER": "Recruiter",
+        "HIRING_MANAGER": "Hiring manager",
+        "REFERRAL": "Referral",
+        "OTHER": "Other"
+      }
     }
   },
   "templates": {
