@@ -85,7 +85,7 @@ export class TailoringSessionValidationError extends Error {
 export class InvalidSessionTransitionError extends Error {
   constructor(
     readonly from: TailoringSessionStatus,
-    readonly event: TailoringSessionEventType,
+    readonly event: TailoringSessionEventType | 'ANSWER_GAP',
     reason?: string,
   ) {
     super(`Cannot apply ${event} to a ${from} session${reason ? `: ${reason}` : ''}.`);

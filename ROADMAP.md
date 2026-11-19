@@ -94,17 +94,17 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.12 | *(Viene de la 3.7: se pasa para cerrar la Fase 3.)* Plantillas propias (backend): subir un `.typ`, validarlo renderizando los ejemplos de ES y EN, guardarlo versionado en `files/templates/`, listar, renombrar y borrar (las usadas por un snapshot se conservan). `[RF-TAIL-09, ADR-24, RNF-10]` | Test de integración: una plantilla válida queda disponible; una que no compila o tarda más del timeout se rechaza con el error de Typst. | ✅ (PR #54; tests de integración con Typst; el "usado por un snapshot" queda como puerto hasta la Fase 7) |
 | 4.13 | *(Viene de la 3.8.)* Plantillas propias (UI): pantalla de plantillas con `classic` y las propias, subida con vista previa del ejemplo y descarga de `classic` + ejemplos como punto de partida. `[RF-TAIL-09]` | Subir una plantilla desde la app y ver su vista previa en ambos idiomas. | ✅ (subida, vista previa ES/EN, renombrar y borrar probados en la UI; visor de PDF verificado en Electron) |
 
-## Fase 5 — Match y gaps · `v0.5.0`
+## Fase 5 — Match y gaps · `v0.5.0` · ✅ cerrada (2026-11-18)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
 | 5.1 | Agregado `TailoringSession` con su máquina de estados (dominio puro + tests). | Todas las transiciones válidas e inválidas cubiertas por tests. | ✅ (tabla estado × evento en `tailoring-session.test.ts`) |
-| 5.2 | Match determinístico de herramientas (con alias) + match semántico de requisitos no-herramienta con evidencia por id. `[RF-TAIL-02, RF-GAP-02]` | Con el perfil real y las JDs de evals, el match es razonable y toda la evidencia apunta a ids existentes. | 🟨 (implementado y con tests; falta correr `npm run evals:match -- --profile-db <careerly.db>` con una key real y revisar el resultado) |
+| 5.2 | Match determinístico de herramientas (con alias) + match semántico de requisitos no-herramienta con evidencia por id. `[RF-TAIL-02, RF-GAP-02]` | Con el perfil real y las JDs de evals, el match es razonable y toda la evidencia apunta a ids existentes. | ✅ (PR #62; evals de match con el perfil real y key real: toda la evidencia apunta a ids existentes) |
 | 5.3 | Pantalla de resumen del match. `[RF-TAIL-03]` | Muestra cubiertos (con evidencia), parciales y faltantes. | ✅ (pantalla probada con la API simulada; se abre con "Adaptar mi CV" desde la oferta) |
-| 5.4 | Generación de preguntas de gaps (faltantes, parciales, no-herramienta). `[RF-TAIL-04, RF-GAP-03, RF-GAP-04]` | Las preguntas se generan sin LLM, desde plantillas. | ⬜ |
-| 5.5 | UI de respuestas con los tres caminos (trabajo / proyecto-curso / no) y "relevante para este CV". `[RF-GAP-01]` | Se puede responder en cualquier orden y saltear. | ⬜ |
-| 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ⬜ |
-| 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ⬜ |
+| 5.4 | Generación de preguntas de gaps (faltantes, parciales, no-herramienta). `[RF-TAIL-04, RF-GAP-03, RF-GAP-04]` | Las preguntas se generan sin LLM, desde plantillas. | ✅ (PR #69) |
+| 5.5 | UI de respuestas con los tres caminos (trabajo / proyecto-curso / no) y "relevante para este CV". `[RF-GAP-01]` | Se puede responder en cualquier orden y saltear. | ✅ (PR #70, en `main` con #75) |
+| 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ✅ (PR #71, en `main` con #75) |
+| 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ✅ (PR #66) |
 
 ## Fase 6 — Generación del CV adaptado · `v0.6.0`
 

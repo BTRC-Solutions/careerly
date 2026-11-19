@@ -185,11 +185,7 @@ beforeEach(() => {
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:preview'), revokeObjectURL: vi.fn() });
   apiServer.use(
     http.get(api(`/tailoring-sessions/${ID}`), () => HttpResponse.json(view)),
-    http.post(api(`/tailoring-sessions/${ID}/gaps`), () => {
-      calls.push('gaps');
-      view = { session: session('AWAITING_ANSWERS', true), job: view.job };
-      return HttpResponse.json(view);
-    }),
+    http.get(api(`/tailoring-sessions/${ID}/gaps`), () => HttpResponse.json({ questions: [] })),
     http.post(api(`/tailoring-sessions/${ID}/generate`), () => {
       calls.push('generate');
       view = {
@@ -258,16 +254,16 @@ const render = () =>
   );
 
 describe('generating and reviewing the CV', () => {
-  it('generates the CV, going through the gaps when there are any', async () => {
-    view = { session: session('MATCHED', true), job: job('tailoring-match', 'SUCCEEDED') };
+  it('generates the CV from the gap questions, with what is still not covered', async () => {
+    view = { session: session('AWAITING_ANSWERS', true), job: job('tailoring-match', 'SUCCEEDED') };
     await render();
 
-    expect(await screen.findByText(/Hay 1 requisito sin cubrir del todo/)).toBeVisible();
+    expect(await screen.findByText(/Queda 1 requisito sin cubrir del todo/)).toBeVisible();
     expect(screen.getByText('En inglés · hasta 1 página')).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Generar CV' }));
 
     expect(await screen.findByText('Escribiendo el CV con la IA…')).toBeVisible();
-    expect(calls).toEqual(['gaps', 'generate']);
+    expect(calls).toEqual(['generate']);
   });
 
   it('shows each bullet with its state and source, next to the preview', async () => {

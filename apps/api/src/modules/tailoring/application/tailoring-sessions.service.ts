@@ -109,15 +109,6 @@ export class TailoringSessionsService {
   }
 
   /**
-   * Goes to the gap questions (RF-GAP-01): after the match, or back from the review. Answering them comes with
-   * roadmap 5.5; for now the session can only go on to generate, skipping them all.
-   */
-  async askGaps(id: string): Promise<TailoringSessionView> {
-    const session = await this.transition(await this.load(id), { type: 'ASK_GAPS' });
-    return { session, job: this.currentJob(session) };
-  }
-
-  /**
    * Writes the session's CVs in the background: without gaps, after answering them, or again from the review
    * (it replaces the CVs, edits included, until regenerating keeps them in roadmap 6.7).
    */
