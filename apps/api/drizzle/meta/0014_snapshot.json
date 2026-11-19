@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9dbcd9a4-6ea5-49b5-992f-125bafae539a",
-  "prevId": "6ee7f439-5641-43e9-8e82-2fb5f8d4707b",
+  "id": "6faea5ba-6b5f-4751-922d-a8d3bd0f9f6e",
+  "prevId": "a754d1e8-c81a-4dca-b6d5-08e130011b6f",
   "tables": {
     "achievement_tools": {
       "name": "achievement_tools",
@@ -493,6 +493,74 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "gap_questions": {
+      "name": "gap_questions",
+      "columns": {
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requirement_id": {
+          "name": "requirement_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "question": {
+          "name": "question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "answer": {
+          "name": "answer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "answered_at": {
+          "name": "answered_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "gap_questions_session_id_requirement_id_pk": {
+          "columns": [
+            "session_id",
+            "requirement_id"
+          ],
+          "name": "gap_questions_session_id_requirement_id_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1524,80 +1592,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "tailored_resumes": {
-      "name": "tailored_resumes",
-      "columns": {
-        "session_id": {
-          "name": "session_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "language": {
-          "name": "language",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "data": {
-          "name": "data",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "prompt_version": {
-          "name": "prompt_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "generated_at": {
-          "name": "generated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "tailored_resumes_session_id_tailoring_sessions_id_fk": {
-          "name": "tailored_resumes_session_id_tailoring_sessions_id_fk",
-          "tableFrom": "tailored_resumes",
-          "tableTo": "tailoring_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "tailored_resumes_session_id_language_pk": {
-          "columns": [
-            "session_id",
-            "language"
-          ],
-          "name": "tailored_resumes_session_id_language_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "tailoring_sessions": {
       "name": "tailoring_sessions",
       "columns": {
@@ -1652,13 +1646,6 @@
         },
         "match": {
           "name": "match",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "regeneration": {
-          "name": "regeneration",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
