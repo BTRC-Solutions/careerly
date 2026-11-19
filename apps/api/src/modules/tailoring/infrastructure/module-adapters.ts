@@ -37,6 +37,7 @@ import {
   ToolResolver,
   ToolVocabulary,
 } from '../application/tailoring.ports.js';
+import { ResumeWithoutNameError } from '../domain/resume-writing.js';
 import type { ToolTerm } from '../domain/truth-guard.js';
 
 export const TAILORING_MATCH_JOB = 'tailoring-match';
@@ -335,6 +336,11 @@ export class TailoringMatchJobHandler implements OnModuleInit {
 }
 
 function permanent(error: unknown): PermanentJobError | null {
+  if (error instanceof ResumeWithoutNameError) return new PermanentJobError('PROFILE_WITHOUT_NAME');
+  // A missing Typst or a broken template does not get better by retrying; a slow render may.
+  if (error instanceof ResumeRenderFailedError && error.reason !== 'TIMEOUT') {
+    return new PermanentJobError(error.reason);
+  }
   if (error instanceof TailoringSessionNotFoundError) {
     return new PermanentJobError('TAILORING_SESSION_DELETED');
   }

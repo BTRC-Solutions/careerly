@@ -14,6 +14,8 @@ import {
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
+import { fitToPages } from '../domain/page-fitter.js';
+import { fitCandidates } from '../domain/resume-fit.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
 import {
@@ -117,8 +119,8 @@ export class TailoringSessionsService {
   }
 
   /**
-   * The CV of a language as a PDF, with the session's template and the profile as it is now (companies, dates
-   * and the rest are copied from it, RN-03). Not fitted to the page budget yet (roadmap 6.5).
+   * The CV of a language as a PDF, with the session's template, the bullets its page fit chose and the profile
+   * as it is now (companies, dates and the rest are copied from it, RN-03).
    */
   async renderResume(id: string, language: ResumeLanguage): Promise<Uint8Array> {
     const session = await this.load(id);
@@ -136,6 +138,7 @@ export class TailoringSessionsService {
   /**
    * The generation job's work, per language: the AI writes the CV, the truthfulness guard checks it (RN-01,
    * RN-02), the texts that break a rule go back to the AI once, and what still breaks one is dropped and logged.
+   * Then the CV is fitted to the page budget by rendering it (RN-04).
    * Idempotent: a session that is no longer generating is left as it is.
    */
   async runGenerate(
@@ -164,6 +167,25 @@ export class TailoringSessionsService {
         const { rewrites } = await this.writer.rewrite({ profile, language, data, issues });
         data = applyRewrites(data, issues, rewrites, profile, vocabulary, today);
       }
+
+      // The fit to the page budget, measured on the PDF with the session's template (RN-04, ADR-05).
+      report({ step: 'fitting', done: index, total: session.languages.length });
+      const fixed = data;
+      const fit = await fitToPages(
+        fitCandidates(fixed, profile),
+        async (selection) => {
+          const document = buildResumeDocument({
+            data: fixed,
+            profile,
+            language,
+            paper: PAPER,
+            selection,
+          });
+          return (await this.renderer.render(document, session.templateId)).pageCount;
+        },
+        { pageBudget: session.pageBudget, today },
+      );
+      data = { ...fixed, fit: { ...fit, pageBudget: session.pageBudget } };
       written.push({
         sessionId: id,
         language,

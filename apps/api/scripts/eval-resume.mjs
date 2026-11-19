@@ -7,11 +7,13 @@
  * It also shows what the truthfulness guard (roadmap 6.4) had to fix: texts rewritten once and texts dropped,
  * with their reasons. The CVs never keep an invented tool or number; those counts measure the prompt.
  *
- *   npm run evals:resume -- --provider gemini [--model <id>] [--only <text>] [--profile-db <careerly.db>]
+ *   npm run evals:resume -- --provider gemini [--model <id>] [--only <text>] [--pages 1|2]
+ *     [--profile-db <careerly.db>]
  *
  * `--model` chooses the large tier's model. The profile, the key and `--profile-db` work as in `evals:match`.
- * Each run writes a JSON report and the PDFs to `.data/evals/`. It exits with 1 if a CV cannot be written or
- * any source does not exist.
+ * `--pages` (1 or 2, default 1) is the page budget: every PDF must respect it (RN-04). Each run writes a JSON
+ * report and the PDFs to `.data/evals/`. It exits with 1 if a CV cannot be written, any source does not exist
+ * or a CV is over the page budget.
  *
  * Calls cost tokens on the user's key: two small-model calls and two to four large-model calls per job
  * description (one more per language when the guard asks for a rewrite).
@@ -48,9 +50,12 @@ const { values: args } = parseArgs({
     cases: { type: 'string', default: path.join(apiDir, 'evals', 'jd-analysis') },
     profile: { type: 'string', default: path.join(apiDir, 'evals', 'match', 'profile.json') },
     'profile-db': { type: 'string' },
+    pages: { type: 'string', default: '1' },
     out: { type: 'string', default: path.join(repoRoot, '.data', 'evals') },
   },
 });
+const pageBudget = Number(args.pages);
+if (pageBudget !== 1 && pageBudget !== 2) throw new Error('--pages must be 1 or 2');
 const credentials = evalCredentials(args.provider);
 const cases = loadCases(args.cases, args.only);
 const { call, request, close } = await startEvalApi({
@@ -114,7 +119,13 @@ try {
     results,
   });
 
-  process.exitCode = results.some((r) => r.error) || invalid > 0 ? 1 : 0;
+  const over = written.filter((r) => r.overBudget.length > 0).map((r) => r.id);
+  console.log(
+    over.length === 0
+      ? `Pages: every CV fits in ${pageBudget} page(s).`
+      : `Pages: over ${pageBudget} page(s) in ${over.join(', ')}.`,
+  );
+  process.exitCode = results.some((r) => r.error) || invalid > 0 || over.length > 0 ? 1 : 0;
 } finally {
   await close();
 }
@@ -136,7 +147,11 @@ async function run(evalCase, elements) {
   if (posting.error) return { id: evalCase.id, error: posting.error };
 
   const { session } = TailoringSessionViewSchema.parse(
-    await call('POST', '/tailoring-sessions', { jobPostingId: posting.id, languages: LANGUAGES }),
+    await call('POST', '/tailoring-sessions', {
+      jobPostingId: posting.id,
+      languages: LANGUAGES,
+      pageBudget,
+    }),
   );
   const matched = await waitWhile(session.id, 'ANALYZING');
   if (matched.session.status === 'FAILED') {
@@ -177,7 +192,13 @@ async function run(evalCase, elements) {
     fs.writeFileSync(path.join(runDir, `${evalCase.id}.${language}.pdf`), pdf);
     pages[language] = (await PDFDocument.load(pdf)).getPageCount();
   }
-  return { id: evalCase.id, gaps, pages, resumes, invalidSources };
+  // The PDF must respect the page budget (RN-04), and agree with what the fit measured.
+  const overBudget = LANGUAGES.filter(
+    (language) =>
+      pages[language] > pageBudget ||
+      resumes.find((r) => r.language === language)?.data.fit?.pageCount !== pages[language],
+  );
+  return { id: evalCase.id, gaps, pages, resumes, invalidSources, overBudget };
 }
 
 function printResult(result, elements) {
@@ -188,7 +209,7 @@ function printResult(result, elements) {
   const describe = (id) =>
     [...elements.entries()].find(([key]) => key.endsWith(`:${id}`))?.[1] ?? 'DOES NOT EXIST';
   console.log(
-    `${result.invalidSources.length === 0 ? '✓' : '✗'} ${result.id} (${result.gaps} gap(s) skipped; ` +
+    `${result.invalidSources.length === 0 && result.overBudget.length === 0 ? '✓' : '✗'} ${result.id} (${result.gaps} gap(s) skipped; ` +
       `pages: es ${result.pages.es}, en ${result.pages.en})`,
   );
   for (const resume of result.resumes) {
@@ -200,7 +221,11 @@ function printResult(result, elements) {
         for (const id of bullet.sourceIds) console.log(`          ← ${describe(id)}`);
       }
     }
-    const { guard } = resume.data;
+    const { guard, fit } = resume.data;
+    const leftOut = fit?.log.filter((entry) => entry.action === 'LEFT_OUT').length ?? 0;
+    console.log(
+      `    fit: ${fit?.pageCount ?? '?'} page(s), ${leftOut} bullet(s) left out${fit?.fits ? '' : ' — DOES NOT FIT'}`,
+    );
     if (guard.rewritten > 0) console.log(`    guard: ${guard.rewritten} text(s) rewritten`);
     for (const drop of guard.dropped) {
       console.log(`    guard dropped (${drop.reasons.join(', ')}): ${drop.text}`);

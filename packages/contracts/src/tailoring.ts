@@ -157,6 +157,48 @@ export const GuardLogSchema = z.object({
 });
 export type GuardLog = z.infer<typeof GuardLogSchema>;
 
+/** What goes into the CV after the page fit, in display order. Every position is listed, maybe without bullets. */
+export const FitSelectionSchema = z.object({
+  positions: z.array(z.object({ id: z.string(), bulletIds: z.array(z.string()) })),
+  /** Only the projects shown. */
+  projects: z.array(z.object({ id: z.string(), bulletIds: z.array(z.string()) })),
+});
+export type FitSelection = z.infer<typeof FitSelectionSchema>;
+
+/**
+ * Why a bullet was left out of the CV or added back (ARCHITECTURE §8): `OLD_POSITION` (shown with no bullets,
+ * RN-07), `SECTION_LIMIT` (over the initial bullets of its position), `NOT_RELEVANT` (a project),
+ * `OVER_BUDGET` (removed to fit the page limit) and `SPACE_LEFT` (added back to fill the last page).
+ */
+export const FitReasonSchema = z.enum([
+  'OLD_POSITION',
+  'SECTION_LIMIT',
+  'NOT_RELEVANT',
+  'OVER_BUDGET',
+  'SPACE_LEFT',
+]);
+export type FitReason = z.infer<typeof FitReasonSchema>;
+
+export const FitLogEntrySchema = z.object({
+  owner: z.object({ type: z.enum(['position', 'project']), id: z.string() }),
+  /** `null` when the entry is about a whole project. */
+  bulletId: z.string().nullable(),
+  action: z.enum(['LEFT_OUT', 'ADDED']),
+  reason: FitReasonSchema,
+});
+export type FitLogEntry = z.infer<typeof FitLogEntrySchema>;
+
+/** The deterministic fit to the page budget (RN-04, ADR-05), measured on the rendered PDF. */
+export const ResumeFitSchema = z.object({
+  selection: FitSelectionSchema,
+  pageCount: z.number().int().positive(),
+  /** `false` when even the shortest CV is over the budget: finalizing it needs confirmation (RN-04). */
+  fits: z.boolean(),
+  pageBudget: PageBudgetSchema,
+  log: z.array(FitLogEntrySchema),
+});
+export type ResumeFit = z.infer<typeof ResumeFitSchema>;
+
 export const TailoredResumeDataSchema = z.object({
   summary: z.object({ text: z.string().trim().min(1), sourceIds: z.array(z.string()) }).nullable(),
   /** Positions and projects with bullets; positions left out are shown with no bullets (RN-07). */
@@ -164,6 +206,8 @@ export const TailoredResumeDataSchema = z.object({
   /** Profile tools for the skills section, the ones the job description asks for first. */
   toolIds: z.array(z.string()),
   guard: GuardLogSchema,
+  /** `null` until the CV is fitted to the page budget. */
+  fit: ResumeFitSchema.nullable(),
 });
 export type TailoredResumeData = z.infer<typeof TailoredResumeDataSchema>;
 
