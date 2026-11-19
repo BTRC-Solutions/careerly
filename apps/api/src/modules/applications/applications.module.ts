@@ -17,7 +17,8 @@ import { SqliteApplicationRepository } from './infrastructure/sqlite-application
 
 /**
  * Job applications (ARCHITECTURE §4–5, hexagonal): one per job description, its state machine (roadmap 7.2)
- * and the finalized CVs sent with it (roadmap 7.3). The timeline, contacts and extra data come in 7.5 and 7.6.
+ * the finalized CVs sent with it (roadmap 7.3) and its timeline (roadmap 7.5). Contacts and extra data come in
+ * 7.6.
  */
 @Module({
   imports: [JobPostingsModule, TailoringModule],

@@ -161,3 +161,106 @@ export const MoveApplicationRequestSchema = z
   })
   .strict();
 export type MoveApplicationRequest = z.infer<typeof MoveApplicationRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Timeline (roadmap 7.5, RF-APP-04, RN-09): append-only, nothing in it is edited or deleted
+// ---------------------------------------------------------------------------
+
+const TimelineText = z.string().trim().min(1).max(5000);
+
+/** The kind of interview. */
+export const InterviewKindSchema = z.enum([
+  'SCREENING',
+  'TECHNICAL',
+  'BEHAVIORAL',
+  'CASE',
+  'FINAL',
+  'OTHER',
+]);
+export type InterviewKind = z.infer<typeof InterviewKindSchema>;
+
+/** How an interview went, as far as the user knows when recording it. */
+export const InterviewOutcomeSchema = z.enum(['PENDING', 'PASSED', 'NOT_PASSED']);
+export type InterviewOutcome = z.infer<typeof InterviewOutcomeSchema>;
+
+/** Where a message from the company came in. */
+export const MessageChannelSchema = z.enum(['EMAIL', 'LINKEDIN', 'PHONE', 'OTHER']);
+export type MessageChannel = z.infer<typeof MessageChannelSchema>;
+
+/** A note of the user. */
+export const NoteEntrySchema = z.object({ type: z.literal('NOTE'), text: TimelineText });
+
+/** An interview: its kind, who took it (RF-APP-04) and how it went. */
+export const InterviewEntrySchema = z.object({
+  type: z.literal('INTERVIEW'),
+  kind: InterviewKindSchema,
+  interviewers: z.array(z.string().trim().min(1).max(200)).max(10),
+  outcome: InterviewOutcomeSchema,
+  notes: TimelineText.optional(),
+});
+
+/** A message received from the company. */
+export const MessageEntrySchema = z.object({
+  type: z.literal('MESSAGE'),
+  channel: MessageChannelSchema,
+  /** Who sent it. */
+  from: z.string().trim().min(1).max(200).optional(),
+  text: TimelineText,
+});
+
+/**
+ * A change of state, recorded on its own (RN-09). `from` is `null` when the application was created; `backward`
+ * says the user confirmed going back, `reopened` that a closed application was reopened (RN-10).
+ */
+export const StatusChangeEntrySchema = z.object({
+  type: z.literal('STATUS_CHANGE'),
+  from: ApplicationStatusSchema.nullable(),
+  to: ApplicationStatusSchema,
+  backward: z.boolean(),
+  reopened: z.boolean(),
+});
+
+export const ApplicationEventTypeSchema = z.enum(['STATUS_CHANGE', 'NOTE', 'INTERVIEW', 'MESSAGE']);
+export type ApplicationEventType = z.infer<typeof ApplicationEventTypeSchema>;
+
+/** What an event says, by type. */
+export const ApplicationEventEntrySchema = z.discriminatedUnion('type', [
+  StatusChangeEntrySchema,
+  NoteEntrySchema,
+  InterviewEntrySchema,
+  MessageEntrySchema,
+]);
+export type ApplicationEventEntry = z.infer<typeof ApplicationEventEntrySchema>;
+
+const EventTimes = {
+  id: z.string(),
+  /** When it happened (an interview may be ahead); the timeline is ordered by it. */
+  occurredAt: z.iso.datetime(),
+  /** When it was recorded. */
+  createdAt: z.iso.datetime(),
+};
+
+/** One event of the timeline. */
+export const ApplicationEventSchema = z.discriminatedUnion('type', [
+  StatusChangeEntrySchema.extend(EventTimes),
+  NoteEntrySchema.extend(EventTimes),
+  InterviewEntrySchema.extend(EventTimes),
+  MessageEntrySchema.extend(EventTimes),
+]);
+export type ApplicationEvent = z.infer<typeof ApplicationEventSchema>;
+
+/** `GET /applications/:id/events`: oldest first, by when they happened and then by when they were recorded. */
+export const ApplicationEventListSchema = z.object({ events: z.array(ApplicationEventSchema) });
+export type ApplicationEventList = z.infer<typeof ApplicationEventListSchema>;
+
+/**
+ * `POST /applications/:id/events`: a note, an interview or a message. Changes of state are recorded by the
+ * application itself. `occurredAt` is now by default.
+ */
+const OccurredAt = { occurredAt: z.iso.datetime({ offset: true }).optional() };
+export const AddApplicationEventRequestSchema = z.discriminatedUnion('type', [
+  NoteEntrySchema.extend(OccurredAt).strict(),
+  InterviewEntrySchema.extend(OccurredAt).strict(),
+  MessageEntrySchema.extend(OccurredAt).strict(),
+]);
+export type AddApplicationEventRequest = z.infer<typeof AddApplicationEventRequestSchema>;

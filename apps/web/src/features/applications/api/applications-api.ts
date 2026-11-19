@@ -1,5 +1,8 @@
 import {
+  type AddApplicationEventRequest,
   type Application,
+  ApplicationEventListSchema,
+  ApplicationEventSchema,
   ApplicationListSchema,
   ApplicationSchema,
   type CreateApplicationRequest,
@@ -12,12 +15,13 @@ import { apiDelete, apiGet, apiPost } from '../../../shared/api/client';
 
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02): one per job description, created saved or already
- * sent with finalized CVs of that job description.
+ * sent with finalized CVs of that job description, and their timeline (roadmap 7.5, RF-APP-04).
  */
 
 export const APPLICATIONS_QUERY_KEY = ['applications'] as const;
 const listKey = [...APPLICATIONS_QUERY_KEY, 'list'] as const;
 const applicationKey = (id: string) => [...APPLICATIONS_QUERY_KEY, id] as const;
+const eventsKey = (id: string) => [...applicationKey(id), 'events'] as const;
 const ofPostingKey = (jobPostingId: string) =>
   [...APPLICATIONS_QUERY_KEY, 'of', jobPostingId] as const;
 
@@ -61,11 +65,15 @@ export function useSendableResumes(jobPostingId: string) {
   });
 }
 
-/** After any change: the application itself, the list and the lookup by job description. */
+/**
+ * After any change: the application itself, its timeline (a change of state is recorded there), the list and the
+ * lookup by job description.
+ */
 function useRefresh() {
   const queryClient = useQueryClient();
   return (application: Application) => {
     queryClient.setQueryData(applicationKey(application.id), application);
+    void queryClient.invalidateQueries({ queryKey: eventsKey(application.id) });
     void queryClient.invalidateQueries({ queryKey: listKey });
     void queryClient.invalidateQueries({ queryKey: ofPostingKey(application.jobPostingId) });
   };
@@ -97,6 +105,27 @@ export function useMoveApplication() {
     mutationFn: ({ id, ...request }: MoveApplicationRequest & { id: string }) =>
       apiPost(`/applications/${id}/status`, ApplicationSchema, request),
     onSuccess: refresh,
+  });
+}
+
+/** The timeline (RF-APP-04): oldest first. */
+export function useApplicationEvents(id: string) {
+  return useQuery({
+    queryKey: eventsKey(id),
+    queryFn: () => apiGet(`/applications/${id}/events`, ApplicationEventListSchema),
+  });
+}
+
+/** Adds a note, an interview or a message to the timeline; it cannot be changed afterwards. */
+export function useAddApplicationEvent(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: AddApplicationEventRequest) =>
+      apiPost(`/applications/${id}/events`, ApplicationEventSchema, request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: eventsKey(id) });
+      void queryClient.invalidateQueries({ queryKey: listKey });
+    },
   });
 }
 

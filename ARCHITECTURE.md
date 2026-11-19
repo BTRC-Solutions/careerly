@@ -302,6 +302,16 @@ interfaz pregunta lo que el movimiento necesita (`features/applications/lib/move
 agregado): confirmar un retroceso o una reapertura, o cómo se envió la primera vez. La tabla filtra por estado,
 empresa y fecha de envío, y busca en el puesto y la empresa (sin distinguir mayúsculas ni acentos).
 
+**Línea de tiempo (paso 7.5, RF-APP-04):** `application_events` es *append-only*. No hay rutas para editar ni
+borrar, y dos *triggers* de SQLite rechazan cualquier `UPDATE` y cualquier `DELETE` mientras la postulación
+existe; al borrarla, sus eventos se van en cascada. Los cambios de estado se registran solos, en la misma
+transacción que guarda la postulación: la creación (`from: null`), el envío, cada movimiento, los retrocesos
+confirmados (`backward`, RN-09) y las reaperturas (`reopened`, RN-10). Los movimientos rechazados no dejan nada. El
+usuario agrega notas (fechadas ahora), entrevistas (tipo, entrevistadores, resultado y notas; pueden ser futuras)
+y mensajes recibidos (medio, de quién y texto). Como nada se edita, el resultado de una entrevista se registra
+con una entrada nueva. El orden es por `occurredAt` y después por `createdAt`; la pantalla muestra lo más nuevo
+primero.
+
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.
 

@@ -1,5 +1,9 @@
 import {
+  type AddApplicationEventRequest,
+  AddApplicationEventRequestSchema,
   type Application,
+  type ApplicationEvent,
+  type ApplicationEventList,
   type ApplicationList,
   type CreateApplicationRequest,
   CreateApplicationRequestSchema,
@@ -126,7 +130,26 @@ export class ApplicationsController {
     return this.applications.move(id, body);
   }
 
-  /** Deletes the application and the record of what was sent; the finalized CVs themselves stay. */
+  /** The timeline (RF-APP-04): changes of state, notes, interviews and messages, oldest first. */
+  @Get(':id/events')
+  events(@Param('id') id: string): Promise<ApplicationEventList> {
+    return this.applications.events(id);
+  }
+
+  /**
+   * Adds a note, an interview or a message to the timeline. There is no route to change or delete one: the
+   * timeline is append-only (roadmap 7.5).
+   */
+  @Post(':id/events')
+  addEvent(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(AddApplicationEventRequestSchema))
+    body: AddApplicationEventRequest,
+  ): Promise<ApplicationEvent> {
+    return this.applications.addEvent(id, body);
+  }
+
+  /** Deletes the application, its timeline and the record of what was sent; the finalized CVs stay. */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: string): Promise<void> {

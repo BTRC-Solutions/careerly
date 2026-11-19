@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
-import type { Application, ApplicationSummary, ResumeVersion } from '@careerly/contracts';
+import type {
+  Application,
+  ApplicationEvent,
+  ApplicationSummary,
+  ResumeVersion,
+} from '@careerly/contracts';
 import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
@@ -12,7 +17,8 @@ import { ApplicationPage } from './ApplicationPage';
 
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08) against a mocked API: creating one from a job
- * description or a finalized session, recording what was sent, and opening exactly the PDF that was sent.
+ * description or a finalized session, recording what was sent, opening exactly the PDF that was sent, and the
+ * timeline (roadmap 7.5, RF-APP-04).
  */
 
 setupApiServer();
@@ -60,12 +66,16 @@ let existing: Application | null;
 let created: unknown[];
 let sends: unknown[];
 let pdfs: string[];
+let events: ApplicationEvent[];
+let added: unknown[];
 
 beforeEach(() => {
   existing = null;
   created = [];
   sends = [];
   pdfs = [];
+  events = [];
+  added = [];
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:pdf'), revokeObjectURL: vi.fn() });
   apiServer.use(
     http.get(api('/applications'), ({ request }) => {
@@ -90,6 +100,19 @@ beforeEach(() => {
       return HttpResponse.json(existing, { status: 201 });
     }),
     http.get(api('/applications/app-1'), () => HttpResponse.json(existing)),
+    http.get(api('/applications/app-1/events'), () => HttpResponse.json({ events })),
+    http.post(api('/applications/app-1/events'), async ({ request }) => {
+      const body = (await request.json()) as { type: 'NOTE'; text: string };
+      added.push(body);
+      const event: ApplicationEvent = {
+        ...body,
+        id: `e-${added.length}`,
+        occurredAt: NOW,
+        createdAt: NOW,
+      };
+      events = [...events, event];
+      return HttpResponse.json(event, { status: 201 });
+    }),
     http.post(api('/applications/app-1/sent-resumes'), async ({ request }) => {
       sends.push(await request.json());
       return HttpResponse.json(existing);
@@ -246,5 +269,116 @@ describe('an application', () => {
     await waitFor(() =>
       expect(sends).toEqual([{ resumeVersionIds: [NEW_EN.id], sentAt: today() }]),
     );
+  });
+});
+
+describe('the timeline (roadmap 7.5, RF-APP-04)', () => {
+  const at = (occurredAt: string) => ({ occurredAt, createdAt: occurredAt });
+  const renderDetail = () =>
+    renderScreen(
+      <Routes>
+        <Route path="/applications/:id" element={<ApplicationPage />} />
+      </Routes>,
+      { path: '/applications/app-1' },
+    );
+
+  it('shows what happened, newest first, without a way to change it', async () => {
+    existing = APPLICATION;
+    events = [
+      {
+        id: 'e1',
+        type: 'STATUS_CHANGE',
+        from: null,
+        to: 'SAVED',
+        backward: false,
+        reopened: false,
+        ...at('2026-11-10T12:00:00.000Z'),
+      },
+      {
+        id: 'e2',
+        type: 'STATUS_CHANGE',
+        from: 'SAVED',
+        to: 'APPLIED',
+        backward: false,
+        reopened: false,
+        ...at('2026-11-11T12:00:00.000Z'),
+      },
+      {
+        id: 'e3',
+        type: 'MESSAGE',
+        channel: 'LINKEDIN',
+        from: 'Laura',
+        text: '¿Hablamos el lunes?',
+        ...at('2026-11-12T12:00:00.000Z'),
+      },
+      {
+        id: 'e4',
+        type: 'STATUS_CHANGE',
+        from: 'INTERVIEWING',
+        to: 'APPLIED',
+        backward: true,
+        reopened: false,
+        ...at('2026-11-13T12:00:00.000Z'),
+      },
+      {
+        id: 'e5',
+        type: 'INTERVIEW',
+        kind: 'TECHNICAL',
+        interviewers: ['Grace', 'Alan'],
+        outcome: 'PENDING',
+        ...at('2099-01-15T17:00:00.000Z'),
+      },
+    ];
+    await renderDetail();
+
+    const timeline = await screen.findByRole('list', { name: 'Línea de tiempo' });
+    const items = await within(timeline).findAllByRole('listitem');
+    expect(items.map((item) => item.querySelector('p')!.textContent)).toEqual([
+      'Entrevista: técnica',
+      'Volvió de Entrevistas a Enviada (confirmado)',
+      'Mensaje por LinkedIn de Laura',
+      'Pasó de Guardada a Enviada',
+      'Creaste la postulación (Guardada)',
+    ]);
+    expect(within(items[0]!).getByText('Con Grace, Alan')).toBeVisible();
+    expect(within(items[0]!).getByText('Sin resultado')).toBeVisible();
+    expect(within(items[0]!).getByText('Próxima')).toBeVisible();
+    expect(within(items[2]!).getByText('¿Hablamos el lunes?')).toBeVisible();
+    expect(screen.getByText('Lo que se registra acá no se puede editar ni borrar.')).toBeVisible();
+    for (const item of items) expect(within(item).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('adds a note and an interview, with its interviewers and date', async () => {
+    existing = APPLICATION;
+    const { user } = await renderDetail();
+
+    await user.click(await screen.findByRole('button', { name: 'Agregar nota' }));
+    let dialog = await screen.findByRole('dialog', { name: 'Agregar nota' });
+    const save = within(dialog).getByRole('button', { name: 'Guardar' });
+    expect(save).toBeDisabled();
+    await user.type(within(dialog).getByLabelText('Nota'), 'Hablé con un ex compañero.');
+    await user.click(save);
+    expect(await screen.findByText('Hablé con un ex compañero.')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Registrar entrevista' }));
+    dialog = await screen.findByRole('dialog', { name: 'Registrar entrevista' });
+    const date = within(dialog).getByLabelText('Fecha y hora');
+    await user.clear(date);
+    await user.type(date, '2026-11-20T10:30');
+    await user.selectOptions(within(dialog).getByLabelText('Tipo'), 'conductual');
+    await user.type(within(dialog).getByLabelText('Entrevistadores'), ' Grace Hopper, , Alan ');
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
+
+    await waitFor(() => expect(added).toHaveLength(2));
+    expect(added).toEqual([
+      { type: 'NOTE', text: 'Hablé con un ex compañero.' },
+      {
+        type: 'INTERVIEW',
+        kind: 'BEHAVIORAL',
+        outcome: 'PENDING',
+        interviewers: ['Grace Hopper', 'Alan'],
+        occurredAt: new Date('2026-11-20T10:30').toISOString(),
+      },
+    ]);
   });
 });

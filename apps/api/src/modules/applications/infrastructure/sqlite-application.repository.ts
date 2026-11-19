@@ -1,9 +1,14 @@
-import { ACTIVE_APPLICATION_STATUSES, ApplicationStatusSchema } from '@careerly/contracts';
+import {
+  ACTIVE_APPLICATION_STATUSES,
+  type ApplicationEvent,
+  ApplicationEventSchema,
+  ApplicationStatusSchema,
+} from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../../platform/database/database.service.js';
-import { applications, sentResumes } from '../../../platform/database/schema.js';
+import { applicationEvents, applications, sentResumes } from '../../../platform/database/schema.js';
 import { inTransaction } from '../../../platform/database/sqlite.js';
 import {
   ApplicationRepository,
@@ -16,8 +21,9 @@ type SentRow = typeof sentResumes.$inferSelect;
 const GhostedFromSchema = z.enum(ACTIVE_APPLICATION_STATUSES).nullable();
 
 /**
- * Applications and their sent CVs. Saving writes both in one `node:sqlite` transaction (the Drizzle proxy driver
- * has none); sent CVs are only added, never changed. Reads go through Drizzle and are validated.
+ * Applications, their sent CVs and their timeline. Saving writes them in one `node:sqlite` transaction (the
+ * Drizzle proxy driver has none); sent CVs and events are only added, never changed (the migration's triggers
+ * refuse it too). Reads go through Drizzle and are validated.
  */
 @Injectable()
 export class SqliteApplicationRepository extends ApplicationRepository {
@@ -25,7 +31,7 @@ export class SqliteApplicationRepository extends ApplicationRepository {
     super();
   }
 
-  async save(application: StoredApplication): Promise<void> {
+  async save(application: StoredApplication, events: ApplicationEvent[] = []): Promise<void> {
     const db = this.database.connection;
     inTransaction(db, () => {
       db.prepare(
@@ -58,7 +64,39 @@ export class SqliteApplicationRepository extends ApplicationRepository {
           `${application.updatedAt}#${pad(index)}`,
         );
       });
+      const append = db.prepare(
+        `INSERT INTO application_events (id, application_id, type, payload, occurred_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      events.forEach(({ id, type, occurredAt, createdAt, ...payload }, index) => {
+        // The position keeps the order among events recorded at the same instant.
+        append.run(
+          id,
+          application.id,
+          type,
+          JSON.stringify(payload),
+          occurredAt,
+          `${createdAt}#${pad(index)}`,
+        );
+      });
     });
+  }
+
+  async events(applicationId: string): Promise<ApplicationEvent[]> {
+    const rows = await this.database.db
+      .select()
+      .from(applicationEvents)
+      .where(eq(applicationEvents.applicationId, applicationId))
+      .orderBy(asc(applicationEvents.occurredAt), asc(applicationEvents.createdAt));
+    return rows.map((row) =>
+      ApplicationEventSchema.parse({
+        ...(JSON.parse(row.payload) as object),
+        id: row.id,
+        type: row.type,
+        occurredAt: row.occurredAt,
+        createdAt: row.createdAt.split('#')[0],
+      }),
+    );
   }
 
   async find(id: string): Promise<StoredApplication | null> {
