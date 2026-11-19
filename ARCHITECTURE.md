@@ -133,7 +133,7 @@ profile      ◄── tailoring ──► job-postings
                     │
                     ├──► documents (render Typst, snapshots)
                     └──► ai (adaptadores de LLM)
-applications ──► job-postings, documents (snapshots)
+applications ──► job-postings, tailoring (CVs finalizados de una JD), documents (PDF de los snapshots)
 dashboard    ──► applications (solo lectura)
 telemetry    ──► applications, job-postings, tailoring, ai (solo lectura) ──► receptor externo (§19)
 
@@ -254,7 +254,7 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `TailoredResume` | sessionId, language, data (JSON), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
 | `ResumeVersion` | sessionId, language, data (JSON: `document`, lo que recibió la plantilla, y `sources`, el CV revisado con las fuentes de cada bullet), templateId, templateName, templateVersion, pageCount, pageBudget, contentHash, fileName, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio, y un *trigger* de SQLite rechaza cualquier `UPDATE`. Uno por idioma de la sesión (único por `sessionId` + `language`). |
 | `Application` | jobPostingId, status, ghostedFrom?, appliedAt?, sentWithoutCareerlyCv, channel, priority, salaryExpected?, salaryOffered? | Agregado principal del módulo `applications`, con su máquina de estados (ver abajo). |
-| `SentResume` | applicationId, resumeVersionId, sentAt | Permite varios CVs enviados (p. ej. ES y EN). |
+| `SentResume` | applicationId, resumeVersionId, sentAt (día, YYYY-MM-DD) | Permite varios CVs enviados (p. ej. ES y EN). Solo CVs finalizados de la JD de la postulación; se agregan, nunca se cambian. |
 | `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
 | `AiGeneration` | task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Base del consumo y presupuesto (RF-CONF-06, RF-CONF-07). |
 | `Setting` | key, value (JSON) | Preferencias no secretas. La API key **no** se guarda acá. Incluye las preferencias de telemetría: `installId`, métricas activadas y `consentVersion`. |
@@ -285,6 +285,13 @@ valor anterior, salvo que el usuario lo haya editado después de la sesión: en 
   o ahora), que se conserva aunque se vuelva a `SAVED`.
 - Un cambio rechazado dice por qué (`ApplicationTransitionRefusal`: `CLOSED`, `NEEDS_CONFIRMATION`,
   `NEEDS_SENT_CV`, etc.), para que la interfaz pida lo que falta.
+
+**Postulaciones y CVs enviados (paso 7.3):** hay una postulación por JD (índice único), y crearla desde una
+sesión de una JD que ya tiene una lleva a la existente ("crear o vincular"). Se crea guardada (`SAVED`) o ya
+enviada: con CVs finalizados de esa JD, que se listan con `FinalizedResumesService` del módulo `tailoring`, o
+confirmando que se envió sin CV de Careerly. Registrar un envío después pasa una guardada a `APPLIED` o le agrega
+CVs a una ya enviada. Una JD con postulación no se puede borrar (409): `applications` registra un chequeo en
+`JobPostingsService` al iniciar, porque `job-postings` no puede depender de `applications`.
 
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.
@@ -667,9 +674,12 @@ POST   /tailoring-sessions/:id/revert-profile-changes # { changeIds? }: deshace 
 GET    /resume-versions/:id
 GET    /resume-versions/:id/pdf
 
-CRUD   /applications
-POST   /applications/:id/status                    # transición validada por el dominio
-POST   /applications/:id/sent-resumes
+GET    /applications?jobPostingId=                 # todas, o la de una JD (una por JD)
+POST   /applications                               # { jobPostingId, sent? }: guardada, o ya enviada con CVs finalizados de esa JD
+GET    /applications/sendable-resumes?jobPostingId= # CVs finalizados de la JD, para enviar
+GET    /applications/:id | DELETE /applications/:id  # borrarla no borra los CVs finalizados
+POST   /applications/:id/sent-resumes              # { resumeVersionIds, sentWithoutCareerlyCv?, sentAt? }: SAVED → APPLIED, o agrega CVs
+POST   /applications/:id/status                    # transición validada por el dominio (7.4)
 CRUD   /applications/:id/events, /applications/:id/contacts
 
 GET    /dashboard/summary

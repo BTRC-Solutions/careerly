@@ -25,6 +25,7 @@ import {
 } from '../api/tailoring-api';
 import { GapQuestionsCard } from '../components/GapQuestionsCard';
 import { SessionOptionsCard } from '../components/SessionOptionsCard';
+import { ApplicationCard } from '../../applications/components/ApplicationCard';
 import { FinalizedResumes } from '../components/FinalizedResumes';
 import { ResumeReview } from '../components/ResumeReview';
 import { SessionProfileChanges } from '../components/SessionProfileChanges';
@@ -198,7 +199,12 @@ function Session({ view }: { view: TailoringSessionView }) {
       )}
 
       {reviewing && <ResumeReview session={session} />}
-      {finalized && <FinalizedResumes session={session} />}
+      {finalized && (
+        <>
+          <ApplicationCard jobPostingId={session.jobPostingId} sessionId={session.id} />
+          <FinalizedResumes session={session} />
+        </>
+      )}
 
       {session.match &&
         (reviewing || finalized ? (

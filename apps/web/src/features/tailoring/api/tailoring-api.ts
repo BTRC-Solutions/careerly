@@ -287,7 +287,7 @@ export function useResumeVersionPdf(versionId: string) {
 /** Saves a finalized PDF with its name: "Name - Job title - Company (EN).pdf". */
 export function useDownloadResumeVersion() {
   return useMutation({
-    mutationFn: async (version: ResumeVersion) => {
+    mutationFn: async (version: Pick<ResumeVersion, 'id' | 'fileName'>) => {
       downloadBlob(await apiGetBlob(`/resume-versions/${version.id}/pdf`), version.fileName);
     },
   });

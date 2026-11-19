@@ -1,4 +1,5 @@
 // Public API of the tailoring module.
+export { FinalizedResumesService } from './application/finalized-resumes.service.js';
 export {
   type TailoringUsage,
   TailoringUsageService,
