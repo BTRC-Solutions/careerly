@@ -10,6 +10,8 @@ import {
   type EditTailoredResumeRequest,
   type FitSelection,
   type Profile,
+  type Regeneration,
+  type RegenerateResumesRequest,
   type TailoredResume,
   type TailoredResumeData,
   type TailoredResumesView,
@@ -19,12 +21,14 @@ import {
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
 import { fitToPages } from '../domain/page-fitter.js';
+import { mergeRegenerated, restrictToScope, WHOLE_CV } from '../domain/regeneration.js';
 import { applyResumeEdit } from '../domain/resume-edits.js';
 import { fitCandidates, orderAsWritten } from '../domain/resume-fit.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
 import {
   applySessionEvent,
+  TailoringSessionValidationError,
   startTailoringSession,
   type TailoringSession,
   type TailoringSessionEvent,
@@ -111,6 +115,30 @@ export class TailoringSessionsService {
   async generate(id: string): Promise<TailoringSessionView> {
     const session = await this.transition(await this.load(id), { type: 'GENERATE' });
     return { session, job: this.generation.request(id) };
+  }
+
+  /**
+   * Writes the CVs again from the review (RF-TAIL-13): the whole CV, its summary or one experience, with the
+   * candidate's indications. The user's edits and what is outside the scope are kept.
+   */
+  async regenerate(id: string, request: RegenerateResumesRequest): Promise<TailoringSessionView> {
+    const session = await this.load(id);
+    const { scope } = request;
+    if (scope.kind === 'EXPERIENCE') {
+      const profile = await this.profile.read();
+      const known = [...profile.positions, ...profile.projects].some(
+        (e) => e.id === scope.experienceId,
+      );
+      if (!known)
+        throw new TailoringSessionValidationError('That experience is not in the profile.');
+    }
+    const regeneration: Regeneration = {
+      scope,
+      instructions: request.instructions?.trim() || null,
+      languages: request.languages ?? session.languages,
+    };
+    const next = await this.transition(session, { type: 'GENERATE', regeneration });
+    return { session: next, job: this.generation.request(id) };
   }
 
   /** The session's CVs, in the order of its languages. */
@@ -226,20 +254,40 @@ export class TailoringSessionsService {
       this.vocabulary.terms(),
     ]);
     const today = new Date().toISOString().slice(0, 7);
+    const { scope, instructions, languages } = session.regeneration ?? {
+      scope: WHOLE_CV,
+      instructions: null,
+      languages: session.languages,
+    };
+    const existing = await this.resumes.list(id);
 
     const written: TailoredResume[] = [];
-    for (const [index, language] of session.languages.entries()) {
-      report({ step: 'writing', done: index, total: session.languages.length });
-      const answer = await this.writer.write({ profile, analysis, match: session.match, language });
-      let data = tailoredResumeData(answer.resume, profile, session.match, randomUUID);
+    for (const [index, language] of languages.entries()) {
+      const progress = { done: index, total: languages.length };
+      report({ step: 'writing', ...progress });
+      const answer = await this.writer.write({
+        profile,
+        analysis,
+        match: session.match,
+        language,
+        scope,
+        instructions,
+      });
+      let data = restrictToScope(
+        tailoredResumeData(answer.resume, profile, session.match, randomUUID),
+        scope,
+      );
       const issues = findTruthIssues(data, profile, vocabulary, today);
       if (issues.length > 0) {
-        report({ step: 'checking', done: index, total: session.languages.length });
+        report({ step: 'checking', ...progress });
         const { rewrites } = await this.writer.rewrite({ profile, language, data, issues });
         data = applyRewrites(data, issues, rewrites, profile, vocabulary, today);
       }
+      // A CV written before keeps the user's edits and what is outside the scope (RF-TAIL-13).
+      const before = existing.find((r) => r.language === language);
+      if (before) data = mergeRegenerated(before.data, data, scope);
 
-      report({ step: 'fitting', done: index, total: session.languages.length });
+      report({ step: 'fitting', ...progress });
       data = await this.fit(data, profile, language, session, today);
       written.push({
         sessionId: id,

@@ -19,6 +19,7 @@
 import type {
   MatchResult,
   PageBudget,
+  Regeneration,
   ResumeLanguage,
   TailoringFailedStep,
   TailoringSessionStatus,
@@ -37,6 +38,8 @@ export interface TailoringSession {
   match: MatchResult | null;
   /** Set only while `FAILED`. */
   failedStep: TailoringFailedStep | null;
+  /** The regeneration in course (RF-TAIL-13): set by GENERATE from the review, kept through a failure and its retry. */
+  regeneration: Regeneration | null;
 }
 
 export type TailoringSessionEvent =
@@ -44,8 +47,11 @@ export type TailoringSessionEvent =
   | { type: 'MATCH_READY'; match: MatchResult }
   /** Go to the gap questions: after the match, or back from the review. */
   | { type: 'ASK_GAPS' }
-  /** Generate the CVs: without gaps, after answering them, or again from the review. */
-  | { type: 'GENERATE' }
+  /**
+   * Generate the CVs: without gaps, after answering them, or again from the review, where a regeneration may say
+   * what to write again and how (RF-TAIL-13).
+   */
+  | { type: 'GENERATE'; regeneration?: Regeneration }
   /** CVs written and fitted to the page budget. */
   | { type: 'RESUMES_READY' }
   /** Snapshots created (RF-TAIL-14). */
@@ -112,6 +118,7 @@ export function startTailoringSession(input: NewTailoringSession): TailoringSess
     status: 'ANALYZING',
     match: null,
     failedStep: null,
+    regeneration: null,
   };
 }
 
@@ -143,6 +150,13 @@ export function applySessionEvent(
       return to('AWAITING_ANSWERS');
 
     case 'GENERATE':
+      if (event.regeneration) {
+        if (status !== 'REVIEW') return reject('only CVs under review can be regenerated');
+        if (event.regeneration.languages.some((l) => !session.languages.includes(l))) {
+          throw new TailoringSessionValidationError('Regenerate only languages of the session.');
+        }
+        return to('GENERATING', { regeneration: event.regeneration });
+      }
       if (status === 'MATCHED') {
         return hasGaps ? reject('the gaps must be answered or skipped first') : to('GENERATING');
       }
@@ -151,7 +165,7 @@ export function applySessionEvent(
 
     case 'RESUMES_READY':
       if (status !== 'GENERATING') return reject();
-      return to('REVIEW');
+      return to('REVIEW', { regeneration: null });
 
     case 'FINALIZE':
       if (status !== 'REVIEW') return reject();

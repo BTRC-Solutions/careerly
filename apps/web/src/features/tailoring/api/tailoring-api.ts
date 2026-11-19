@@ -3,6 +3,7 @@ import {
   type EditTailoredResumeRequest,
   type GapAnswer,
   GapQuestionsSchema,
+  type RegenerateResumesRequest,
   type ResumeLanguage,
   type RevertProfileChangesRequest,
   RevertProfileChangesResultSchema,
@@ -182,6 +183,19 @@ export function useEditResume(id: string, language: ResumeLanguage) {
           : current,
       );
       void queryClient.invalidateQueries({ queryKey: previewKey(id, language) });
+    },
+  });
+}
+
+/** Writes the CVs again, whole or in part, with the candidate's indications (RF-TAIL-13). */
+export function useRegenerateResumes(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: RegenerateResumesRequest) =>
+      apiPost(`/tailoring-sessions/${id}/regenerate`, TailoringSessionViewSchema, request),
+    onSuccess: (next) => {
+      queryClient.setQueryData(sessionKey(id), next);
+      void queryClient.removeQueries({ queryKey: resumesKey(id) });
     },
   });
 }

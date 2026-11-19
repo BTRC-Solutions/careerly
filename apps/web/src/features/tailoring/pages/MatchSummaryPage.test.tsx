@@ -84,6 +84,7 @@ const MATCHED: TailoringSessionView = {
     templateId: 'classic',
     status: 'MATCHED',
     failedStep: null,
+    regeneration: null,
     createdAt: '2026-11-17T12:00:00.000Z',
     updatedAt: '2026-11-17T12:00:00.000Z',
     match: {

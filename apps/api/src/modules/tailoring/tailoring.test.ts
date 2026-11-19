@@ -413,8 +413,8 @@ describe('tailoring session match (integration)', () => {
 
       const resumes = await resumesOf(id);
       expect(resumes.map((r) => [r.language, r.promptVersion])).toEqual([
-        ['es', 'resume-writing.v1'],
-        ['en', 'resume-writing.v1'],
+        ['es', 'resume-writing.v2'],
+        ['en', 'resume-writing.v2'],
       ]);
       const [es, en] = resumes;
       // The invented source, the unknown experience and the summary's unknown reference are dropped.
@@ -691,6 +691,94 @@ describe('tailoring session match (integration)', () => {
           })
         ).status,
       ).toBe(404);
+    },
+  );
+
+  it.runIf(HAS_TYPST)(
+    'regenerates one section with indications, keeping the user’s edits elsewhere (RF-TAIL-13)',
+    async () => {
+      const first = {
+        ...writing('en'),
+        experiences: [
+          {
+            experience: 'W1',
+            bullets: [
+              { text: 'Designed the public REST API used by 40 partners', sources: ['A1'] },
+              { text: 'Documented the public REST API for partners', sources: ['A1'] },
+            ],
+          },
+        ],
+      };
+      const again = {
+        summary: '',
+        summarySources: [],
+        experiences: [
+          { experience: 'W1', bullets: [{ text: 'Wrote the partner guides', sources: ['A1'] }] },
+        ],
+      };
+      const summaryOnly = {
+        summary: 'Engineer who documents what partners use.',
+        summarySources: ['W1'],
+        experiences: [],
+      };
+      const replies = [ok(NODE_ONLY), ok(first)];
+      await start(replies);
+      const id = await matchedWithoutGaps(['en']);
+      await api('POST', `/tailoring-sessions/${id}/generate`);
+      await waitFor(generated(id));
+      const [generatedResume] = await resumesOf(id);
+      const [, documented] = generatedResume!.data.experiences[0]!.bullets;
+      const patch = (body: unknown) => api('PATCH', `/tailoring-sessions/${id}/resumes/en`, body);
+      await patch({ op: 'EDIT_BULLET', bulletId: documented!.id, text: 'Documented the API' });
+      await patch({ op: 'EDIT_SUMMARY', text: 'My own summary.' });
+      const regenerate = (body: unknown) =>
+        api('POST', `/tailoring-sessions/${id}/regenerate`, body);
+
+      // One experience again, with indications: the edited summary and the edited bullet stay.
+      replies.push(ok(again));
+      const response = await regenerate({
+        scope: { kind: 'EXPERIENCE', experienceId: generatedResume!.data.experiences[0]!.sourceId },
+        instructions: '  More focus on documentation  ',
+      });
+      expect(response.status).toBe(200);
+      expect(TailoringSessionViewSchema.parse(await response.json()).session).toMatchObject({
+        status: 'GENERATING',
+        regeneration: { instructions: 'More focus on documentation', languages: ['en'] },
+      });
+      const done = await waitFor(generated(id));
+      expect(done.session).toMatchObject({ status: 'REVIEW', regeneration: null });
+
+      let [resume] = await resumesOf(id);
+      expect(resume!.data.summary!.text).toBe('My own summary.');
+      expect(resume!.data.experiences[0]!.bullets.map((b) => [b.text, b.editedByUser])).toEqual([
+        ['Documented the API', true],
+        ['Wrote the partner guides', false],
+      ]);
+      expect(resume!.data.fit).toMatchObject({ fits: true });
+      const call = gemini!.calls.at(-1)!;
+      expect(call).toMatch(/Write only the bullets of \[W1\]\./);
+      expect(call).toMatch(
+        /Indications from the candidate for this version:\nMore focus on documentation$/,
+      );
+      expect(logs.output()).not.toContain('More focus on documentation');
+
+      // Only the summary: the bullets stay as they are.
+      replies.push(ok(summaryOnly));
+      expect((await regenerate({ scope: { kind: 'SUMMARY' } })).status).toBe(200);
+      await waitFor(generated(id));
+      [resume] = await resumesOf(id);
+      expect(resume!.data.summary!.text).toBe('Engineer who documents what partners use.');
+      expect(resume!.data.experiences[0]!.bullets.map((b) => b.text)).toEqual([
+        'Documented the API',
+        'Wrote the partner guides',
+      ]);
+      expect(gemini!.calls.at(-1)).toMatch(/Write only the summary\./);
+
+      expect(
+        (await regenerate({ scope: { kind: 'EXPERIENCE', experienceId: 'nope' } })).status,
+      ).toBe(400);
+      expect((await regenerate({ scope: { kind: 'ALL' }, languages: ['es'] })).status).toBe(400);
+      expect((await regenerate({ scope: { kind: 'EVERYTHING' } })).status).toBe(400);
     },
   );
 

@@ -69,6 +69,7 @@ describe('profile changes of a tailoring session over HTTP (integration)', () =>
       templateId: 'classic',
       status: 'AWAITING_ANSWERS',
       failedStep: null,
+      regeneration: null,
       match: null,
       createdAt: now,
       updatedAt: now,

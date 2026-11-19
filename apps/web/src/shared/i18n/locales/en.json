@@ -932,6 +932,21 @@
       },
       "showMatch": "Show the match with the job description"
     },
+    "regenerate": {
+      "action": "Regenerate",
+      "all": "Regenerate all",
+      "experience": "Regenerate {{name}}",
+      "names": {
+        "ALL": "the whole CV",
+        "SUMMARY": "the summary"
+      },
+      "title": "Regenerate {{name}}",
+      "description": "The AI writes it again in {{language}}. What you edited and the rest of the CV stay as they are.",
+      "instructions": "Indications (optional)",
+      "instructionsHint": "What you want different in this version. The AI never adds anything your profile does not say.",
+      "placeholder": "For example: more focus on leadership, shorter.",
+      "submit": "Regenerate"
+    },
     "profileChanges": {
       "title": "Changes to your profile",
       "description": "What this session added to or changed in your master profile while answering the gaps. You can undo them one by one or all at once.",

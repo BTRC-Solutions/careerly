@@ -107,6 +107,7 @@ const SESSION: TailoringSession = {
   templateId: 'classic',
   status: 'AWAITING_ANSWERS',
   failedStep: null,
+  regeneration: null,
   match: null,
   createdAt: AT,
   updatedAt: AT,

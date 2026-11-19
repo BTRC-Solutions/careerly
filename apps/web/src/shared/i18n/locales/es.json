@@ -932,6 +932,21 @@
       },
       "showMatch": "Ver el match con la oferta"
     },
+    "regenerate": {
+      "action": "Regenerar",
+      "all": "Regenerar todo",
+      "experience": "Regenerar {{name}}",
+      "names": {
+        "ALL": "todo el CV",
+        "SUMMARY": "el resumen"
+      },
+      "title": "Regenerar {{name}}",
+      "description": "La IA lo vuelve a escribir en {{language}}. Lo que editaste y el resto del CV no cambian.",
+      "instructions": "Indicaciones (opcional)",
+      "instructionsHint": "Qué querés distinto en esta versión. La IA nunca agrega nada que tu perfil no diga.",
+      "placeholder": "Por ejemplo: más foco en liderazgo, más corto.",
+      "submit": "Regenerar"
+    },
     "profileChanges": {
       "title": "Cambios en tu perfil",
       "description": "Lo que esta sesión agregó o cambió en tu perfil maestro al responder los gaps. Podés deshacerlo de a uno o todo junto.",

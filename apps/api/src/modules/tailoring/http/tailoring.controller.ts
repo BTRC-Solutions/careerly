@@ -7,6 +7,8 @@ import {
   CreateTailoringSessionRequestSchema,
   type EditTailoredResumeRequest,
   EditTailoredResumeRequestSchema,
+  type RegenerateResumesRequest,
+  RegenerateResumesRequestSchema,
   type TailoredResume,
   type ResumeLanguage,
   ResumeLanguageSchema,
@@ -172,6 +174,19 @@ export class TailoringController {
   @HttpCode(HttpStatus.OK)
   generate(@Param('id') id: string): Promise<TailoringSessionView> {
     return this.sessions.generate(id);
+  }
+
+  /**
+   * Writes the CVs again from the review (RF-TAIL-13): whole, only the summary or one experience, with optional
+   * indications. The user's edits and what is outside the scope are kept.
+   */
+  @Post(':id/regenerate')
+  @HttpCode(HttpStatus.OK)
+  regenerate(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(RegenerateResumesRequestSchema)) body: RegenerateResumesRequest,
+  ): Promise<TailoringSessionView> {
+    return this.sessions.regenerate(id, body);
   }
 
   @Get(':id/resumes')
