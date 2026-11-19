@@ -221,6 +221,119 @@ describe('telemetry API (integration)', () => {
     expect((await preview()).features?.aiTokens).toBe(20);
   });
 
+  it('reports the applications of the day without anything the user wrote (RF-TEL-03b–g, RN-18)', async () => {
+    await call('PATCH', '/telemetry/settings', { decision: 'ACCEPT' });
+    const posting = async (body: object) =>
+      (
+        await call('POST', '/job-postings', {
+          text: 'Secret JD text about Acme internals.',
+          ...body,
+        })
+      ).body as { id: string };
+    const application = async (body: object) =>
+      (await call('POST', '/applications', body)).body as { id: string };
+
+    const linkedin = await posting({
+      title: `  Senior   Backend Engineer ${'x'.repeat(100)}`,
+      company: 'Acme Secret Corp',
+      url: 'https://ar.linkedin.com/jobs/view/123456?trackingId=secret-token',
+    });
+    const site = await posting({
+      title: 'Data Engineer',
+      company: 'Initech',
+      url: 'https://careers.initech.example/jobs/7',
+    });
+    const bare = await posting({ company: 'Globex' });
+    const analysis = openDatabase(config().databaseFile);
+    const insert = analysis.prepare(
+      `INSERT INTO job_analyses (job_posting_id, language, role_category, seniority, work_mode, country,
+         years_of_experience, keywords, prompt_version, model, analyzed_at, edited_at)
+       VALUES (?, 'en', ?, ?, ?, ?, NULL, '[]', 'v1', 'm', ?, NULL)`,
+    );
+    try {
+      insert.run(linkedin.id, 'backend', 'senior', 'remote', 'ar', new Date().toISOString());
+      insert.run(site.id, 'data', 'semi-senior', 'hybrid', 'Narnia', new Date().toISOString());
+    } finally {
+      analysis.close();
+    }
+
+    const first = await application({
+      jobPostingId: linkedin.id,
+      sent: { resumeVersionIds: [], sentWithoutCareerlyCv: true },
+    });
+    await application({ jobPostingId: site.id });
+    await application({ jobPostingId: bare.id });
+    await call('POST', `/applications/${first.id}/status`, { to: 'INTERVIEWING' });
+    await call('POST', `/applications/${first.id}/status`, {
+      to: 'APPLIED',
+      confirmBackward: true,
+    });
+    // What the user writes stays on the computer.
+    await call('PATCH', `/applications/${first.id}`, {
+      salaryExpected: 'USD 7.777 secret',
+      channel: 'REFERRAL',
+    });
+    await call('POST', `/applications/${first.id}/contacts`, {
+      name: 'Laura Secret',
+      role: 'RECRUITER',
+      email: 'laura@acme-secret.test',
+      linkedinUrl: 'https://www.linkedin.com/in/laura-secret',
+    });
+    await call('POST', `/applications/${first.id}/events`, { type: 'NOTE', text: 'Secret note' });
+    await call('POST', `/applications/${first.id}/events`, {
+      type: 'INTERVIEW',
+      kind: 'TECHNICAL',
+      interviewers: ['Grace Secret'],
+      outcome: 'PASSED',
+      notes: 'Secret interview notes',
+    });
+
+    const { report } = TelemetryPreviewResponseSchema.parse(
+      (await call('GET', '/telemetry/preview')).body,
+    );
+    expect(report!.metrics).toEqual({
+      activeUsage: { active: true },
+      applications: { created: 3 },
+      sources: { 'linkedin.com': 1, other: 1, unknown: 1 },
+      positionCategories: { 'backend:senior': 1, 'data:semi-senior': 1 },
+      positionTitles: [`Senior Backend Engineer ${'x'.repeat(56)}`, 'Data Engineer'],
+      funnel: { APPLIED: 2, INTERVIEWING: 1 },
+      workMode: { remote: 1, hybrid: 1, unknown: 1 },
+      countries: { AR: 1 },
+    });
+    const json = JSON.stringify(report);
+    for (const secret of [
+      'Acme',
+      'Initech',
+      'Globex',
+      'trackingId',
+      'secret',
+      'Secret',
+      '/jobs/',
+      'laura',
+      'Grace',
+      '7.777',
+      'REFERRAL',
+    ]) {
+      expect(json).not.toContain(secret);
+    }
+
+    // Each metric is enabled on its own.
+    await call('PATCH', '/telemetry/settings', {
+      metrics: { sources: false, positionTitles: false, funnel: false },
+    });
+    const { report: fewer } = TelemetryPreviewResponseSchema.parse(
+      (await call('GET', '/telemetry/preview')).body,
+    );
+    expect(Object.keys(fewer!.metrics).sort()).toEqual([
+      'activeUsage',
+      'applications',
+      'countries',
+      'positionCategories',
+      'workMode',
+    ]);
+  });
+
   it('regenerates the anonymous id', async () => {
     const { installId } = await (async () =>
       TelemetrySettingsResponseSchema.parse(

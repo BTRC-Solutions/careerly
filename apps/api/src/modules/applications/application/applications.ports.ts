@@ -2,6 +2,7 @@ import type {
   ApplicationChannel,
   ApplicationEvent,
   ApplicationPriority,
+  ApplicationStatus,
   Contact,
   ResumeVersion,
 } from '@careerly/contracts';
@@ -72,6 +73,10 @@ export abstract class ApplicationRepository {
   abstract list(): Promise<StoredApplication[]>;
   /** Returns whether it existed; its sent CVs go with it (the finalized CVs themselves stay). */
   abstract delete(id: string): Promise<boolean>;
+  /** The job descriptions of the applications created in `[from, to)`, ISO instants. */
+  abstract createdBetween(from: string, to: string): Promise<string[]>;
+  /** The state reached by each change of state in `[from, to)`; creating an application is not one. */
+  abstract statusesReachedBetween(from: string, to: string): Promise<ApplicationStatus[]>;
 }
 
 /** The contact does not exist in that application (maps to 404). */
