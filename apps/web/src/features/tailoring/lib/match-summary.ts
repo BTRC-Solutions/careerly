@@ -106,3 +106,8 @@ export function describeEvidence(evidence: Evidence, profile: Profile): Describe
     }
   }
 }
+
+/** Requirements the profile does not fully cover: the gaps to ask about (as the API counts them). */
+export function countGaps(match: MatchResult): number {
+  return match.requirements.filter((r) => r.status !== 'COVERED').length;
+}

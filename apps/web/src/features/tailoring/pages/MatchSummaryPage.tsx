@@ -4,20 +4,30 @@ import type {
   RequirementMatch,
   TailoringSessionView,
 } from '@careerly/contracts';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { ChevronLeftIcon } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { Tag } from '../../../shared/ui/Tag';
 import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useProfile } from '../../profile/api/profile-api';
-import { useRetryTailoring, useTailoringSession } from '../api/tailoring-api';
+import {
+  useAbandonSession,
+  useGenerateResumes,
+  useRetryTailoring,
+  useTailoringSession,
+} from '../api/tailoring-api';
+import { GapQuestionsCard } from '../components/GapQuestionsCard';
 import { SessionOptionsCard } from '../components/SessionOptionsCard';
-import { describeEvidence, summarizeMatch } from '../lib/match-summary';
+import { ResumeReview } from '../components/ResumeReview';
+import { SessionProfileChanges } from '../components/SessionProfileChanges';
+import { countGaps, describeEvidence, summarizeMatch } from '../lib/match-summary';
 
 /** Error codes with their own explanation; anything else gets the generic one. */
 const KNOWN_ERRORS = new Set([
@@ -28,6 +38,18 @@ const KNOWN_ERRORS = new Set([
   'JOB_POSTING_DELETED',
 ]);
 
+/** Error codes of the CV generation with their own explanation. */
+const KNOWN_GENERATION_ERRORS = new Set([
+  'NOT_CONFIGURED',
+  'KEY_REJECTED',
+  'BLOCKED',
+  'RATE_LIMITED',
+  'JOB_POSTING_DELETED',
+  'PROFILE_WITHOUT_NAME',
+  'RENDERER_UNAVAILABLE',
+  'COMPILE_ERROR',
+]);
+
 /** Covered: a seafoam dot; partial: a seafoam ring; missing: an orange dot (STYLES.md color semantics). */
 const STATUS_DOT: Record<MatchStatus, string> = {
   COVERED: 'bg-seafoam-600',
@@ -35,15 +57,19 @@ const STATUS_DOT: Record<MatchStatus, string> = {
   MISSING: 'bg-signal-orange',
 };
 
-/** The match between a job description and the master profile (RF-TAIL-03). */
+/**
+ * A tailoring session: the match between a job description and the master profile (RF-TAIL-03), the writing of
+ * the CVs (RF-TAIL-10) and their review (RF-TAIL-12).
+ */
 export function MatchSummaryPage() {
   const { t } = useTranslation();
   const { id = '' } = useParams();
   const view = useTailoringSession(id);
   const jobPostingId = view.data?.session.jobPostingId;
+  const reviewing = view.data?.session.status === 'REVIEW';
 
   return (
-    <div className="flex max-w-[52rem] flex-col gap-6">
+    <div className={cn('flex flex-col gap-6', reviewing ? 'max-w-[90rem]' : 'max-w-[52rem]')}>
       {jobPostingId && (
         <Link
           to={`/job-postings/${jobPostingId}`}
@@ -74,15 +100,52 @@ function Session({ view }: { view: TailoringSessionView }) {
   const { session, job } = view;
   const posting = useJobPosting(session.jobPostingId);
   const retry = useRetryTailoring(session.id);
+  const abandon = useAbandonSession(session.id);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const closed = session.status === 'FINALIZED' || session.status === 'ABANDONED';
   const subtitle = posting.data
     ? [posting.data.title ?? t('jobPostings.untitled'), posting.data.company]
         .filter(Boolean)
         .join(' · ')
     : undefined;
 
+  const failedGenerating = session.status === 'FAILED' && session.failedStep === 'GENERATING';
+  const errorCode = job?.lastError ?? '';
+  const errorKey = failedGenerating
+    ? `tailoring.generate.errors.${KNOWN_GENERATION_ERRORS.has(errorCode) ? errorCode : 'FAILED'}`
+    : `tailoring.match.errors.${KNOWN_ERRORS.has(errorCode) ? errorCode : 'FAILED'}`;
+  const reviewing = session.status === 'REVIEW';
+
   return (
     <>
-      <PageHeader title={t('tailoring.match.title')} description={subtitle} />
+      <PageHeader
+        title={reviewing ? t('tailoring.review.title') : t('tailoring.match.title')}
+        description={subtitle}
+        actions={
+          !closed && (
+            <Button variant="ghost" onClick={() => setConfirmingAbandon(true)}>
+              {t('tailoring.abandon.action')}
+            </Button>
+          )
+        }
+      />
+
+      {session.status === 'ABANDONED' && (
+        <Card>
+          <p role="status" className="text-sm text-slate-ink">
+            {t('tailoring.abandon.done')}
+          </p>
+        </Card>
+      )}
+
+      <ConfirmDialog
+        open={confirmingAbandon}
+        onOpenChange={setConfirmingAbandon}
+        title={t('tailoring.abandon.title')}
+        description={t('tailoring.abandon.description')}
+        confirmLabel={t('tailoring.abandon.action')}
+        onConfirm={() => abandon.mutateAsync()}
+      />
 
       {session.status === 'ANALYZING' && (
         <Card>
@@ -98,11 +161,7 @@ function Session({ view }: { view: TailoringSessionView }) {
 
       {session.status === 'FAILED' && (
         <Card className="flex items-start justify-between gap-4">
-          <InlineError>
-            {t(
-              `tailoring.match.errors.${KNOWN_ERRORS.has(job?.lastError ?? '') ? job?.lastError : 'FAILED'}`,
-            )}
-          </InlineError>
+          <InlineError>{t(errorKey)}</InlineError>
           <Button disabled={retry.isPending} onClick={() => retry.mutate()}>
             {t('common.retry')}
           </Button>
@@ -112,8 +171,74 @@ function Session({ view }: { view: TailoringSessionView }) {
 
       <SessionOptionsCard session={session} />
 
-      {session.match && <MatchResultView match={session.match} />}
+      <GapQuestionsCard session={session} />
+
+      {((session.status === 'MATCHED' && session.match && countGaps(session.match) === 0) ||
+        session.status === 'AWAITING_ANSWERS') && <GenerateCard view={view} />}
+
+      {session.status === 'GENERATING' && (
+        <Card>
+          <p role="status" className="text-sm text-slate-ink">
+            {job?.status === 'PENDING' && job.attempts > 0
+              ? t('tailoring.generate.retrying')
+              : t(
+                  `tailoring.generate.steps.${GENERATION_STEPS.has(job?.progress?.step ?? '') ? job?.progress?.step : 'reading'}`,
+                )}
+          </p>
+        </Card>
+      )}
+
+      {reviewing && <ResumeReview session={session} />}
+
+      {session.match &&
+        (reviewing ? (
+          <details className="max-w-[52rem]">
+            <summary className="cursor-pointer text-sm text-steel-text hover:text-indigo-navy">
+              {t('tailoring.review.showMatch')}
+            </summary>
+            <div className="mt-4 flex flex-col gap-6">
+              <MatchResultView match={session.match} />
+            </div>
+          </details>
+        ) : (
+          <MatchResultView match={session.match} />
+        ))}
+
+      <SessionProfileChanges sessionId={session.id} />
     </>
+  );
+}
+
+const GENERATION_STEPS = new Set(['reading', 'scoring', 'writing', 'checking', 'fitting']);
+
+/** Writes the CVs: right away without gaps; with them, skipping the questions until they can be answered. */
+function GenerateCard({ view }: { view: TailoringSessionView }) {
+  const { t } = useTranslation();
+  const { session } = view;
+  const generate = useGenerateResumes(view);
+  const gaps = session.match ? countGaps(session.match) : 0;
+  const languages = session.languages
+    .map((language) => t(`tailoring.review.languages.${language}`))
+    .join(', ');
+
+  return (
+    <Card className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-section-title text-indigo-navy">{t('tailoring.generate.title')}</h2>
+        <p className="text-sm text-slate-ink">
+          {gaps > 0
+            ? t('tailoring.generate.withGaps', { count: gaps })
+            : t('tailoring.generate.noGaps')}
+        </p>
+        <p className="text-sm text-steel-text">
+          {t('tailoring.generate.options', { languages, count: session.pageBudget })}
+        </p>
+        {generate.error && <InlineError>{generate.error.message}</InlineError>}
+      </div>
+      <Button disabled={generate.isPending} onClick={() => generate.mutate()}>
+        {t('tailoring.generate.action')}
+      </Button>
+    </Card>
   );
 }
 

@@ -1,4 +1,11 @@
 {
+  "personalInfo": {
+    "firstNames": "Lucía",
+    "lastNames": "Fernández",
+    "headline": "Backend Developer",
+    "location": "Buenos Aires, Argentina",
+    "email": "lucia@example.com"
+  },
   "positions": [
     {
       "company": "Pagos Rápidos S.A.",

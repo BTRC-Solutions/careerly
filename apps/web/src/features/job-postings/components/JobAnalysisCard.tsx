@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { Tag } from '../../../shared/ui/Tag';
 import { useAiAvailability } from '../../ai/useAiAvailability';
-import { useStartTailoring } from '../../tailoring/api/tailoring-api';
+import { useOpenSessionsOf, useStartTailoring } from '../../tailoring/api/tailoring-api';
 import { useAnalyzeJobPosting, useJobAnalysis } from '../api/job-analysis-api';
 import { AnalysisEditor } from './AnalysisEditor';
 
@@ -24,6 +24,8 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
   const state = useJobAnalysis(jobPostingId);
   const analyze = useAnalyzeJobPosting(jobPostingId);
   const startTailoring = useStartTailoring();
+  // An unfinished session of this posting is continued rather than started again (RF-TAIL-15).
+  const openSession = useOpenSessionsOf(jobPostingId).data?.sessions[0];
   const navigate = useNavigate();
   const ai = useAiAvailability();
   const job = state.data?.job ?? null;
@@ -53,8 +55,14 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
             >
               {analysis ? t('jobPostings.analysis.again') : t('jobPostings.analysis.start')}
             </Button>
+            {analysis && !running && openSession && (
+              <Button onClick={() => void navigate(`/tailoring/${openSession.id}`)}>
+                {t('jobPostings.analysis.continueTailoring')}
+              </Button>
+            )}
             {analysis && !running && (
               <Button
+                variant={openSession ? 'secondary' : 'primary'}
                 disabled={startTailoring.isPending || !ai.available}
                 onClick={() =>
                   startTailoring.mutate(
@@ -63,7 +71,9 @@ export function JobAnalysisCard({ jobPostingId }: { jobPostingId: string }) {
                   )
                 }
               >
-                {t('jobPostings.analysis.tailor')}
+                {openSession
+                  ? t('jobPostings.analysis.tailorAgain')
+                  : t('jobPostings.analysis.tailor')}
               </Button>
             )}
           </div>

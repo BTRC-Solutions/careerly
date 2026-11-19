@@ -1,6 +1,6 @@
 # Careerly — Roadmap
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-17
+> Estado: borrador v0.4 · Última actualización: 2026-11-18
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Cómo usar este roadmap
@@ -94,17 +94,17 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 4.12 | *(Viene de la 3.7: se pasa para cerrar la Fase 3.)* Plantillas propias (backend): subir un `.typ`, validarlo renderizando los ejemplos de ES y EN, guardarlo versionado en `files/templates/`, listar, renombrar y borrar (las usadas por un snapshot se conservan). `[RF-TAIL-09, ADR-24, RNF-10]` | Test de integración: una plantilla válida queda disponible; una que no compila o tarda más del timeout se rechaza con el error de Typst. | ✅ (PR #54; tests de integración con Typst; el "usado por un snapshot" queda como puerto hasta la Fase 7) |
 | 4.13 | *(Viene de la 3.8.)* Plantillas propias (UI): pantalla de plantillas con `classic` y las propias, subida con vista previa del ejemplo y descarga de `classic` + ejemplos como punto de partida. `[RF-TAIL-09]` | Subir una plantilla desde la app y ver su vista previa en ambos idiomas. | ✅ (subida, vista previa ES/EN, renombrar y borrar probados en la UI; visor de PDF verificado en Electron) |
 
-## Fase 5 — Match y gaps · `v0.5.0`
+## Fase 5 — Match y gaps · `v0.5.0` · ✅ cerrada (2026-11-18)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
 | 5.1 | Agregado `TailoringSession` con su máquina de estados (dominio puro + tests). | Todas las transiciones válidas e inválidas cubiertas por tests. | ✅ (tabla estado × evento en `tailoring-session.test.ts`) |
-| 5.2 | Match determinístico de herramientas (con alias) + match semántico de requisitos no-herramienta con evidencia por id. `[RF-TAIL-02, RF-GAP-02]` | Con el perfil real y las JDs de evals, el match es razonable y toda la evidencia apunta a ids existentes. | 🟨 (implementado y con tests; falta correr `npm run evals:match -- --profile-db <careerly.db>` con una key real y revisar el resultado) |
+| 5.2 | Match determinístico de herramientas (con alias) + match semántico de requisitos no-herramienta con evidencia por id. `[RF-TAIL-02, RF-GAP-02]` | Con el perfil real y las JDs de evals, el match es razonable y toda la evidencia apunta a ids existentes. | ✅ (PR #62; evals de match con el perfil real y key real: toda la evidencia apunta a ids existentes) |
 | 5.3 | Pantalla de resumen del match. `[RF-TAIL-03]` | Muestra cubiertos (con evidencia), parciales y faltantes. | ✅ (pantalla probada con la API simulada; se abre con "Adaptar mi CV" desde la oferta) |
-| 5.4 | Generación de preguntas de gaps (faltantes, parciales, no-herramienta). `[RF-TAIL-04, RF-GAP-03, RF-GAP-04]` | Las preguntas se generan sin LLM, desde plantillas. | ⬜ |
-| 5.5 | UI de respuestas con los tres caminos (trabajo / proyecto-curso / no) y "relevante para este CV". `[RF-GAP-01]` | Se puede responder en cualquier orden y saltear. | ⬜ |
-| 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ⬜ |
-| 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ⬜ |
+| 5.4 | Generación de preguntas de gaps (faltantes, parciales, no-herramienta). `[RF-TAIL-04, RF-GAP-03, RF-GAP-04]` | Las preguntas se generan sin LLM, desde plantillas. | ✅ (PR #69) |
+| 5.5 | UI de respuestas con los tres caminos (trabajo / proyecto-curso / no) y "relevante para este CV". `[RF-GAP-01]` | Se puede responder en cualquier orden y saltear. | ✅ (PR #70, en `main` con #75) |
+| 5.6 | Aplicar respuestas afirmativas al perfil maestro (origen `GAP_ANSWER`); "No" solo en el historial de la sesión. Recalcular el match. `[RF-TAIL-05, RF-GAP-05, RN-11, RN-12]` | Test: una respuesta "No" no crea nada en el perfil, y la misma herramienta se vuelve a preguntar en otra sesión. | ✅ (PR #71, en `main` con #75) |
+| 5.7 | Deshacer cambios de una sesión en el perfil. `[RF-TAIL-06]` | Revertir individualmente y en bloque funciona desde la UI. | ✅ (PR #66) |
 
 ## Fase 6 — Generación del CV adaptado · `v0.6.0`
 
@@ -112,12 +112,12 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 |---|---|---|---|
 | 6.1 | Opciones de la sesión: idiomas de salida, límite de páginas (con valor por defecto por años de experiencia) y plantilla. `[RF-TAIL-07, RF-TAIL-08, RF-TAIL-09]` | Se persisten y se respetan en la generación. | 🟨 |
 | 6.2 | Puntuación de relevancia de logros y proyectos. | Scores guardados por candidato. | 🟨 |
-| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | ⬜ |
-| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | ⬜ |
-| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | ⬜ |
-| 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | ⬜ |
-| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | ⬜ |
-| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ⬜ |
+| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | 🟨 (adelantado a 5.4–6.2, en PR draft: implementado y con tests; falta correr `npm run evals:resume` con una key real y revisar los CVs) |
+| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | 🟨 (adelantado, en PR draft sobre el de 6.3: guardia de herramientas y cifras con una reescritura, probada con tests; falta correr `npm run evals:resume` con una key real) |
+| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | 🟨 (adelantado, en PR draft sobre el de 6.4: el ajuste corre al generar y se guarda con su `fitLog`, probado con Typst; falta correr `npm run evals:resume` con una key real) |
+| 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | 🟨 (adelantado, en PR draft sobre el de 6.5: pantalla y API probadas; editar + vista previa tarda ~200 ms en el navegador y el test de integración exige < 2 s) |
+| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (adelantado, en PR draft sobre el de 6.6: probado con tests y en el navegador, incluido un reintento tras un fallo; falta probarlo con una key real) |
+| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | 🟨 (en PR draft sobre el de 6.7: sesiones en curso en el inicio, continuar desde la oferta y abandonar; test de integración que cierra la API con el match a medias y al volver termina solo) |
 | 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ⬜ |
 
 ## Fase 7 — Snapshots y postulaciones · `v0.7.0`

@@ -23,6 +23,7 @@ const SESSION: TailoringSession = {
   templateId: 'classic',
   status: 'MATCHED',
   failedStep: null,
+  regeneration: null,
   match: null,
   createdAt: '2026-11-18T12:00:00.000Z',
   updatedAt: '2026-11-18T12:00:00.000Z',

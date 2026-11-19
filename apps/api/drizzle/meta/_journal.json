@@ -96,8 +96,36 @@
     {
       "idx": 13,
       "version": "6",
-      "when": 1795011561977,
-      "tag": "0013_tailoring_relevance",
+      "when": 1795012152682,
+      "tag": "0013_gap_questions",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1795012638906,
+      "tag": "0014_gap_answers_created",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1795046385818,
+      "tag": "0015_tailored_resumes",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1795047021222,
+      "tag": "0016_session_regeneration",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1795047558710,
+      "tag": "0017_tailoring_relevance",
       "breakpoints": true
     }
   ]

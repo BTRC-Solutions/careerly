@@ -1,4 +1,4 @@
-import type { MatchResult, Profile } from '@careerly/contracts';
+import type { MatchResult, Profile, TailoredResumeData } from '@careerly/contracts';
 
 /*
  * Relevance of the profile's achievements and projects for a job description (ARCHITECTURE §7.2, step 7): the
@@ -69,4 +69,25 @@ export function relevanceScores(
     const score = evidence.has(key(candidate)) ? Math.max(raw, EVIDENCE_FLOOR) : raw;
     return { ...candidate, score: Math.round(score * 100) / 100 };
   });
+}
+
+/**
+ * Gives each bullet the best score among its sources (the achievements it cites, or the project itself), so the
+ * page fitter keeps the most relevant ones. A bullet whose sources were not scored keeps its score.
+ */
+export function scoreBullets(
+  data: TailoredResumeData,
+  scores: readonly RelevanceScore[],
+): TailoredResumeData {
+  const byId = new Map(scores.map((score) => [score.id, score.score]));
+  return {
+    ...data,
+    experiences: data.experiences.map((experience) => ({
+      ...experience,
+      bullets: experience.bullets.map((bullet) => {
+        const found = bullet.sourceIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+        return found.length > 0 ? { ...bullet, score: Math.max(...found) } : bullet;
+      }),
+    })),
+  };
 }

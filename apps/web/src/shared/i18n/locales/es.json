@@ -709,7 +709,9 @@
         "add": "Agregar requisito",
         "keywordsHint": "Separadas por comas."
       },
-      "tailor": "Adaptar mi CV"
+      "tailor": "Adaptar mi CV",
+      "continueTailoring": "Continuar mi CV",
+      "tailorAgain": "Empezar de nuevo"
     }
   },
   "templates": {
@@ -843,6 +845,205 @@
         "LANGUAGE": "Idioma"
       },
       "deleted": "ya no está en tu perfil"
+    },
+    "generate": {
+      "title": "Generar el CV",
+      "action": "Generar CV",
+      "noGaps": "Tu perfil cubre todo lo que pide la oferta.",
+      "withGaps_one": "Queda {{count}} requisito sin cubrir del todo. El CV se escribe con lo que ya tiene tu perfil, incluido lo que respondiste.",
+      "withGaps_other": "Quedan {{count}} requisitos sin cubrir del todo. El CV se escribe con lo que ya tiene tu perfil, incluido lo que respondiste.",
+      "options_one": "En {{languages}} · hasta {{count}} página",
+      "options_other": "En {{languages}} · hasta {{count}} páginas",
+      "retrying": "La generación falló y se va a reintentar en unos segundos…",
+      "steps": {
+        "reading": "Preparando la generación…",
+        "scoring": "Viendo qué de tu perfil importa más para esta oferta…",
+        "writing": "Escribiendo el CV con la IA…",
+        "checking": "Revisando que todo salga de tu perfil…",
+        "fitting": "Ajustando el CV a las páginas…"
+      },
+      "errors": {
+        "NOT_CONFIGURED": "No hay una API key configurada. Cargala en Configuración y reintentá.",
+        "KEY_REJECTED": "El proveedor de IA rechazó tu API key. Revisala en Configuración y reintentá.",
+        "BLOCKED": "El proveedor de IA no quiso escribir este CV.",
+        "RATE_LIMITED": "El proveedor de IA está limitando las solicitudes. Reintentá en un rato.",
+        "JOB_POSTING_DELETED": "La oferta de esta sesión ya no existe.",
+        "PROFILE_WITHOUT_NAME": "Tu perfil no tiene nombre. Completalo en el perfil y reintentá.",
+        "RENDERER_UNAVAILABLE": "No se encontró Typst para armar el PDF. Reinstalá la app y reintentá.",
+        "COMPILE_ERROR": "La plantilla de esta sesión tiene errores. Revisala en Plantillas y reintentá.",
+        "FAILED": "No se pudo generar el CV. Reintentá."
+      }
+    },
+    "review": {
+      "title": "Revisión del CV",
+      "loadError": "No se pudieron cargar los CVs de esta sesión.",
+      "language": "Idioma del CV",
+      "languages": {
+        "es": "español",
+        "en": "inglés"
+      },
+      "preview": "Vista previa",
+      "previewTitle": "Vista previa del CV en {{language}}",
+      "previewError": "No se pudo armar la vista previa.",
+      "updating": "Actualizando…",
+      "editError": "No se pudo aplicar el cambio: {{message}}",
+      "fit": {
+        "fits_one": "Ocupa {{count}} página, dentro del límite de {{budget}}.",
+        "fits_other": "Ocupa {{count}} páginas, dentro del límite de {{budget}}.",
+        "over_one": "No entra en {{count}} página: ocupa {{pages}}. Pasá algún bullet a «Automático» o excluilo.",
+        "over_other": "No entra en {{count}} páginas: ocupa {{pages}}. Pasá algún bullet a «Automático» o excluilo.",
+        "leftOut_one": "{{count}} bullet quedó afuera para que el CV entre.",
+        "leftOut_other": "{{count}} bullets quedaron afuera para que el CV entre.",
+        "allIn": "Entran todos los bullets."
+      },
+      "summary": "Resumen",
+      "noSummary": "Sin resumen.",
+      "edit": "Editar",
+      "edited": "Editado por vos",
+      "bulletText": "Texto del bullet",
+      "headerOnly": "Se muestra solo con empresa, puesto y fechas.",
+      "source": "Sale de:",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "inclusion": {
+        "label": "Inclusión en el CV",
+        "AUTO": "Automático",
+        "INCLUDED": "Incluir siempre",
+        "EXCLUDED": "Excluir"
+      },
+      "states": {
+        "IN": "En el CV",
+        "EXCLUDED": "Excluido por vos",
+        "LEFT_OUT": {
+          "OVER_BUDGET": "Afuera: no entra en las páginas",
+          "SECTION_LIMIT": "Afuera: límite de bullets del puesto",
+          "OLD_POSITION": "Afuera: puesto de hace más de 10 años",
+          "NOT_RELEVANT": "Afuera: proyecto no relevante",
+          "SPACE_LEFT": "En el CV"
+        }
+      },
+      "guard": {
+        "summary_one": "La guardia de veracidad corrigió {{rewritten}} y dejó afuera {{count}} texto",
+        "summary_other": "La guardia de veracidad corrigió {{rewritten}} y dejó afuera {{count}} textos",
+        "description": "Son textos que la IA escribió con algo que tu perfil no dice. No están en el CV.",
+        "reasons": {
+          "NO_SOURCE": "no cita ningún logro de su experiencia",
+          "UNKNOWN_EXPERIENCE": "era para una experiencia que no está en tu perfil",
+          "TOOL_NOT_IN_SOURCES": "nombra una herramienta que sus fuentes no muestran",
+          "NUMBER_NOT_IN_SOURCES": "tiene una cifra que sus fuentes no tienen"
+        }
+      },
+      "showMatch": "Ver el match con la oferta"
+    },
+    "regenerate": {
+      "action": "Regenerar",
+      "all": "Regenerar todo",
+      "experience": "Regenerar {{name}}",
+      "names": {
+        "ALL": "todo el CV",
+        "SUMMARY": "el resumen"
+      },
+      "title": "Regenerar {{name}}",
+      "description": "La IA lo vuelve a escribir en {{language}}. Lo que editaste y el resto del CV no cambian.",
+      "instructions": "Indicaciones (opcional)",
+      "instructionsHint": "Qué querés distinto en esta versión. La IA nunca agrega nada que tu perfil no diga.",
+      "placeholder": "Por ejemplo: más foco en liderazgo, más corto.",
+      "submit": "Regenerar"
+    },
+    "open": {
+      "title": "Sesiones en curso",
+      "updated": "Último cambio: {{date}}"
+    },
+    "statuses": {
+      "ANALYZING": "Comparando",
+      "MATCHED": "Match listo",
+      "AWAITING_ANSWERS": "Preguntas",
+      "GENERATING": "Generando",
+      "REVIEW": "En revisión",
+      "FINALIZED": "Finalizada",
+      "ABANDONED": "Abandonada",
+      "FAILED": "Con error"
+    },
+    "abandon": {
+      "action": "Abandonar",
+      "title": "¿Abandonar esta sesión?",
+      "description": "Deja de aparecer en las sesiones en curso y no se puede retomar. Lo que agregaste a tu perfil se mantiene; si no lo querés, deshacelo antes.",
+      "done": "Abandonaste esta sesión. Para esta oferta podés empezar una nueva."
+    },
+    "profileChanges": {
+      "title": "Cambios en tu perfil",
+      "description": "Lo que esta sesión agregó o cambió en tu perfil maestro al responder los gaps. Podés deshacerlo de a uno o todo junto.",
+      "kinds": {
+        "CREATE": "Agregado",
+        "UPDATE": "Modificado"
+      },
+      "gone": "Ya no está en tu perfil.",
+      "undo": "Deshacer",
+      "undoOne": "Deshacer el cambio en «{{name}}»",
+      "undoAll": "Deshacer todos",
+      "undone": "Deshecho",
+      "confirmTitle": "¿Deshacer los cambios de esta sesión?",
+      "confirmDescription_one": "Se va a deshacer {{count}} cambio en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "confirmDescription_other": "Se van a deshacer {{count}} cambios en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "kept_one": "{{count}} campo lo editaste después de esta sesión: se mantuvo tu versión.",
+      "kept_other": "{{count}} campos los editaste después de esta sesión: se mantuvo tu versión."
+    },
+    "gaps": {
+      "templates": {
+        "TOOL": {
+          "MISSING": "¿Usaste {{name}}?",
+          "PARTIAL": "¿Qué hiciste con {{name}}?"
+        },
+        "SKILL": {
+          "MISSING": "¿Tenés experiencia en «{{name}}»?",
+          "PARTIAL": "¿Tenés más experiencia en «{{name}}»?"
+        },
+        "LANGUAGE": {
+          "MISSING": "¿Tenés este nivel de idioma: «{{name}}»?",
+          "PARTIAL": "¿Llegás al nivel que piden: «{{name}}»?"
+        },
+        "OTHER": {
+          "MISSING": "¿Cumplís con «{{name}}»?",
+          "PARTIAL": "¿Cumplís del todo con «{{name}}»?"
+        }
+      },
+      "partialHint": {
+        "TOOL": "{{name}} figura en tu perfil, pero ningún logro muestra cómo lo usaste. Esto es lo que ya hay:",
+        "SKILL": "Tu perfil tiene algo relacionado, pero menos de lo que piden:",
+        "LANGUAGE": "Tu perfil tiene este idioma, pero no con el nivel que piden:",
+        "OTHER": "Tu perfil tiene algo relacionado, pero menos de lo que piden:"
+      },
+      "title": "Preguntas sobre lo que falta",
+      "intro_one": "Hay {{count}} requisito que tu perfil no muestra o muestra a medias. Contanos si lo tenés: lo que sumes queda en tu perfil.",
+      "intro_other": "Hay {{count}} requisitos que tu perfil no muestra o muestra a medias. Contanos si los tenés: lo que sumes queda en tu perfil.",
+      "start": "Responder",
+      "description": "Respondé en el orden que quieras. Lo que saltees cuenta como \"no\" para este CV, y un \"no\" nunca se guarda en tu perfil.",
+      "progress": "{{answered}} de {{total}} respondidas",
+      "answerLegend": "Tu respuesta",
+      "answers": {
+        "USED_AT_WORK": "Sí, en un trabajo",
+        "USED_ELSEWHERE": "Sí, en un proyecto o curso",
+        "NOT_USED": "No",
+        "SKIPPED": "Salteada"
+      },
+      "positions": "¿En qué experiencia?",
+      "noPositions": "Todavía no cargaste experiencias en tu perfil.",
+      "project": "Proyecto o curso",
+      "newProject": "Uno nuevo…",
+      "projectName": "Nombre",
+      "projectKind": "Tipo",
+      "detail": "¿Qué hiciste?",
+      "detailHint": "En 1 o 2 líneas. Se agrega a tu perfil como un logro.",
+      "includeInResume": "Incluirlo en este CV",
+      "notInThisResume": "No se incluye en este CV.",
+      "skip": "Saltear",
+      "change": "Cambiar",
+      "errors": {
+        "detail": "Contá en 1 o 2 líneas qué hiciste.",
+        "positions": "Elegí al menos una experiencia.",
+        "projectName": "Poné un nombre al proyecto o curso."
+      },
+      "addedToProfile": "Se agregó a tu perfil maestro. Podés deshacerlo desde \"Cambios en tu perfil\"."
     },
     "options": {
       "title": "Opciones del CV",

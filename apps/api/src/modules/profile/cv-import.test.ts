@@ -149,13 +149,12 @@ describe('CV import (integration)', () => {
       }),
       logs.logger,
     );
-    if (withKey) {
-      await fetch(`http://127.0.0.1:${server.port}/internal/ai-credentials`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${CONTROL_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credentials: { provider: 'gemini', apiKey: KEY } }),
-      });
-    }
+    // Electron always sends the credentials at startup, `null` when there is no key.
+    await fetch(`http://127.0.0.1:${server.port}/internal/ai-credentials`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${CONTROL_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credentials: withKey ? { provider: 'gemini', apiKey: KEY } : null }),
+    });
   }
 
   function upload(file: Buffer | null, name = 'cv.pdf') {

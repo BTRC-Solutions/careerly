@@ -1,6 +1,6 @@
-import type { MatchResult, Profile } from '@careerly/contracts';
+import type { MatchResult, Profile, TailoredResumeData } from '@careerly/contracts';
 import { describe, expect, it } from 'vitest';
-import { EVIDENCE_FLOOR, relevanceCandidates, relevanceScores } from './relevance.js';
+import { EVIDENCE_FLOOR, relevanceCandidates, relevanceScores, scoreBullets } from './relevance.js';
 
 const provenance = {
   origin: 'MANUAL',
@@ -121,5 +121,43 @@ describe('relevanceScores', () => {
     expect(
       relevanceScores(candidates, [{ ...answers[0]!, score: 0.9 }], match(evidence))[0]!.score,
     ).toBe(0.9);
+  });
+});
+
+describe('scoreBullets', () => {
+  const bullet = (id: string, sourceIds: string[]) => ({
+    id,
+    text: id,
+    sourceIds,
+    score: null,
+    editedByUser: false,
+    inclusion: 'AUTO' as const,
+  });
+  const data: TailoredResumeData = {
+    summary: null,
+    experiences: [
+      {
+        kind: 'POSITION',
+        sourceId: 'p1',
+        bullets: [bullet('b1', ['a1', 'a2']), bullet('b2', ['a3'])],
+      },
+      { kind: 'PROJECT', sourceId: 'pr1', bullets: [bullet('b3', ['pr1'])] },
+    ],
+    toolIds: [],
+    guard: { rewritten: 0, dropped: [] },
+    fit: null,
+  };
+
+  it('gives each bullet the best score of its sources, and leaves unscored ones as they are', () => {
+    const scored = scoreBullets(data, [
+      { kind: 'ACHIEVEMENT', id: 'a1', score: 0.2 },
+      { kind: 'ACHIEVEMENT', id: 'a2', score: 0.7 },
+      { kind: 'PROJECT', id: 'pr1', score: 0.4 },
+    ]);
+    expect(scored.experiences.flatMap((e) => e.bullets.map((b) => [b.id, b.score]))).toEqual([
+      ['b1', 0.7],
+      ['b2', null],
+      ['b3', 0.4],
+    ]);
   });
 });
