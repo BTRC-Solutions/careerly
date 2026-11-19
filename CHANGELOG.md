@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.6.0](https://github.com/BTRC-Solutions/careerly/compare/v0.5.0...v0.6.0) (2026-11-19)
+
+
+### Features
+
+* **api:** add the truthfulness guard to tailored CVs (F6.4) ([ae82227](https://github.com/BTRC-Solutions/careerly/commit/ae822270d78fb9610111d576127782fdd6798133))
+* **api:** fit tailored CVs to the page budget when generating (F6.5) ([af21a0a](https://github.com/BTRC-Solutions/careerly/commit/af21a0ab6d4d60ec117318b75ae3987347975694))
+* **api:** write tailored CVs per language with sources (F6.3) ([11e7792](https://github.com/BTRC-Solutions/careerly/commit/11e77926c31c798cb98b9a8c9c4f6d3aa59f40b3))
+* regenerate a tailored CV or one section with indications ([10ce888](https://github.com/BTRC-Solutions/careerly/commit/10ce8889d7427d01d4c0f761d472fe16edaacc0f))
+* regenerate a tailored CV or one section with indications (F6.7) ([b229de1](https://github.com/BTRC-Solutions/careerly/commit/b229de1ba565515e9ff99c21da24754957f53199))
+* review tailored CVs with live preview and edits (F6.6) ([0b2d86e](https://github.com/BTRC-Solutions/careerly/commit/0b2d86ea63ef7d29be13e493318c29d64a338936))
+* **tailoring:** choose the languages, page limit and template of a session (F6.1) ([d4e8abf](https://github.com/BTRC-Solutions/careerly/commit/d4e8abf4883fdd1029d0562a398148cc886467d2))
+* **tailoring:** resume sessions in progress, or abandon them (F6.8) ([27a87d2](https://github.com/BTRC-Solutions/careerly/commit/27a87d2d8e67d882c85daebc76c89c112f0f58d9))
+* **tailoring:** resume sessions in progress, or abandon them (F6.8) ([87092ea](https://github.com/BTRC-Solutions/careerly/commit/87092eacb19dae82656b899320fabb9be2a01a4f))
+* **tailoring:** score the relevance of achievements and projects for the job (F6.2) ([f62e47d](https://github.com/BTRC-Solutions/careerly/commit/f62e47da665a8c457a6876af99cc918685d0867d))
+* **telemetry:** report generated CVs, their languages and answered gaps (F6.9) ([fdbd467](https://github.com/BTRC-Solutions/careerly/commit/fdbd467b34d7ad89d3a6f0e00a523499ff799400))
+* **telemetry:** report generated CVs, their languages and answered gaps (F6.9) ([a6ded83](https://github.com/BTRC-Solutions/careerly/commit/a6ded835fa590ea21d6fcc29de3c5d30428ffd59))
+
+
+### Miscellaneous Chores
+
+* close phase 6 ([03856cb](https://github.com/BTRC-Solutions/careerly/commit/03856cb0bed4a01c20e703994266823ffcc15268))
+
 ## [0.5.0](https://github.com/BTRC-Solutions/careerly/compare/v0.4.0...v0.5.0) (2026-11-18)
 
 
