@@ -110,15 +110,15 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 6.1 | Opciones de la sesión: idiomas de salida, límite de páginas (con valor por defecto por años de experiencia) y plantilla. `[RF-TAIL-07, RF-TAIL-08, RF-TAIL-09]` | Se persisten y se respetan en la generación. | 🟨 |
-| 6.2 | Puntuación de relevancia de logros y proyectos. | Scores guardados por candidato. | 🟨 |
-| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | 🟨 (adelantado a 5.4–6.2, en PR draft: implementado y con tests; falta correr `npm run evals:resume` con una key real y revisar los CVs) |
-| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | 🟨 (adelantado, en PR draft sobre el de 6.3: guardia de herramientas y cifras con una reescritura, probada con tests; falta correr `npm run evals:resume` con una key real) |
-| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | 🟨 (adelantado, en PR draft sobre el de 6.4: el ajuste corre al generar y se guarda con su `fitLog`, probado con Typst; falta correr `npm run evals:resume` con una key real) |
-| 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | 🟨 (adelantado, en PR draft sobre el de 6.5: pantalla y API probadas; editar + vista previa tarda ~200 ms en el navegador y el test de integración exige < 2 s) |
-| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (adelantado, en PR draft sobre el de 6.6: probado con tests y en el navegador, incluido un reintento tras un fallo; falta probarlo con una key real) |
-| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | 🟨 (en PR draft sobre el de 6.7: sesiones en curso en el inicio, continuar desde la oferta y abandonar; test de integración que cierra la API con el match a medias y al volver termina solo) |
-| 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | 🟨 (en PR draft sobre el de 6.2: CVs por idioma y gaps respondidos desde el módulo `tailoring`; test de integración con una sesión completa, sin textos en el reporte) |
+| 6.1 | Opciones de la sesión: idiomas de salida, límite de páginas (con valor por defecto por años de experiencia) y plantilla. `[RF-TAIL-07, RF-TAIL-08, RF-TAIL-09]` | Se persisten y se respetan en la generación. | ✅ (#67) |
+| 6.2 | Puntuación de relevancia de logros y proyectos. | Scores guardados por candidato. | ✅ (#68) |
+| 6.3 | Redacción de bullets y resumen por idioma con `sourceIds`. `[RF-TAIL-10, RF-TAIL-11]` | CVs generados en ES y EN desde el mismo perfil. | 🟨 (mergeado en #72; falta correr `npm run evals:resume` con una key real y revisar los CVs) |
+| 6.4 | Guardia de veracidad (RN-01, RN-02, RN-03) con regeneración de bullets inválidos. | Test: un bullet con una herramienta que no está en el perfil se descarta. Evals: 0 bullets inventados. | 🟨 (mergeado en #73; falta correr `npm run evals:resume` con una key real: 0 bullets inventados) |
+| 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | 🟨 (mergeado en #74; falta correr `npm run evals:resume` con una key real: todos dentro del límite) |
+| 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | ✅ (#76) |
+| 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (mergeado en #78; falta probarlo con una key real) |
+| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ✅ (#79) |
+| 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ✅ (#80) |
 
 ## Fase 7 — Snapshots y postulaciones · `v0.7.0`
 
