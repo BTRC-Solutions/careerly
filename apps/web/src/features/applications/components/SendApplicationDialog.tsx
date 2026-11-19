@@ -1,4 +1,4 @@
-import type { Application, ResumeVersion } from '@careerly/contracts';
+import type { Application, ApplicationStatus, ResumeVersion } from '@careerly/contracts';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../shared/ui/Button';
@@ -7,14 +7,20 @@ import { Checkbox, Field, Input } from '../../../shared/ui/form';
 import { InlineError } from '../../../shared/ui/InlineError';
 import {
   useCreateApplication,
+  useMoveApplication,
   useSendableResumes,
   useSendApplication,
 } from '../api/applications-api';
 import { today } from '../lib/dates';
 
-/** Create the application of a job description, or record that an existing one was sent. */
+/**
+ * Create the application of a job description, record that an existing one was sent, or move one that was
+ * never sent past `SAVED` on the board (roadmap 7.4), which needs to say how it was sent.
+ */
 export type SendTarget =
-  { kind: 'create'; jobPostingId: string } | { kind: 'send'; application: Application };
+  | { kind: 'create'; jobPostingId: string }
+  | { kind: 'send'; application: Application }
+  | { kind: 'move'; application: { id: string; jobPostingId: string }; to: ApplicationStatus };
 
 /**
  * Asks whether the application was sent and with which finalized CVs of its job description (RF-APP-02), or
@@ -35,12 +41,13 @@ export function SendApplicationDialog({
   const { t } = useTranslation();
   const jobPostingId =
     target.kind === 'create' ? target.jobPostingId : target.application.jobPostingId;
+  const moving = target.kind === 'move' ? target : null;
   const sendable = useSendableResumes(jobPostingId);
   const alreadySent = new Set(
     target.kind === 'send' ? target.application.sentResumes.map((s) => s.resumeVersionId) : [],
   );
   const choices = (sendable.data?.versions ?? []).filter((v) => !alreadySent.has(v.id));
-  const firstTime = target.kind === 'create' || target.application.status === 'SAVED';
+  const firstTime = target.kind !== 'send' || target.application.status === 'SAVED';
 
   const [sent, setSent] = useState(true);
   const [picked, setPicked] = useState<Set<string> | null>(null);
@@ -48,7 +55,8 @@ export function SendApplicationDialog({
   const [sentAt, setSentAt] = useState(today());
   const create = useCreateApplication();
   const send = useSendApplication(target.kind === 'send' ? target.application.id : '');
-  const mutation = target.kind === 'create' ? create : send;
+  const move = useMoveApplication();
+  const mutation = target.kind === 'create' ? create : target.kind === 'move' ? move : send;
 
   // Until the user touches them, the CVs of the session (or of the newest one) come checked.
   const checked = picked ?? defaultPick(choices, sessionId);
@@ -67,6 +75,8 @@ export function SendApplicationDialog({
     };
     if (target.kind === 'create') {
       create.mutate({ jobPostingId, ...(sent ? { sent: sending } : {}) }, { onSuccess: done });
+    } else if (moving) {
+      move.mutate({ id: moving.application.id, to: moving.to, sent: sending }, { onSuccess: done });
     } else {
       send.mutate(sending, { onSuccess: done });
     }
@@ -88,9 +98,13 @@ export function SendApplicationDialog({
       title={
         target.kind === 'create'
           ? t('applications.send.createTitle')
-          : firstTime
-            ? t('applications.send.markTitle')
-            : t('applications.send.addTitle')
+          : moving
+            ? t('applications.send.moveTitle', {
+                status: t(`applications.statuses.${moving.to}`),
+              })
+            : firstTime
+              ? t('applications.send.markTitle')
+              : t('applications.send.addTitle')
       }
       size="lg"
     >
@@ -173,9 +187,11 @@ export function SendApplicationDialog({
           <Button type="submit" disabled={!ready || mutation.isPending}>
             {target.kind === 'create'
               ? t('applications.send.create')
-              : firstTime
-                ? t('applications.send.mark')
-                : t('applications.send.add')}
+              : moving
+                ? t('applications.move.confirm')
+                : firstTime
+                  ? t('applications.send.mark')
+                  : t('applications.send.add')}
           </Button>
         </DialogActions>
       </form>

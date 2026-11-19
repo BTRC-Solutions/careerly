@@ -293,6 +293,15 @@ confirmando que se envió sin CV de Careerly. Registrar un envío después pasa 
 CVs a una ya enviada. Una JD con postulación no se puede borrar (409): `applications` registra un chequeo en
 `JobPostingsService` al iniciar, porque `job-postings` no puede depender de `applications`.
 
+**Tablero y tabla de postulaciones (paso 7.4):** el kanban tiene una columna por estado activo, "Sin respuesta"
+y una columna "Cerradas" (Aceptada, Rechazada, Retirada) colapsada; soltar ahí pregunta cuál. Con `dnd-kit`, la
+tarjeta que se arrastra es una copia (`DragOverlay`), porque el tablero se desplaza de costado; con el teclado,
+espacio la toma, las flechas izquierda y derecha la llevan de columna en columna y espacio la suelta, con anuncios
+para lectores de pantalla. Cada tarjeta tiene además un menú "Mover a…" (Radix). Antes de llamar a la API, la
+interfaz pregunta lo que el movimiento necesita (`features/applications/lib/moves.ts`, las mismas reglas que el
+agregado): confirmar un retroceso o una reapertura, o cómo se envió la primera vez. La tabla filtra por estado,
+empresa y fecha de envío, y busca en el puesto y la empresa (sin distinguir mayúsculas ni acentos).
+
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.
 
@@ -679,7 +688,7 @@ POST   /applications                               # { jobPostingId, sent? }: gu
 GET    /applications/sendable-resumes?jobPostingId= # CVs finalizados de la JD, para enviar
 GET    /applications/:id | DELETE /applications/:id  # borrarla no borra los CVs finalizados
 POST   /applications/:id/sent-resumes              # { resumeVersionIds, sentWithoutCareerlyCv?, sentAt? }: SAVED → APPLIED, o agrega CVs
-POST   /applications/:id/status                    # transición validada por el dominio (7.4)
+POST   /applications/:id/status                    # { to, confirmBackward?, sent? }: transición validada por el dominio; una cerrada se reabre
 CRUD   /applications/:id/events, /applications/:id/contacts
 
 GET    /dashboard/summary

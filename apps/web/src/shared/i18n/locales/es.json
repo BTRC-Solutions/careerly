@@ -761,7 +761,8 @@
       "create": "Crear postulación",
       "mark": "Marcar como enviada",
       "add": "Agregar CV enviado",
-      "finalizedOn": "Finalizado el {{date}} · {{file}}"
+      "finalizedOn": "Finalizado el {{date}} · {{file}}",
+      "moveTitle": "¿Cómo la enviaste? (pasa a {{status}})"
     },
     "detail": {
       "withoutCv": "Se envió sin un CV hecho con Careerly.",
@@ -778,6 +779,77 @@
     "delete": {
       "title": "¿Borrar esta postulación?",
       "description": "Se borran la postulación y el registro de lo que enviaste. Los CVs finalizados y la oferta no se borran."
+    },
+    "views": {
+      "label": "Vista",
+      "board": "Tablero",
+      "table": "Tabla"
+    },
+    "board": {
+      "columns": {
+        "SAVED": "Guardadas",
+        "APPLIED": "Enviadas",
+        "SCREENING": "Primer contacto",
+        "INTERVIEWING": "Entrevistas",
+        "OFFER": "Ofertas",
+        "GHOSTED": "Sin respuesta",
+        "CLOSED": "Cerradas"
+      },
+      "showClosed_one": "Ver {{count}}",
+      "showClosed_other": "Ver las {{count}}",
+      "hideClosed": "Ocultar",
+      "drag": "Arrastrar «{{title}}»",
+      "moveMenu": "Mover «{{title}}» a…",
+      "moveTo": "Mover a…",
+      "instructions": "Para mover una postulación con el teclado, presioná espacio para tomarla, usá las flechas para llevarla a otra columna y espacio de nuevo para soltarla. Escape cancela. También podés usar el menú «Mover a…» de cada tarjeta.",
+      "announce": {
+        "start": "Tomaste «{{title}}».",
+        "over": "«{{title}}» está sobre la columna {{column}}.",
+        "outside": "«{{title}}» no está sobre ninguna columna.",
+        "end": "Soltaste «{{title}}» en la columna {{column}}.",
+        "cancel": "Se canceló el movimiento de «{{title}}»."
+      }
+    },
+    "move": {
+      "done": "«{{title}}» pasó a {{status}}.",
+      "confirm": "Mover",
+      "backTitle": "¿Volver a {{status}}?",
+      "backDescription": "«{{title}}» vuelve a un estado anterior.",
+      "reopenTitle": "¿Reabrir en {{status}}?",
+      "reopenDescription": "«{{title}}» estaba cerrada y vuelve a estar en curso, en {{status}}.",
+      "closeTitle": "Cerrar la postulación",
+      "closeQuestion": "¿Cómo terminó?",
+      "cannotClose": "Esta postulación no se puede cerrar desde donde está.",
+      "refused": {
+        "NOT_SENT": "«{{title}}» todavía no se envió: no puede pasar a {{status}}. Para descartarla, pasala a Retirada.",
+        "INVALID_TARGET": "«{{title}}» está cerrada: solo se reabre en un estado en curso.",
+        "CLOSED": "«{{title}}» está cerrada: reabrila primero.",
+        "NOT_CLOSED": "«{{title}}» no está cerrada.",
+        "SAME_STATUS": "«{{title}}» ya está en {{status}}.",
+        "NEEDS_CONFIRMATION": "Para volver a {{status}} hay que confirmarlo.",
+        "NEEDS_SENT_CV": "Para pasar a {{status}} hay que indicar cómo se envió."
+      }
+    },
+    "table": {
+      "search": "Buscar",
+      "searchPlaceholder": "Puesto o empresa",
+      "company": "Empresa",
+      "anyCompany": "Todas",
+      "sentFrom": "Enviada desde",
+      "sentTo": "Enviada hasta",
+      "statuses": "Estados",
+      "clear": "Quitar filtros",
+      "count_one": "{{count}} postulación",
+      "count_other": "{{count}} postulaciones",
+      "caption": "Postulaciones",
+      "columns": {
+        "job": "Puesto",
+        "company": "Empresa",
+        "status": "Estado",
+        "sent": "Enviada",
+        "updated": "Último cambio",
+        "actions": "Acciones"
+      }
     }
   },
   "templates": {

@@ -110,6 +110,7 @@ export const ApplicationSummarySchema = ApplicationSchema.pick({
   id: true,
   jobPostingId: true,
   status: true,
+  ghostedFrom: true,
   appliedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -146,3 +147,17 @@ export const CreateApplicationRequestSchema = z
   .object({ jobPostingId: z.string().min(1), sent: SendApplicationRequestSchema.optional() })
   .strict();
 export type CreateApplicationRequest = z.infer<typeof CreateApplicationRequestSchema>;
+
+/**
+ * `POST /applications/:id/status` (RF-APP-03): moves it to another state. A closed application is reopened to
+ * `to` (RN-10); going back needs `confirmBackward` (RN-09); reaching `APPLIED` or later for the first time
+ * needs `sent` (the CVs sent, or that it went without one).
+ */
+export const MoveApplicationRequestSchema = z
+  .object({
+    to: ApplicationStatusSchema,
+    confirmBackward: z.boolean().optional(),
+    sent: SendApplicationRequestSchema.optional(),
+  })
+  .strict();
+export type MoveApplicationRequest = z.infer<typeof MoveApplicationRequestSchema>;

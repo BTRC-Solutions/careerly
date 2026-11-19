@@ -1,23 +1,58 @@
-import type { ApplicationSummary } from '@careerly/contracts';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import { cn } from '../../../shared/lib/cn';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { useApplications } from '../api/applications-api';
-import { StatusTag } from '../components/ApplicationCard';
-import { formatDay } from '../lib/dates';
+import { ApplicationsBoard } from '../components/ApplicationsBoard';
+import { ApplicationsTable } from '../components/ApplicationsTable';
 
-/** The applications, most recently changed first (roadmap 7.3; the kanban and table come in 7.4). */
+const VIEWS = ['board', 'table'] as const;
+type View = (typeof VIEWS)[number];
+
+/**
+ * The applications (roadmap 7.4, RF-APP-06), as a kanban by state or a table with filters. The view is kept in
+ * the address (`?view=table`), so going back to the list returns to it.
+ */
 export function ApplicationsPage() {
   const { t } = useTranslation();
   const applications = useApplications();
+  const [params, setParams] = useSearchParams();
+  const view: View = params.get('view') === 'table' ? 'table' : 'board';
   const list = applications.data?.applications;
 
   return (
-    <div className="flex max-w-[52rem] flex-col gap-8">
-      <PageHeader title={t('applications.title')} description={t('applications.subtitle')} />
+    <div className="flex max-w-[70rem] flex-col gap-6">
+      <PageHeader
+        title={t('applications.title')}
+        description={t('applications.subtitle')}
+        actions={
+          <div
+            role="group"
+            aria-label={t('applications.views.label')}
+            className="flex rounded-control border border-silver-lining p-0.5"
+          >
+            {VIEWS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={option === view}
+                onClick={() => setParams(option === 'board' ? {} : { view: option })}
+                className={cn(
+                  'rounded-[6px] px-3 py-1 text-sm font-medium transition-colors',
+                  option === view
+                    ? 'bg-indigo-navy text-pure-white'
+                    : 'text-steel-text hover:text-indigo-navy',
+                )}
+              >
+                {t(`applications.views.${option}`)}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {applications.isPending && (
         <p role="status" className="text-sm text-steel-text">
@@ -41,42 +76,13 @@ export function ApplicationsPage() {
           </Link>
         </Card>
       )}
-      {list && list.length > 0 && (
-        <ul className="flex flex-col gap-3">
-          {list.map((application) => (
-            <li key={application.id}>
-              <ApplicationRow application={application} />
-            </li>
-          ))}
-        </ul>
-      )}
+      {list &&
+        list.length > 0 &&
+        (view === 'board' ? (
+          <ApplicationsBoard applications={list} />
+        ) : (
+          <ApplicationsTable applications={list} />
+        ))}
     </div>
-  );
-}
-
-function ApplicationRow({ application }: { application: ApplicationSummary }) {
-  const { t, i18n } = useTranslation();
-  return (
-    <Link
-      to={`/applications/${application.id}`}
-      className="flex items-center justify-between gap-4 rounded-card border border-silver-lining bg-pure-white px-5 py-4 transition-colors hover:border-indigo-navy"
-    >
-      <div className="min-w-0">
-        <p className="truncate font-medium text-indigo-navy">
-          {application.title ?? t('jobPostings.untitled')}
-        </p>
-        <p className="mt-1 text-sm text-slate-ink">
-          {[
-            application.company,
-            application.appliedAt
-              ? t('applications.sentOn', { date: formatDay(application.appliedAt, i18n.language) })
-              : t('applications.notSent'),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      </div>
-      <StatusTag status={application.status} />
-    </Link>
   );
 }

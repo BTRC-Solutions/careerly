@@ -13,6 +13,8 @@ import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useDownloadResumeVersion, useResumeVersionPdf } from '../../tailoring/api/tailoring-api';
 import { useApplication, useDeleteApplication } from '../api/applications-api';
 import { StatusTag } from '../components/ApplicationCard';
+import { useMoveFlow } from '../components/MoveFlow';
+import { MoveMenu } from '../components/MoveMenu';
 import { SendApplicationDialog } from '../components/SendApplicationDialog';
 import { formatDay } from '../lib/dates';
 
@@ -54,6 +56,7 @@ function ApplicationDetail({ application }: { application: Application }) {
   const navigate = useNavigate();
   const posting = useJobPosting(application.jobPostingId);
   const remove = useDeleteApplication(application);
+  const flow = useMoveFlow();
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -72,12 +75,23 @@ function ApplicationDetail({ application }: { application: Application }) {
       />
 
       <Card className="flex flex-col gap-2">
-        <p className="flex flex-wrap items-center gap-2 text-sm text-slate-ink">
-          <StatusTag status={application.status} />
-          {application.appliedAt
-            ? t('applications.sentOn', { date: formatDay(application.appliedAt, i18n.language) })
-            : t('applications.notSent')}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-slate-ink">
+            <StatusTag status={application.status} />
+            {application.appliedAt
+              ? t('applications.sentOn', { date: formatDay(application.appliedAt, i18n.language) })
+              : t('applications.notSent')}
+          </p>
+          <MoveMenu
+            application={{ ...application, title: posting.data?.title ?? null }}
+            onMove={(to) => flow.move({ ...application, title: posting.data?.title ?? null }, to)}
+          />
+        </div>
+        {flow.message && (
+          <p role="status" className="text-sm text-slate-ink">
+            {flow.message}
+          </p>
+        )}
         {application.sentWithoutCareerlyCv && (
           <p className="text-sm text-steel-text">{t('applications.detail.withoutCv')}</p>
         )}
@@ -118,6 +132,7 @@ function ApplicationDetail({ application }: { application: Application }) {
         )}
       </Card>
 
+      {flow.dialogs}
       {sending && (
         <SendApplicationDialog
           target={{ kind: 'send', application }}

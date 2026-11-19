@@ -3,6 +3,7 @@ import {
   ApplicationListSchema,
   ApplicationSchema,
   type CreateApplicationRequest,
+  type MoveApplicationRequest,
   ResumeVersionListSchema,
   type SendApplicationRequest,
 } from '@careerly/contracts';
@@ -85,6 +86,16 @@ export function useSendApplication(id: string) {
   return useMutation({
     mutationFn: (request: SendApplicationRequest) =>
       apiPost(`/applications/${id}/sent-resumes`, ApplicationSchema, request),
+    onSuccess: refresh,
+  });
+}
+
+/** Moves it to another state (kanban, RF-APP-03); the server checks the rules again. */
+export function useMoveApplication() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ id, ...request }: MoveApplicationRequest & { id: string }) =>
+      apiPost(`/applications/${id}/status`, ApplicationSchema, request),
     onSuccess: refresh,
   });
 }
