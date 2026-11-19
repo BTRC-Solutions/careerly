@@ -3,6 +3,7 @@ import { DocumentsModule } from '../documents/index.js';
 import { JobPostingsModule } from '../job-postings/index.js';
 import { JobsModule } from '../jobs/index.js';
 import { ProfileModule } from '../profile/index.js';
+import { FinalizedResumesService } from './application/finalized-resumes.service.js';
 import { GapsService } from './application/gaps.service.js';
 import { SessionProfileChangesService } from './application/session-profile-changes.service.js';
 import { RelevanceService } from './application/relevance.service.js';
@@ -61,9 +62,10 @@ import {
 @Module({
   imports: [JobsModule, ProfileModule, JobPostingsModule, DocumentsModule],
   controllers: [TailoringController],
-  exports: [TailoringUsageService],
+  exports: [TailoringUsageService, FinalizedResumesService],
   providers: [
     TailoringSessionsService,
+    FinalizedResumesService,
     RelevanceService,
     GapsService,
     TailoringUsageService,

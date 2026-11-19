@@ -1,5 +1,6 @@
 import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
+import { ApplicationsModule } from './modules/applications/index.js';
 import { AiModule } from './modules/ai/index.js';
 import { DocumentsModule } from './modules/documents/index.js';
 import { JobPostingsModule } from './modules/job-postings/index.js';
@@ -41,6 +42,7 @@ export class AppModule {
         AiModule,
         DocumentsModule,
         TailoringModule,
+        ApplicationsModule,
         TelemetryModule,
       ],
       controllers: [HealthController],

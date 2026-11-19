@@ -6,7 +6,17 @@ import type {
   UpdateJobPostingRequest,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { JobPostingNotFoundError, JobPostingRepository } from './job-postings.repository.js';
+import {
+  JobPostingInUseError,
+  JobPostingNotFoundError,
+  JobPostingRepository,
+} from './job-postings.repository.js';
+
+/**
+ * Says what keeps a job description from being deleted (e.g. its application), or `null`. Other modules
+ * register one, since this module cannot depend on them.
+ */
+export type JobPostingDeletionCheck = (jobPostingId: string) => Promise<string | null>;
 
 /** Characters of the text shown in the list. */
 const EXCERPT_LENGTH = 200;
@@ -14,7 +24,14 @@ const EXCERPT_LENGTH = 200;
 /** Job descriptions the user pastes (RF-JD-01); their analysis comes in step 4.5. */
 @Injectable()
 export class JobPostingsService {
+  private readonly deletionChecks: JobPostingDeletionCheck[] = [];
+
   constructor(private readonly postings: JobPostingRepository) {}
+
+  /** Registers a check that runs before deleting a job description (e.g. the applications module). */
+  registerDeletionCheck(check: JobPostingDeletionCheck): void {
+    this.deletionChecks.push(check);
+  }
 
   async create(request: CreateJobPostingRequest): Promise<JobPosting> {
     const now = new Date().toISOString();
@@ -46,7 +63,12 @@ export class JobPostingsService {
     return updated;
   }
 
+  /** Throws `JobPostingInUseError` when another module keeps it (e.g. it has an application). */
   async delete(id: string): Promise<void> {
+    for (const check of this.deletionChecks) {
+      const usedBy = await check(id);
+      if (usedBy) throw new JobPostingInUseError(id, usedBy);
+    }
     if (!(await this.postings.delete(id))) throw new JobPostingNotFoundError(id);
   }
 }

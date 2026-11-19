@@ -4,7 +4,8 @@
     "home": "Inicio",
     "settings": "Configuración",
     "profile": "Perfil maestro",
-    "jobPostings": "Ofertas"
+    "jobPostings": "Ofertas",
+    "applications": "Postulaciones"
   },
   "home": {
     "title": "Bienvenido a Careerly",
@@ -712,6 +713,71 @@
       "tailor": "Adaptar mi CV",
       "continueTailoring": "Continuar mi CV",
       "tailorAgain": "Empezar de nuevo"
+    },
+    "deleteBlocked": "Esta oferta tiene una postulación: para borrar la oferta, primero borrá la postulación."
+  },
+  "applications": {
+    "title": "Postulaciones",
+    "subtitle": "Una por oferta, con los CVs que enviaste.",
+    "loading": "Cargando…",
+    "loadError": "No se pudieron cargar las postulaciones.",
+    "notFound": "No se encontró la postulación.",
+    "emptyTitle": "Todavía no tenés postulaciones",
+    "emptyDescription": "Se crean desde una oferta o desde un CV finalizado, cuando lo enviás o para guardarla y enviarla después.",
+    "goToJobPostings": "Ir a las ofertas",
+    "back": "Volver a postulaciones",
+    "sentOn": "Enviada el {{date}}",
+    "notSent": "Todavía no la enviaste",
+    "cv": "CV en {{language}}",
+    "statuses": {
+      "SAVED": "Guardada",
+      "APPLIED": "Enviada",
+      "SCREENING": "Primer contacto",
+      "INTERVIEWING": "Entrevistas",
+      "OFFER": "Oferta",
+      "ACCEPTED": "Aceptada",
+      "REJECTED": "Rechazada",
+      "WITHDRAWN": "Retirada",
+      "GHOSTED": "Sin respuesta"
+    },
+    "card": {
+      "title": "Postulación",
+      "none": "Todavía no creaste la postulación para esta oferta.",
+      "open": "Ver postulación",
+      "create": "Crear postulación"
+    },
+    "send": {
+      "createTitle": "Crear postulación",
+      "markTitle": "Marcar como enviada",
+      "addTitle": "Agregar CV enviado",
+      "question": "¿Ya la enviaste?",
+      "yes": "Sí, ya la envié",
+      "notYet": "Todavía no: guardarla para después",
+      "cvs": "¿Qué CVs enviaste?",
+      "noCvs": "Esta oferta no tiene CVs finalizados para enviar.",
+      "withoutCv": "La envié sin un CV hecho con Careerly",
+      "date": "Fecha de envío",
+      "pickOne": "Elegí al menos un CV, o marcá que la enviaste sin un CV de Careerly.",
+      "create": "Crear postulación",
+      "mark": "Marcar como enviada",
+      "add": "Agregar CV enviado",
+      "finalizedOn": "Finalizado el {{date}} · {{file}}"
+    },
+    "detail": {
+      "withoutCv": "Se envió sin un CV hecho con Careerly.",
+      "openJobPosting": "Ver la oferta",
+      "sentCvs": "CVs enviados",
+      "noneYet": "Cuando la envíes, registrá acá qué CVs mandaste.",
+      "noneSent": "No se envió ningún CV hecho con Careerly.",
+      "sentFile": "Enviado el {{date}} · {{file}}",
+      "view": "Ver",
+      "hide": "Ocultar",
+      "download": "Descargar PDF",
+      "pdfTitle": "CV enviado en {{language}}"
+    },
+    "delete": {
+      "title": "¿Borrar esta postulación?",
+      "description": "Se borran la postulación y el registro de lo que enviaste. Los CVs finalizados y la oferta no se borran."
     }
   },
   "templates": {

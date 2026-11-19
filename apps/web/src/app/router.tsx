@@ -1,5 +1,7 @@
 import { createHashRouter, Navigate } from 'react-router';
 import { AiUsagePage } from '../features/ai/pages/AiUsagePage';
+import { ApplicationPage } from '../features/applications/pages/ApplicationPage';
+import { ApplicationsPage } from '../features/applications/pages/ApplicationsPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import {
   JobPostingPage,
@@ -47,6 +49,8 @@ export const router = createHashRouter([
       { path: 'job-postings/new', element: <NewJobPostingPage /> },
       { path: 'job-postings/:id', element: <JobPostingPage /> },
       { path: 'tailoring/:id', element: <MatchSummaryPage /> },
+      { path: 'applications', element: <ApplicationsPage /> },
+      { path: 'applications/:id', element: <ApplicationPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/ai-usage', element: <AiUsagePage /> },
       { path: 'settings/templates', element: <TemplatesPage /> },

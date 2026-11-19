@@ -4,7 +4,8 @@
     "home": "Home",
     "settings": "Settings",
     "profile": "Master profile",
-    "jobPostings": "Job postings"
+    "jobPostings": "Job postings",
+    "applications": "Applications"
   },
   "home": {
     "title": "Welcome to Careerly",
@@ -712,6 +713,71 @@
       "tailor": "Tailor my CV",
       "continueTailoring": "Continue my CV",
       "tailorAgain": "Start over"
+    },
+    "deleteBlocked": "This job posting has an application: to delete the posting, delete the application first."
+  },
+  "applications": {
+    "title": "Applications",
+    "subtitle": "One per job posting, with the CVs you sent.",
+    "loading": "Loading…",
+    "loadError": "Could not load the applications.",
+    "notFound": "Application not found.",
+    "emptyTitle": "No applications yet",
+    "emptyDescription": "You create them from a job posting or a finalized CV, when you send it or to save it for later.",
+    "goToJobPostings": "Go to job postings",
+    "back": "Back to applications",
+    "sentOn": "Sent on {{date}}",
+    "notSent": "Not sent yet",
+    "cv": "CV in {{language}}",
+    "statuses": {
+      "SAVED": "Saved",
+      "APPLIED": "Applied",
+      "SCREENING": "Screening",
+      "INTERVIEWING": "Interviewing",
+      "OFFER": "Offer",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn",
+      "GHOSTED": "No answer"
+    },
+    "card": {
+      "title": "Application",
+      "none": "You have not created the application for this job posting yet.",
+      "open": "Open application",
+      "create": "Create application"
+    },
+    "send": {
+      "createTitle": "Create application",
+      "markTitle": "Mark as sent",
+      "addTitle": "Add a sent CV",
+      "question": "Did you send it already?",
+      "yes": "Yes, I sent it",
+      "notYet": "Not yet: save it for later",
+      "cvs": "Which CVs did you send?",
+      "noCvs": "This job posting has no finalized CVs to send.",
+      "withoutCv": "I sent it without a CV made with Careerly",
+      "date": "Date sent",
+      "pickOne": "Pick at least one CV, or check that you sent it without a Careerly CV.",
+      "create": "Create application",
+      "mark": "Mark as sent",
+      "add": "Add sent CV",
+      "finalizedOn": "Finalized on {{date}} · {{file}}"
+    },
+    "detail": {
+      "withoutCv": "It was sent without a CV made with Careerly.",
+      "openJobPosting": "Open the job posting",
+      "sentCvs": "Sent CVs",
+      "noneYet": "When you send it, record here which CVs you sent.",
+      "noneSent": "No CV made with Careerly was sent.",
+      "sentFile": "Sent on {{date}} · {{file}}",
+      "view": "View",
+      "hide": "Hide",
+      "download": "Download PDF",
+      "pdfTitle": "CV sent in {{language}}"
+    },
+    "delete": {
+      "title": "Delete this application?",
+      "description": "The application and the record of what you sent are deleted. The finalized CVs and the job posting stay."
     }
   },
   "templates": {

@@ -18,3 +18,15 @@ export abstract class JobPostingRepository {
   /** Returns whether it existed. */
   abstract delete(id: string): Promise<boolean>;
 }
+
+/** Another module keeps something of the job description, so it cannot be deleted (maps to 409). */
+export class JobPostingInUseError extends Error {
+  constructor(
+    readonly jobPostingId: string,
+    /** What keeps it, e.g. `APPLICATION`. */
+    readonly usedBy: string,
+  ) {
+    super('This job description has an application; delete the application first.');
+    this.name = 'JobPostingInUseError';
+  }
+}

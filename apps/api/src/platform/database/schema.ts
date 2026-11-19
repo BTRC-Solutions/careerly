@@ -518,3 +518,49 @@ export const resumeVersions = sqliteTable(
     index('resume_versions_template_idx').on(table.templateId),
   ],
 );
+
+/**
+ * Job applications (RF-APP-01, roadmap 7.3): one per job description. `job_posting_id` points to the
+ * job-postings module without a foreign key; deleting a job description with an application is refused.
+ */
+export const applications = sqliteTable(
+  'applications',
+  {
+    id: text('id').primaryKey(),
+    jobPostingId: text('job_posting_id').notNull(),
+    /** `ApplicationStatus`. */
+    status: text('status').notNull(),
+    /** `ActiveApplicationStatus`, only while `GHOSTED`. */
+    ghostedFrom: text('ghosted_from'),
+    /** YYYY-MM-DD. */
+    appliedAt: text('applied_at'),
+    sentWithoutCareerlyCv: integer('sent_without_careerly_cv', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('applications_job_posting_idx').on(table.jobPostingId),
+    index('applications_updated_at_idx').on(table.updatedAt),
+  ],
+);
+
+/**
+ * The finalized CVs sent with an application (RF-APP-02). `resume_version_id` points to the documents module
+ * without a foreign key; versions are never deleted.
+ */
+export const sentResumes = sqliteTable(
+  'sent_resumes',
+  {
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    resumeVersionId: text('resume_version_id').notNull(),
+    /** YYYY-MM-DD. */
+    sentAt: text('sent_at').notNull(),
+    /** Insertion order, to list them oldest first. */
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.applicationId, table.resumeVersionId] })],
+);

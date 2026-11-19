@@ -126,7 +126,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 |---|---|---|---|
 | 7.1 | Finalizar sesión → `ResumeVersion` inmutable por idioma + PDF en `files/snapshots/`. `[RF-TAIL-14, RNF-10]` | Test: editar el perfil después de finalizar no cambia el snapshot ni su PDF. | ✅ (snapshot autocontenido: PDF, datos y copia de la plantilla; probado en la UI) |
 | 7.2 | Agregado `Application` con su máquina de estados (dominio puro + tests). `[RN-08, RN-09, RN-10]` | Todas las transiciones cubiertas por tests. | ✅ (tabla estado × destino en `application.test.ts`, más retrocesos, envío, `GHOSTED` y reabrir) |
-| 7.3 | Crear postulación desde una JD o desde una sesión finalizada; asociar uno o más snapshots enviados. `[RF-APP-01, RF-APP-02, RF-APP-08]` | Desde la postulación se abre y guarda exactamente el PDF enviado. | ⬜ |
+| 7.3 | Crear postulación desde una JD o desde una sesión finalizada; asociar uno o más snapshots enviados. `[RF-APP-01, RF-APP-02, RF-APP-08]` | Desde la postulación se abre y guarda exactamente el PDF enviado. | ✅ (una postulación por JD; test de integración del PDF exacto; probado en la UI) |
 | 7.4 | Vista kanban con arrastrar para cambiar de estado + vista tabla con filtros y búsqueda. `[RF-APP-03, RF-APP-06]` | Usable con teclado (accesibilidad). | ⬜ |
 | 7.5 | Línea de tiempo: eventos automáticos de estado, notas y entrevistas. `[RF-APP-04]` | Los eventos aparecen en orden y no se pueden alterar. | ⬜ |
 | 7.6 | Contactos y datos adicionales (canal, prioridad, salarios). `[RF-APP-05, RF-APP-07]` | CRUD completo. | ⬜ |

@@ -13,6 +13,8 @@ import {
   useJobPosting,
   useUpdateJobPosting,
 } from '../api/job-postings-api';
+import { useApplicationOf } from '../../applications/api/applications-api';
+import { ApplicationCard } from '../../applications/components/ApplicationCard';
 import { JobAnalysisCard } from '../components/JobAnalysisCard';
 import { JobPostingForm } from '../components/JobPostingForm';
 
@@ -62,6 +64,9 @@ export function JobPostingPage() {
   const posting = useJobPosting(id);
   const update = useUpdateJobPosting();
   const remove = useDeleteJobPosting();
+  // A job description with an application cannot be deleted: the application goes first.
+  const application = useApplicationOf(id);
+  const deletable = application.data === null;
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -87,11 +92,17 @@ export function JobPostingPage() {
             title={posting.data.title ?? t('jobPostings.untitled')}
             description={posting.data.company ?? undefined}
             actions={
-              <Button variant="secondary" onClick={() => setConfirming(true)}>
-                {t('common.delete')}
-              </Button>
+              deletable && (
+                <Button variant="secondary" onClick={() => setConfirming(true)}>
+                  {t('common.delete')}
+                </Button>
+              )
             }
           />
+          <ApplicationCard jobPostingId={id} />
+          {application.data && (
+            <p className="-mt-3 text-sm text-steel-text">{t('jobPostings.deleteBlocked')}</p>
+          )}
           <JobAnalysisCard jobPostingId={id} />
           <Card>
             <JobPostingForm

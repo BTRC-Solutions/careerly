@@ -35,7 +35,10 @@ import {
   JobAnalysisNotFoundError,
   JobAnalysisService,
 } from '../application/job-analysis.service.js';
-import { JobPostingNotFoundError } from '../application/job-postings.repository.js';
+import {
+  JobPostingInUseError,
+  JobPostingNotFoundError,
+} from '../application/job-postings.repository.js';
 import { JobPostingsService } from '../application/job-postings.service.js';
 
 /**
@@ -53,7 +56,9 @@ function toHttpError(error: unknown): unknown {
   if (error instanceof JobPostingNotFoundError || error instanceof JobAnalysisNotFoundError) {
     return new NotFoundException(error.message);
   }
-  if (error instanceof AnalysisInProgressError) return new ConflictException(error.message);
+  if (error instanceof AnalysisInProgressError || error instanceof JobPostingInUseError) {
+    return new ConflictException(error.message);
+  }
   return error;
 }
 
