@@ -1,5 +1,7 @@
 import {
   type Application,
+  ApplicationEventListSchema,
+  ApplicationEventSchema,
   ApplicationListSchema,
   ApplicationSchema,
   JobAnalysisStateSchema,
@@ -13,6 +15,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTempDir, HAS_TYPST } from '../../test-support/temp-dir.js';
 import {
@@ -24,7 +27,8 @@ import {
 
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08), end to end: one per job description, created
- * saved or already sent with the finalized CVs of that job description, whose PDF is exactly the finalized one.
+ * saved or already sent with the finalized CVs of that job description, whose PDF is exactly the finalized one,
+ * and its append-only timeline (roadmap 7.5, RF-APP-04, RN-09).
  */
 
 const CONTROL_TOKEN = 'control-token-only-main-knows';
@@ -289,6 +293,116 @@ describe('job applications (integration)', () => {
       appliedAt: '2026-11-12',
     });
     expect((await moveTo({ to: 'NOPE' })).status).toBe(400);
+  });
+
+  it('records every change of state and what the user adds, in order and append-only (RF-APP-04, RN-09)', async () => {
+    await start();
+    const jd = await posting('Site Reliability Engineer');
+    const { id } = await create({
+      jobPostingId: jd.id,
+      sent: { resumeVersionIds: [], sentWithoutCareerlyCv: true, sentAt: '2026-11-10' },
+    });
+    const moveTo = (body: unknown) => api('POST', `/applications/${id}/status`, body);
+    const add = async (body: unknown) => {
+      const response = await api('POST', `/applications/${id}/events`, body);
+      expect(response.status).toBe(201);
+      return ApplicationEventSchema.parse(await response.json());
+    };
+    const timeline = async () =>
+      ApplicationEventListSchema.parse(await json('GET', `/applications/${id}/events`)).events;
+
+    await moveTo({ to: 'INTERVIEWING' });
+    expect((await moveTo({ to: 'APPLIED' })).status).toBe(409); // refused: nothing recorded
+    await moveTo({ to: 'APPLIED', confirmBackward: true });
+    await moveTo({ to: 'REJECTED' });
+    await moveTo({ to: 'SCREENING' });
+
+    const note = await add({ type: 'NOTE', text: '  Asked a friend who works there.  ' });
+    expect(note).toMatchObject({ type: 'NOTE', text: 'Asked a friend who works there.' });
+    // An interview ahead, and a message from before the notes: the timeline goes by when they happened.
+    await add({
+      type: 'INTERVIEW',
+      kind: 'TECHNICAL',
+      interviewers: ['Grace Hopper'],
+      outcome: 'PENDING',
+      occurredAt: '2099-01-15T14:00:00-03:00',
+    });
+    await add({
+      type: 'MESSAGE',
+      channel: 'EMAIL',
+      from: 'Recruiting team',
+      text: 'We would like to talk.',
+      occurredAt: '2000-01-01T09:00:00.000Z',
+    });
+
+    const events = await timeline();
+    expect(events.map((event) => event.type)).toEqual([
+      'MESSAGE',
+      'STATUS_CHANGE',
+      'STATUS_CHANGE',
+      'STATUS_CHANGE',
+      'STATUS_CHANGE',
+      'STATUS_CHANGE',
+      'STATUS_CHANGE',
+      'NOTE',
+      'INTERVIEW',
+    ]);
+    expect(
+      events.flatMap((event) =>
+        event.type === 'STATUS_CHANGE'
+          ? [[event.from, event.to, event.backward, event.reopened]]
+          : [],
+      ),
+    ).toEqual([
+      [null, 'SAVED', false, false],
+      ['SAVED', 'APPLIED', false, false],
+      ['APPLIED', 'INTERVIEWING', false, false],
+      ['INTERVIEWING', 'APPLIED', true, false],
+      ['APPLIED', 'REJECTED', false, false],
+      ['REJECTED', 'SCREENING', false, true],
+    ]);
+    expect(events.at(-1)).toMatchObject({ occurredAt: '2099-01-15T17:00:00.000Z' });
+
+    // Only notes, interviews and messages are added, and they are validated.
+    for (const body of [
+      { type: 'STATUS_CHANGE', from: 'SAVED', to: 'OFFER', backward: false, reopened: false },
+      { type: 'NOTE', text: '   ' },
+      { type: 'INTERVIEW', kind: 'TECHNICAL', interviewers: [], outcome: 'MAYBE' },
+      { type: 'NOTE', text: 'Hi', extra: true },
+    ]) {
+      expect((await api('POST', `/applications/${id}/events`, body)).status).toBe(400);
+    }
+    expect(
+      (await api('POST', '/applications/nope/events', { type: 'NOTE', text: 'Hi' })).status,
+    ).toBe(404);
+    expect((await api('GET', '/applications/nope/events')).status).toBe(404);
+
+    // Nothing in the timeline can be changed or deleted: there is no route, and the database refuses it.
+    expect(
+      (await api('PATCH', `/applications/${id}/events/${note.id}`, { text: 'x' })).status,
+    ).toBe(404);
+    expect((await api('DELETE', `/applications/${id}/events/${note.id}`)).status).toBe(404);
+    const db = new DatabaseSync(path.join(temp!.dir, 'careerly.db'));
+    try {
+      expect(() => db.prepare('UPDATE application_events SET payload = ?').run('{}')).toThrow(
+        /append-only/,
+      );
+      expect(() => db.prepare('DELETE FROM application_events').run()).toThrow(/append-only/);
+    } finally {
+      db.close();
+    }
+    expect(await timeline()).toEqual(events);
+
+    // Deleting the application takes its timeline along.
+    expect((await api('DELETE', `/applications/${id}`)).status).toBe(204);
+    const check = new DatabaseSync(path.join(temp!.dir, 'careerly.db'));
+    try {
+      expect(check.prepare('SELECT COUNT(*) AS count FROM application_events').get()).toEqual({
+        count: 0,
+      });
+    } finally {
+      check.close();
+    }
   });
 
   it.runIf(HAS_TYPST)(

@@ -564,3 +564,25 @@ export const sentResumes = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.applicationId, table.resumeVersionId] })],
 );
+
+/**
+ * The timeline of an application (roadmap 7.5, RF-APP-04): changes of state, recorded by the application itself
+ * (RN-09), and the notes, interviews and messages the user adds. Append-only: triggers in the migration refuse
+ * any `UPDATE`, and any `DELETE` while the application exists (deleting the application takes them along).
+ */
+export const applicationEvents = sqliteTable(
+  'application_events',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    /** `ApplicationEventType`. */
+    type: text('type').notNull(),
+    /** JSON: the `ApplicationEventEntry` without its type. */
+    payload: text('payload').notNull(),
+    occurredAt: text('occurred_at').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('application_events_order_idx').on(table.applicationId, table.occurredAt)],
+);

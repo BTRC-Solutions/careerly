@@ -814,7 +814,7 @@
       "done": "«{{title}}» pasó a {{status}}.",
       "confirm": "Mover",
       "backTitle": "¿Volver a {{status}}?",
-      "backDescription": "«{{title}}» vuelve a un estado anterior.",
+      "backDescription": "«{{title}}» vuelve a un estado anterior. Queda registrado en la línea de tiempo.",
       "reopenTitle": "¿Reabrir en {{status}}?",
       "reopenDescription": "«{{title}}» estaba cerrada y vuelve a estar en curso, en {{status}}.",
       "closeTitle": "Cerrar la postulación",
@@ -849,6 +849,59 @@
         "sent": "Enviada",
         "updated": "Último cambio",
         "actions": "Acciones"
+      }
+    },
+    "timeline": {
+      "title": "Línea de tiempo",
+      "appendOnly": "Lo que se registra acá no se puede editar ni borrar.",
+      "loadError": "No se pudo cargar la línea de tiempo.",
+      "add": {
+        "NOTE": "Agregar nota",
+        "INTERVIEW": "Registrar entrevista",
+        "MESSAGE": "Registrar mensaje"
+      },
+      "created": "Creaste la postulación ({{status}})",
+      "moved": "Pasó de {{from}} a {{to}}",
+      "back": "Volvió de {{from}} a {{to}} (confirmado)",
+      "reopened": "Reabriste la postulación en {{status}}",
+      "note": "Nota",
+      "interview": "Entrevista: {{kind}}",
+      "with": "Con {{names}}",
+      "message": "Mensaje por {{channel}}",
+      "messageFrom": "Mensaje por {{channel}} de {{from}}",
+      "upcoming": "Próxima",
+      "kinds": {
+        "SCREENING": "primer contacto",
+        "TECHNICAL": "técnica",
+        "BEHAVIORAL": "conductual",
+        "CASE": "caso práctico",
+        "FINAL": "final",
+        "OTHER": "otra"
+      },
+      "outcomes": {
+        "PENDING": "Sin resultado",
+        "PASSED": "Pasada",
+        "NOT_PASSED": "No pasada"
+      },
+      "channels": {
+        "EMAIL": "email",
+        "LINKEDIN": "LinkedIn",
+        "PHONE": "teléfono",
+        "OTHER": "otro medio"
+      },
+      "form": {
+        "interviewDate": "Fecha y hora",
+        "receivedOn": "Recibido el",
+        "kind": "Tipo",
+        "outcome": "Resultado",
+        "interviewers": "Entrevistadores",
+        "interviewersHint": "Separados por comas.",
+        "channel": "Medio",
+        "from": "De (opcional)",
+        "note": "Nota",
+        "notes": "Notas (opcional)",
+        "message": "Mensaje",
+        "save": "Guardar"
       }
     }
   },

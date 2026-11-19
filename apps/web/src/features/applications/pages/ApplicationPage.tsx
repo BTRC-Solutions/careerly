@@ -16,11 +16,12 @@ import { StatusTag } from '../components/ApplicationCard';
 import { useMoveFlow } from '../components/MoveFlow';
 import { MoveMenu } from '../components/MoveMenu';
 import { SendApplicationDialog } from '../components/SendApplicationDialog';
+import { Timeline } from '../components/Timeline';
 import { formatDay } from '../lib/dates';
 
 /**
- * One application (roadmap 7.3): the job it is for, its state, and the finalized CVs sent with it, to open and
- * download exactly as they were sent (RF-APP-08). Changing its state comes with the kanban (roadmap 7.4).
+ * One application (roadmap 7.3): the job it is for, its state, the finalized CVs sent with it, to open and
+ * download exactly as they were sent (RF-APP-08), and its timeline (roadmap 7.5, RF-APP-04).
  */
 export function ApplicationPage() {
   const { t } = useTranslation();
@@ -131,6 +132,8 @@ function ApplicationDetail({ application }: { application: Application }) {
           </ul>
         )}
       </Card>
+
+      <Timeline applicationId={application.id} />
 
       {flow.dialogs}
       {sending && (

@@ -1,4 +1,4 @@
-import type { ResumeVersion } from '@careerly/contracts';
+import type { ApplicationEvent, ResumeVersion } from '@careerly/contracts';
 import type { Application } from '../domain/application.js';
 
 /** A finalized CV sent with an application, as stored. */
@@ -47,10 +47,15 @@ export class ApplicationJobPostingNotFoundError extends Error {
   }
 }
 
-/** Port: stored applications and their sent CVs. Abstract classes so they can be Nest DI tokens. */
+/** Port: stored applications, their sent CVs and their timeline. Abstract classes so they can be Nest DI tokens. */
 export abstract class ApplicationRepository {
-  /** Inserts or updates the application and adds the sent CVs it does not have yet, in one transaction. */
-  abstract save(application: StoredApplication): Promise<void>;
+  /**
+   * Inserts or updates the application, adds the sent CVs it does not have yet and appends the new events of its
+   * timeline, in one transaction. Events are never changed or removed (roadmap 7.5).
+   */
+  abstract save(application: StoredApplication, events?: ApplicationEvent[]): Promise<void>;
+  /** The timeline: by when the events happened, then by when they were recorded. */
+  abstract events(applicationId: string): Promise<ApplicationEvent[]>;
   abstract find(id: string): Promise<StoredApplication | null>;
   abstract findByJobPosting(jobPostingId: string): Promise<StoredApplication | null>;
   /** Most recently updated first. */

@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type {
   ActiveApplicationStatus,
+  AddApplicationEventRequest,
+  ApplicationEvent,
+  ApplicationEventList,
   Application as ApplicationView,
   ApplicationList,
   CreateApplicationRequest,
@@ -11,7 +14,12 @@ import type {
   SendApplicationRequest,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { applyApplicationEvent, isTerminal, newApplication } from '../domain/application.js';
+import {
+  applyApplicationEvent,
+  isTerminal,
+  newApplication,
+  type StatusChange,
+} from '../domain/application.js';
 import {
   ApplicationAlreadyExistsError,
   ApplicationNotFoundError,
@@ -25,8 +33,9 @@ import {
 /**
  * Job applications (roadmap 7.3): one per job description (RF-APP-01), created saved or already sent, with
  * the finalized CVs of that job description that were sent (RF-APP-02). Their PDFs are the finalized ones
- * (RF-APP-08). The status changes go through the aggregate (roadmap 7.2); the timeline that records them
- * comes in roadmap 7.5.
+ * (RF-APP-08). The status changes go through the aggregate (roadmap 7.2) and are recorded in the timeline
+ * (roadmap 7.5, RN-09), where the user also adds notes, interviews and messages (RF-APP-04). Nothing in the
+ * timeline is edited or deleted.
  */
 @Injectable()
 export class ApplicationsService {
@@ -43,15 +52,21 @@ export class ApplicationsService {
     if (existing) throw new ApplicationAlreadyExistsError(existing.id);
 
     const now = new Date().toISOString();
-    let application: StoredApplication = {
+    const saved: StoredApplication = {
       ...newApplication({ id: randomUUID(), jobPostingId: request.jobPostingId }),
       sentResumes: [],
       createdAt: now,
       updatedAt: now,
     };
     const versions = await this.finalized.forJobPosting(request.jobPostingId);
-    if (request.sent) application = send(application, request.sent, versions, now);
-    await this.applications.save(application);
+    const created = statusEvent(
+      { from: null, to: 'SAVED', backward: false, reopened: false, at: now },
+      now,
+    );
+    const { application, change } = request.sent
+      ? send(saved, request.sent, versions, now)
+      : { application: saved, change: null };
+    await this.applications.save(application, [created, ...statusEvents(change, now)]);
     return toView(application, versions);
   }
 
@@ -62,8 +77,9 @@ export class ApplicationsService {
   async send(id: string, request: SendApplicationRequest): Promise<ApplicationView> {
     const stored = await this.load(id);
     const versions = await this.finalized.forJobPosting(stored.jobPostingId);
-    const application = send(stored, request, versions, new Date().toISOString());
-    await this.applications.save(application);
+    const now = new Date().toISOString();
+    const { application, change } = send(stored, request, versions, now);
+    await this.applications.save(application, statusEvents(change, now));
     return toView(application, versions);
   }
 
@@ -71,9 +87,31 @@ export class ApplicationsService {
   async move(id: string, request: MoveApplicationRequest): Promise<ApplicationView> {
     const stored = await this.load(id);
     const versions = await this.finalized.forJobPosting(stored.jobPostingId);
-    const application = move(stored, request, versions, new Date().toISOString());
-    await this.applications.save(application);
+    const now = new Date().toISOString();
+    const { application, change } = move(stored, request, versions, now);
+    await this.applications.save(application, statusEvents(change, now));
     return toView(application, versions);
+  }
+
+  /** The timeline (RF-APP-04): oldest first. */
+  async events(id: string): Promise<ApplicationEventList> {
+    await this.load(id);
+    return { events: await this.applications.events(id) };
+  }
+
+  /** Adds a note, an interview or a message to the timeline (RF-APP-04); it cannot be changed afterwards. */
+  async addEvent(id: string, request: AddApplicationEventRequest): Promise<ApplicationEvent> {
+    const stored = await this.load(id);
+    const now = new Date().toISOString();
+    const { occurredAt, ...entry } = request;
+    const event: ApplicationEvent = {
+      ...entry,
+      id: randomUUID(),
+      occurredAt: occurredAt ? new Date(occurredAt).toISOString() : now,
+      createdAt: now,
+    };
+    await this.applications.save({ ...stored, updatedAt: now }, [event]);
+    return event;
   }
 
   async get(id: string): Promise<ApplicationView> {
@@ -141,10 +179,16 @@ function send(
   request: SendApplicationRequest,
   versions: ResumeVersion[],
   now: string,
-): StoredApplication {
+): Moved {
   const next = attach(application, request, versions, now);
-  if (application.status !== 'SAVED') return next;
+  if (application.status !== 'SAVED') return { application: next, change: null };
   return transition(next, { to: 'APPLIED', sent: request }, now);
+}
+
+/** The application after a change, and the change of state for the timeline, if there was one. */
+interface Moved {
+  application: StoredApplication;
+  change: StatusChange | null;
 }
 
 /**
@@ -157,7 +201,7 @@ function move(
   request: MoveApplicationRequest,
   versions: ResumeVersion[],
   now: string,
-): StoredApplication {
+): Moved {
   const next = request.sent ? attach(application, request.sent, versions, now) : application;
   return transition(next, request, now);
 }
@@ -166,12 +210,12 @@ function transition(
   application: StoredApplication,
   request: MoveApplicationRequest,
   now: string,
-): StoredApplication {
+): Moved {
   const sending = {
     appliedAt: request.sent?.sentAt ?? today(),
     sentWithoutCareerlyCv: request.sent?.sentWithoutCareerlyCv,
   };
-  const { application: moved } = applyApplicationEvent(
+  const { application: moved, change } = applyApplicationEvent(
     application,
     isTerminal(application.status)
       ? { type: 'REOPEN', to: request.to as ActiveApplicationStatus, at: now, ...sending }
@@ -183,8 +227,28 @@ function transition(
           ...sending,
         },
   );
-  return { ...application, ...moved, updatedAt: now };
+  return { application: { ...application, ...moved, updatedAt: now }, change };
 }
+
+/** The timeline event of a change of state (RN-09); `from` is `null` when the application was created. */
+function statusEvent(
+  change: Omit<StatusChange, 'from'> & { from: StatusChange['from'] | null },
+  now: string,
+): ApplicationEvent {
+  return {
+    type: 'STATUS_CHANGE',
+    id: randomUUID(),
+    from: change.from,
+    to: change.to,
+    backward: change.backward,
+    reopened: change.reopened,
+    occurredAt: change.at,
+    createdAt: now,
+  };
+}
+
+const statusEvents = (change: StatusChange | null, now: string): ApplicationEvent[] =>
+  change ? [statusEvent(change, now)] : [];
 
 /** Adds the sent CVs it does not have yet, only finalized ones of its job description. */
 function attach(

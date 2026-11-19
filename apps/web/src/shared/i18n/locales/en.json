@@ -814,7 +814,7 @@
       "done": "“{{title}}” moved to {{status}}.",
       "confirm": "Move",
       "backTitle": "Go back to {{status}}?",
-      "backDescription": "“{{title}}” goes back to an earlier state.",
+      "backDescription": "“{{title}}” goes back to an earlier state. It is recorded in the timeline.",
       "reopenTitle": "Reopen in {{status}}?",
       "reopenDescription": "“{{title}}” was closed and is in progress again, in {{status}}.",
       "closeTitle": "Close the application",
@@ -849,6 +849,59 @@
         "sent": "Sent",
         "updated": "Last change",
         "actions": "Actions"
+      }
+    },
+    "timeline": {
+      "title": "Timeline",
+      "appendOnly": "What is recorded here cannot be edited or deleted.",
+      "loadError": "The timeline could not be loaded.",
+      "add": {
+        "NOTE": "Add note",
+        "INTERVIEW": "Record interview",
+        "MESSAGE": "Record message"
+      },
+      "created": "You created the application ({{status}})",
+      "moved": "Moved from {{from}} to {{to}}",
+      "back": "Went back from {{from}} to {{to}} (confirmed)",
+      "reopened": "You reopened the application in {{status}}",
+      "note": "Note",
+      "interview": "Interview: {{kind}}",
+      "with": "With {{names}}",
+      "message": "Message by {{channel}}",
+      "messageFrom": "Message by {{channel}} from {{from}}",
+      "upcoming": "Upcoming",
+      "kinds": {
+        "SCREENING": "screening",
+        "TECHNICAL": "technical",
+        "BEHAVIORAL": "behavioral",
+        "CASE": "case study",
+        "FINAL": "final",
+        "OTHER": "other"
+      },
+      "outcomes": {
+        "PENDING": "No result yet",
+        "PASSED": "Passed",
+        "NOT_PASSED": "Not passed"
+      },
+      "channels": {
+        "EMAIL": "email",
+        "LINKEDIN": "LinkedIn",
+        "PHONE": "phone",
+        "OTHER": "other means"
+      },
+      "form": {
+        "interviewDate": "Date and time",
+        "receivedOn": "Received on",
+        "kind": "Kind",
+        "outcome": "Result",
+        "interviewers": "Interviewers",
+        "interviewersHint": "Separated by commas.",
+        "channel": "Means",
+        "from": "From (optional)",
+        "note": "Note",
+        "notes": "Notes (optional)",
+        "message": "Message",
+        "save": "Save"
       }
     }
   },
