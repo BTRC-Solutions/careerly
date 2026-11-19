@@ -241,6 +241,8 @@ export abstract class ProfileWriter {
 export abstract class TailoringSessionRepository {
   abstract save(session: StoredSession): Promise<void>;
   abstract find(id: string): Promise<StoredSession | null>;
+  /** Most recently updated first; `open` leaves out finalized and abandoned ones. */
+  abstract list(filter: { jobPostingId?: string; open?: boolean }): Promise<StoredSession[]>;
 }
 
 /** Port: the background job that matches a session (one per session; retrying restarts it). */

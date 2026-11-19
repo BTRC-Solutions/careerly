@@ -1,4 +1,5 @@
 import {
+  TailoringSessionListSchema,
   type CreateTailoringSessionRequest,
   type EditTailoredResumeRequest,
   type GapAnswer,
@@ -64,7 +65,10 @@ export function useStartTailoring() {
   return useMutation({
     mutationFn: (request: CreateTailoringSessionRequest) =>
       apiPost('/tailoring-sessions', TailoringSessionViewSchema, request),
-    onSuccess: (view) => queryClient.setQueryData(sessionKey(view.session.id), view),
+    onSuccess: (view) => {
+      queryClient.setQueryData(sessionKey(view.session.id), view);
+      void queryClient.invalidateQueries({ queryKey: [...TAILORING_QUERY_KEY, 'list'] });
+    },
   });
 }
 
@@ -196,6 +200,40 @@ export function useRegenerateResumes(id: string) {
     onSuccess: (next) => {
       queryClient.setQueryData(sessionKey(id), next);
       void queryClient.removeQueries({ queryKey: resumesKey(id) });
+    },
+  });
+}
+
+const openSessionsKey = [...TAILORING_QUERY_KEY, 'list', 'open'] as const;
+
+/** The sessions left in progress (RF-TAIL-15), most recently updated first. */
+export function useOpenSessions() {
+  return useQuery({
+    queryKey: openSessionsKey,
+    queryFn: () => apiGet('/tailoring-sessions?open=true', TailoringSessionListSchema),
+  });
+}
+
+/** The open sessions of one job description, to continue one instead of starting over. */
+export function useOpenSessionsOf(jobPostingId: string) {
+  return useQuery({
+    queryKey: [...TAILORING_QUERY_KEY, 'list', 'open', jobPostingId],
+    queryFn: () =>
+      apiGet(
+        `/tailoring-sessions?open=true&jobPostingId=${encodeURIComponent(jobPostingId)}`,
+        TailoringSessionListSchema,
+      ),
+  });
+}
+
+/** Leaves the session (RF-TAIL-15): it is kept, but no longer listed as open. */
+export function useAbandonSession(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost(`/tailoring-sessions/${id}/abandon`, TailoringSessionViewSchema, {}),
+    onSuccess: (view) => {
+      queryClient.setQueryData(sessionKey(id), view);
+      void queryClient.invalidateQueries({ queryKey: [...TAILORING_QUERY_KEY, 'list'] });
     },
   });
 }

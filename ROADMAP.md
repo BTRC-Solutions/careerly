@@ -117,7 +117,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 6.5 | Ajuste de páginas integrado al pipeline + `fitLog`. `[RN-04]` | Todos los CVs de las evals respetan el límite de páginas. | 🟨 (adelantado, en PR draft sobre el de 6.4: el ajuste corre al generar y se guarda con su `fitLog`, probado con Typst; falta correr `npm run evals:resume` con una key real) |
 | 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | 🟨 (adelantado, en PR draft sobre el de 6.5: pantalla y API probadas; editar + vista previa tarda ~200 ms en el navegador y el test de integración exige < 2 s) |
 | 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (adelantado, en PR draft sobre el de 6.6: probado con tests y en el navegador, incluido un reintento tras un fallo; falta probarlo con una key real) |
-| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ⬜ |
+| 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | 🟨 (en PR draft sobre el de 6.7: sesiones en curso en el inicio, continuar desde la oferta y abandonar; test de integración que cierra la API con el match a medias y al volver termina solo) |
 | 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ⬜ |
 
 ## Fase 7 — Snapshots y postulaciones · `v0.7.0`

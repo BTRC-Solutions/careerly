@@ -709,7 +709,9 @@
         "add": "Agregar requisito",
         "keywordsHint": "Separadas por comas."
       },
-      "tailor": "Adaptar mi CV"
+      "tailor": "Adaptar mi CV",
+      "continueTailoring": "Continuar mi CV",
+      "tailorAgain": "Empezar de nuevo"
     }
   },
   "templates": {
@@ -946,6 +948,26 @@
       "instructionsHint": "Qué querés distinto en esta versión. La IA nunca agrega nada que tu perfil no diga.",
       "placeholder": "Por ejemplo: más foco en liderazgo, más corto.",
       "submit": "Regenerar"
+    },
+    "open": {
+      "title": "Sesiones en curso",
+      "updated": "Último cambio: {{date}}"
+    },
+    "statuses": {
+      "ANALYZING": "Comparando",
+      "MATCHED": "Match listo",
+      "AWAITING_ANSWERS": "Preguntas",
+      "GENERATING": "Generando",
+      "REVIEW": "En revisión",
+      "FINALIZED": "Finalizada",
+      "ABANDONED": "Abandonada",
+      "FAILED": "Con error"
+    },
+    "abandon": {
+      "action": "Abandonar",
+      "title": "¿Abandonar esta sesión?",
+      "description": "Deja de aparecer en las sesiones en curso y no se puede retomar. Lo que agregaste a tu perfil se mantiene; si no lo querés, deshacelo antes.",
+      "done": "Abandonaste esta sesión. Para esta oferta podés empezar una nueva."
     },
     "profileChanges": {
       "title": "Cambios en tu perfil",

@@ -104,7 +104,12 @@ describe('Claude Code with the subscription (integration)', () => {
     await start({ loggedIn: true, answer: { ok: true, greeting: 'hola' } });
     process.env.ANTHROPIC_API_KEY = 'sk-ant-must-not-reach-claude-code';
     try {
-      // Without the switch there is no key: AI is not configured.
+      // Without the switch there is no key (Electron sent none): AI is not configured.
+      await fetch(`http://127.0.0.1:${server!.port}/internal/ai-credentials`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${CONTROL_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentials: null }),
+      });
       expect((await smoke()).status).toBe('NOT_CONFIGURED');
 
       await setEnabled(true);

@@ -709,7 +709,9 @@
         "add": "Add requirement",
         "keywordsHint": "Separated by commas."
       },
-      "tailor": "Tailor my CV"
+      "tailor": "Tailor my CV",
+      "continueTailoring": "Continue my CV",
+      "tailorAgain": "Start over"
     }
   },
   "templates": {
@@ -946,6 +948,26 @@
       "instructionsHint": "What you want different in this version. The AI never adds anything your profile does not say.",
       "placeholder": "For example: more focus on leadership, shorter.",
       "submit": "Regenerate"
+    },
+    "open": {
+      "title": "Sessions in progress",
+      "updated": "Last change: {{date}}"
+    },
+    "statuses": {
+      "ANALYZING": "Matching",
+      "MATCHED": "Match ready",
+      "AWAITING_ANSWERS": "Questions",
+      "GENERATING": "Generating",
+      "REVIEW": "Under review",
+      "FINALIZED": "Finalized",
+      "ABANDONED": "Abandoned",
+      "FAILED": "Failed"
+    },
+    "abandon": {
+      "action": "Abandon",
+      "title": "Abandon this session?",
+      "description": "It no longer shows among the sessions in progress and cannot be resumed. What you added to your profile stays; undo it first if you do not want it.",
+      "done": "You abandoned this session. You can start a new one for this job posting."
     },
     "profileChanges": {
       "title": "Changes to your profile",

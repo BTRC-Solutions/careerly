@@ -59,7 +59,9 @@ export type TailoringSessionEvent =
   /** The running AI step failed. */
   | { type: 'FAIL' }
   /** Try the failed step again. */
-  | { type: 'RETRY' };
+  | { type: 'RETRY' }
+  /** The user leaves the session (RF-TAIL-15); a running step's result is then ignored. */
+  | { type: 'ABANDON' };
 
 export type TailoringSessionEventType = TailoringSessionEvent['type'];
 
@@ -71,6 +73,7 @@ export const TAILORING_SESSION_EVENT_TYPES: readonly TailoringSessionEventType[]
   'FINALIZE',
   'FAIL',
   'RETRY',
+  'ABANDON',
 ];
 
 /** The session options break a rule (maps to 400 VALIDATION_FAILED). */
@@ -178,6 +181,11 @@ export function applySessionEvent(
     case 'RETRY':
       if (status !== 'FAILED' || session.failedStep === null) return reject();
       return to(session.failedStep);
+
+    case 'ABANDON':
+      // What was sent does not change (RNF-10), and an abandoned session stays so.
+      if (status === 'FINALIZED' || status === 'ABANDONED') return reject();
+      return to('ABANDONED', { regeneration: null });
   }
 }
 

@@ -16,6 +16,7 @@ import { ResumeLanguageSchema } from './resume.js';
  * - `GENERATING`: writing and fitting the CVs.
  * - `REVIEW`: CVs ready to edit, regenerate or finalize.
  * - `FINALIZED`: snapshots created; the session no longer changes.
+ * - `ABANDONED`: the user left it (RF-TAIL-15); kept, but no longer listed as open.
  * - `FAILED`: an AI step failed; it can be retried from that step.
  */
 export const TailoringSessionStatusSchema = z.enum([
@@ -25,6 +26,7 @@ export const TailoringSessionStatusSchema = z.enum([
   'GENERATING',
   'REVIEW',
   'FINALIZED',
+  'ABANDONED',
   'FAILED',
 ]);
 export type TailoringSessionStatus = z.infer<typeof TailoringSessionStatusSchema>;
@@ -479,3 +481,42 @@ export const GapAnswerSchema = z.discriminatedUnion('answer', [
 ]);
 export type GapAnswer = z.infer<typeof GapAnswerSchema>;
 export type GapAnswerKind = GapAnswer['answer'];
+
+// ---------------------------------------------------------------------------
+// Open sessions (RF-TAIL-15)
+// ---------------------------------------------------------------------------
+
+/** Statuses of a session that is over: finalized or abandoned. Any other one can be resumed. */
+export const CLOSED_SESSION_STATUSES: readonly TailoringSessionStatus[] = [
+  'FINALIZED',
+  'ABANDONED',
+];
+
+/** A session in a list: what is needed to find it again, without its match or CVs. */
+export const TailoringSessionSummarySchema = z.object({
+  id: z.string(),
+  jobPostingId: z.string(),
+  status: TailoringSessionStatusSchema,
+  languages: z.array(ResumeLanguageSchema),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type TailoringSessionSummary = z.infer<typeof TailoringSessionSummarySchema>;
+
+/** `GET /tailoring-sessions?jobPostingId=&open=true`: most recently updated first. */
+export const ListTailoringSessionsQuerySchema = z
+  .object({
+    jobPostingId: z.string().min(1).optional(),
+    /** Only sessions that are not finalized or abandoned. */
+    open: z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional(),
+  })
+  .strict();
+export type ListTailoringSessionsQuery = z.infer<typeof ListTailoringSessionsQuerySchema>;
+
+export const TailoringSessionListSchema = z.object({
+  sessions: z.array(TailoringSessionSummarySchema),
+});
+export type TailoringSessionList = z.infer<typeof TailoringSessionListSchema>;
