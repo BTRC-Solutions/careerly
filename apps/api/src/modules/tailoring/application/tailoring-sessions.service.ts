@@ -10,10 +10,12 @@ import {
   type ResumeLanguage,
   ResumeLanguageSchema,
   type EditTailoredResumeRequest,
+  type FinalizeSessionRequest,
   type FitSelection,
   type Profile,
   type Regeneration,
   type RegenerateResumesRequest,
+  type ResumeVersionList,
   type TailoredResume,
   type TailoredResumeData,
   type TailoredResumesView,
@@ -26,6 +28,7 @@ import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js'
 import { fitToPages } from '../domain/page-fitter.js';
 import { mergeRegenerated, restrictToScope, WHOLE_CV } from '../domain/regeneration.js';
 import { applyResumeEdit } from '../domain/resume-edits.js';
+import { resumeFileName } from '../domain/resume-file-name.js';
 import { defaultPageBudget } from '../domain/session-options.js';
 import { scoreBullets } from '../domain/relevance.js';
 import { fitCandidates, orderAsWritten } from '../domain/resume-fit.js';
@@ -48,6 +51,8 @@ import {
   RequirementMatcher,
   ResumeNotEditableError,
   ResumePdfRenderer,
+  ResumesOverBudgetError,
+  ResumeVersionStore,
   ResumeWriter,
   TailoredResumeNotFoundError,
   TailoredResumeRepository,
@@ -89,6 +94,7 @@ export class TailoringSessionsService {
     private readonly vocabulary: ToolVocabulary,
     private readonly templates: TemplateLookup,
     private readonly relevance: RelevanceService,
+    private readonly versions: ResumeVersionStore,
   ) {}
 
   async start(request: CreateTailoringSessionRequest): Promise<TailoringSessionView> {
@@ -254,6 +260,60 @@ export class TailoringSessionsService {
     const saved: TailoredResume = { ...resume, data };
     await this.resumes.save(saved);
     return saved;
+  }
+
+  /**
+   * Finalizes the session (RF-TAIL-14): every CV of its languages is frozen as an immutable version with its
+   * PDF, built from the profile as it is now. A CV over the page budget needs `confirmOverBudget` (RN-04).
+   * If the session could not be marked finalized after freezing, finalizing again reuses those versions.
+   */
+  async finalize(id: string, request: FinalizeSessionRequest): Promise<TailoringSessionView> {
+    const stored = await this.load(id);
+    // Checked before anything is written: only a session under review can be finalized.
+    const { createdAt: _createdAt, updatedAt: _updatedAt, ...session } = stored;
+    applySessionEvent(session, { type: 'FINALIZE' });
+
+    const resumes = await this.resumes.list(id);
+    const ordered = stored.languages.map((language) => {
+      const resume = resumes.find((r) => r.language === language);
+      if (!resume) throw new TailoredResumeNotFoundError(id, language);
+      return resume;
+    });
+    const over = ordered.filter((r) => !r.data.fit?.fits).map((r) => r.language);
+    if (over.length > 0 && !request.confirmOverBudget) throw new ResumesOverBudgetError(over);
+
+    const [profile, posting] = await Promise.all([
+      this.profile.read(),
+      this.jobDescriptions.posting(stored.jobPostingId),
+    ]);
+    const toFreeze = ordered.map(({ language, data }) => {
+      const document = buildResumeDocument({ data, profile, language, paper: PAPER });
+      return {
+        language,
+        document,
+        sources: data,
+        pageBudget: stored.pageBudget,
+        fileName: resumeFileName({
+          name: document.basics.name,
+          jobTitle: posting.title,
+          company: posting.company,
+          language,
+        }),
+      };
+    });
+    await this.versions.freeze(id, stored.templateId, toFreeze);
+    return { session: await this.transition(stored, { type: 'FINALIZE' }), job: null };
+  }
+
+  /** The finalized CVs of the session, in the order of its languages; empty until it is finalized. */
+  async listVersions(id: string): Promise<ResumeVersionList> {
+    const session = await this.load(id);
+    const versions = await this.versions.list(id);
+    return {
+      versions: session.languages.flatMap((language) =>
+        versions.filter((version) => version.language === language),
+      ),
+    };
   }
 
   /** Fits a CV to the session's page budget, measured on the PDF with its template (RN-04, ADR-05). */

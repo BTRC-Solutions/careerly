@@ -14,12 +14,12 @@ import {
 import {
   ResumeRenderer,
   TemplateCatalog,
+  ResumeVersionRepository,
   TemplateNotFoundError,
-  type TemplateUsage,
-  UserTemplateError,
   UserTemplateStore,
 } from './application/documents.ports.js';
 import { ResumeRenderService } from './application/resume-render.service.js';
+import { ResumeVersionsService } from './application/resume-versions.service.js';
 import { UserTemplatesService } from './application/user-templates.service.js';
 
 /*
@@ -91,6 +91,7 @@ describe('user templates (integration)', () => {
         name: 'Moderna',
         version: 1,
         builtIn: false,
+        finalizedResumes: 0,
       });
 
       expect(await listed()).toContainEqual(created);
@@ -169,7 +170,7 @@ describe('user templates (integration)', () => {
             return renderer.render(template, data);
           },
         } satisfies ResumeRenderer,
-        { isUsed: async () => false } satisfies TemplateUsage,
+        server.app.get(ResumeVersionRepository),
       );
 
       const created = await service.upload(Buffer.from(CLASSIC_SOURCE), 'Nueva');
@@ -191,18 +192,31 @@ describe('user templates (integration)', () => {
       }
     });
 
-    it('keeps a template that a snapshot uses', async () => {
+    it('deletes a template that finalized CVs use, which keep their own copy', async () => {
       const created = (await (await upload(CLASSIC_SOURCE)).json()) as TemplateSummary;
-      const service = new UserTemplatesService(
-        server.app.get(TemplateCatalog),
-        server.app.get(UserTemplateStore),
-        server.app.get(ResumeRenderer),
-        { isUsed: async () => true } satisfies TemplateUsage,
-      );
+      const versions = server.app.get(ResumeVersionsService);
+      const [version] = await versions.finalize('session-1', created.id, [
+        {
+          language: 'en',
+          document: DOCUMENT,
+          sources: {
+            summary: null,
+            experiences: [],
+            toolIds: [],
+            guard: { rewritten: 0, dropped: [] },
+            fit: null,
+          },
+          pageBudget: 1,
+          fileName: 'CV (EN).pdf',
+        },
+      ]);
+      expect(await listed()).toContainEqual({ ...created, finalizedResumes: 1 });
 
-      await expect(service.delete(created.id)).rejects.toBeInstanceOf(UserTemplateError);
-      expect(await listed()).toContainEqual(created);
-      expect(fs.existsSync(path.join(templatesFolder, created.id, '1', 'template.typ'))).toBe(true);
+      expect((await call('DELETE', `/templates/${created.id}`)).status).toBe(204);
+      expect(fs.existsSync(path.join(templatesFolder, created.id))).toBe(false);
+      const snapshot = path.join(temp.dir, 'data', 'files', 'snapshots', version!.id);
+      expect(fs.readFileSync(path.join(snapshot, 'template.typ'), 'utf8')).toBe(CLASSIC_SOURCE);
+      expect((await call('GET', `/resume-versions/${version!.id}/pdf`)).status).toBe(200);
     });
   });
 

@@ -28,6 +28,8 @@ export const ApiErrorCode = z.enum([
   'TEMPLATE_TIMEOUT',
   /** The Typst CLI that renders the CVs was not found. */
   'RENDERER_UNAVAILABLE',
+  /** A CV is over its page budget: finalizing it needs the user's explicit confirmation (RN-04). */
+  'RESUME_OVER_BUDGET',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 

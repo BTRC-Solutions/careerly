@@ -6,6 +6,7 @@ import {
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { apiDelete, apiGet, apiGetBlob, apiPatch, apiUpload } from '../../../shared/api/client';
+import { downloadBlob } from '../../../shared/lib/download';
 
 /*
  * CV templates (RF-TAIL-09, roadmap 4.13): the built-in `classic` and the user's own `.typ` files.
@@ -72,17 +73,7 @@ export function useDeleteTemplate() {
 export function useDownloadStarterKit() {
   return useMutation({
     mutationFn: async () => {
-      const blob = await apiGetBlob('/templates/starter-kit');
-      const url = URL.createObjectURL(blob);
-      try {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'careerly-template-starter-kit.zip';
-        link.click();
-      } finally {
-        // Give the download a moment to start before releasing the file.
-        setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      }
+      downloadBlob(await apiGetBlob('/templates/starter-kit'), 'careerly-template-starter-kit.zip');
     },
   });
 }

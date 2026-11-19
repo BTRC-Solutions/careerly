@@ -160,7 +160,9 @@ beforeEach(() => {
       HttpResponse.json({ changes: [] }),
     ),
     http.get(api('/templates'), () =>
-      HttpResponse.json([{ id: 'classic', name: 'Clásica', version: 1, builtIn: true }]),
+      HttpResponse.json([
+        { id: 'classic', name: 'Clásica', version: 1, builtIn: true, finalizedResumes: 0 },
+      ]),
     ),
     http.get(api('/job-postings/posting-1'), () =>
       HttpResponse.json({

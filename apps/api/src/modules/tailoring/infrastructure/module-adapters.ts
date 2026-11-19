@@ -6,6 +6,7 @@ import type {
   ProfileChangeEntity,
   ProjectKind,
   ResumeDocument,
+  ResumeVersion,
   RevertProfileChangesResult,
   SessionProfileChange,
   ToolRef,
@@ -17,8 +18,17 @@ import {
   AiNotConfiguredError,
   AiProviderNotSupportedError,
 } from '../../ai/index.js';
-import { RenderError, ResumeRenderService, TemplateNotFoundError } from '../../documents/index.js';
-import { JobAnalysisService, JobPostingNotFoundError } from '../../job-postings/index.js';
+import {
+  RenderError,
+  ResumeRenderService,
+  ResumeVersionsService,
+  TemplateNotFoundError,
+} from '../../documents/index.js';
+import {
+  JobAnalysisService,
+  JobPostingNotFoundError,
+  JobPostingsService,
+} from '../../job-postings/index.js';
 import { JobQueue, JobRunner, PermanentJobError } from '../../jobs/index.js';
 import { ProfileChangesService, ProfileService, ToolCatalogService } from '../../profile/index.js';
 import { TailoringSessionsService } from '../application/tailoring-sessions.service.js';
@@ -31,6 +41,8 @@ import {
   ProfileReader,
   ResumePdfRenderer,
   ResumeRenderFailedError,
+  type ResumeToFreeze,
+  ResumeVersionStore,
   ProfileWriter,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
@@ -59,14 +71,43 @@ export class DocumentsModuleRenderer extends ResumePdfRenderer {
       const { pdf, pageCount } = await this.renderService.render(document, templateId);
       return { pdf, pageCount };
     } catch (error) {
-      if (error instanceof TemplateNotFoundError) {
-        throw new ResumeRenderFailedError('TEMPLATE_NOT_FOUND', error.message);
-      }
-      if (error instanceof RenderError) {
-        throw new ResumeRenderFailedError(error.reason, error.message, error.diagnostics);
-      }
-      throw error;
+      throw toRenderFailure(error);
     }
+  }
+}
+
+/** The documents module's render errors as this module's. */
+function toRenderFailure(error: unknown): unknown {
+  if (error instanceof TemplateNotFoundError) {
+    return new ResumeRenderFailedError('TEMPLATE_NOT_FOUND', error.message);
+  }
+  if (error instanceof RenderError) {
+    return new ResumeRenderFailedError(error.reason, error.message, error.diagnostics);
+  }
+  return error;
+}
+
+/** Finalized CVs through the documents module (RF-TAIL-14). */
+@Injectable()
+export class DocumentsModuleVersionStore extends ResumeVersionStore {
+  constructor(private readonly versions: ResumeVersionsService) {
+    super();
+  }
+
+  async freeze(
+    sessionId: string,
+    templateId: string,
+    resumes: ResumeToFreeze[],
+  ): Promise<ResumeVersion[]> {
+    try {
+      return await this.versions.finalize(sessionId, templateId, resumes);
+    } catch (error) {
+      throw toRenderFailure(error);
+    }
+  }
+
+  list(sessionId: string): Promise<ResumeVersion[]> {
+    return this.versions.listBySession(sessionId);
   }
 }
 
@@ -272,8 +313,23 @@ export class CatalogToolVocabulary extends ToolVocabulary {
 /** The job description's analysis through the job-postings module. */
 @Injectable()
 export class JobPostingsModuleReader extends JobDescriptionReader {
-  constructor(private readonly analyses: JobAnalysisService) {
+  constructor(
+    private readonly analyses: JobAnalysisService,
+    private readonly postings: JobPostingsService,
+  ) {
     super();
+  }
+
+  async posting(jobPostingId: string): Promise<{ title: string | null; company: string | null }> {
+    try {
+      const { title, company } = await this.postings.get(jobPostingId);
+      return { title, company };
+    } catch (error) {
+      if (error instanceof JobPostingNotFoundError) {
+        throw new TailoringJobPostingNotFoundError(jobPostingId);
+      }
+      throw error;
+    }
   }
 
   async analysis(jobPostingId: string): Promise<JobAnalysis> {

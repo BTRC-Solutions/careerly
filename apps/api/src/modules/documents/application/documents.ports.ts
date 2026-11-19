@@ -1,4 +1,4 @@
-import type { TemplateData } from '@careerly/contracts';
+import type { ResumeVersion, ResumeVersionData, TemplateData } from '@careerly/contracts';
 
 /** A CV template ready to render: its manifest plus the folder with `template.typ` (ARCHITECTURE.md §9). */
 export interface ResumeTemplate {
@@ -19,7 +19,7 @@ export class TemplateNotFoundError extends Error {
 }
 
 /** Why a change to the user's templates was refused. */
-export type UserTemplateFailure = 'INVALID_FILE' | 'BUILT_IN' | 'IN_USE';
+export type UserTemplateFailure = 'INVALID_FILE' | 'BUILT_IN';
 
 export class UserTemplateError extends Error {
   constructor(
@@ -81,12 +81,46 @@ export abstract class TemplateStarterKit {
   abstract build(): Promise<Uint8Array>;
 }
 
-/**
- * Port: whether a saved snapshot uses a template version. Those templates are kept (roadmap 4.12).
- * Snapshots arrive in phase 7; until then nothing uses a template.
- */
-export abstract class TemplateUsage {
-  abstract isUsed(templateId: string): Promise<boolean>;
+/** A finalized CV with its content (RF-TAIL-14). */
+export interface StoredResumeVersion extends ResumeVersion {
+  data: ResumeVersionData;
+}
+
+/** The finalized CV does not exist (maps to 404). */
+export class ResumeVersionNotFoundError extends Error {
+  constructor(readonly versionId: string) {
+    super('Finalized CV not found.');
+    this.name = 'ResumeVersionNotFoundError';
+  }
+}
+
+/** Port: the finalized CVs. **Immutable**: there is no update (RNF-10). */
+export abstract class ResumeVersionRepository {
+  /** Inserts every version in one transaction: all of them or none. */
+  abstract insertAll(versions: StoredResumeVersion[]): Promise<void>;
+  /** Oldest first. */
+  abstract listBySession(sessionId: string): Promise<ResumeVersion[]>;
+  abstract find(id: string): Promise<StoredResumeVersion | null>;
+  /** How many finalized CVs use each template, by template id. */
+  abstract countByTemplate(): Promise<Map<string, number>>;
+}
+
+/** What is kept on disk for a finalized CV, so it can be opened and rendered again exactly (RNF-10). */
+export interface ResumeVersionFiles {
+  pdf: Uint8Array;
+  /** What the template received. */
+  data: TemplateData;
+  /** The template it was rendered with; its source is copied. */
+  template: ResumeTemplate;
+}
+
+/** Port: the files of the finalized CVs, under `files/snapshots/<id>/`. Written once, never changed. */
+export abstract class ResumeVersionFileStore {
+  /** Fails if the version already has files. */
+  abstract write(id: string, files: ResumeVersionFiles): Promise<void>;
+  abstract readPdf(id: string): Promise<Uint8Array>;
+  /** Only to undo a finalization that could not be saved. */
+  abstract remove(id: string): Promise<void>;
 }
 
 /** A rendered PDF and its number of pages, which the page fitter works with (ARCHITECTURE.md §8). */

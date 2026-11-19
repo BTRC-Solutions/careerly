@@ -15,6 +15,8 @@ export const TemplateSummarySchema = z.object({
   name: z.string(),
   version: z.number().int().positive(),
   builtIn: z.boolean(),
+  /** Finalized CVs made with it. They keep their own copy, so deleting the template does not change them. */
+  finalizedResumes: z.number().int().nonnegative(),
 });
 export type TemplateSummary = z.infer<typeof TemplateSummarySchema>;
 
