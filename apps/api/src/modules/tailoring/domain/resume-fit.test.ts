@@ -51,6 +51,7 @@ const bullet = (id: string, score: number | null = null) => ({
   sourceIds: ['a'],
   score,
   editedByUser: false,
+  inclusion: 'AUTO' as const,
 });
 
 const DATA: TailoredResumeData = {
@@ -78,13 +79,18 @@ describe('fitCandidates', () => {
           startDate: '2022-01',
           endDate: null,
           bullets: [
-            { id: 'n1', score: 1 },
-            { id: 'n2', score: 0.75 },
-            { id: 'n3', score: 0.5 },
-            { id: 'n4', score: 0.25 },
+            { id: 'n1', score: 1, pinned: false },
+            { id: 'n2', score: 0.75, pinned: false },
+            { id: 'n3', score: 0.5, pinned: false },
+            { id: 'n4', score: 0.25, pinned: false },
           ],
         },
-        { id: 'old', startDate: '2008-01', endDate: '2011-12', bullets: [{ id: 'o1', score: 1 }] },
+        {
+          id: 'old',
+          startDate: '2008-01',
+          endDate: '2011-12',
+          bullets: [{ id: 'o1', score: 1, pinned: false }],
+        },
       ],
       // p2 has no bullets; p1 keeps its relevance scores (roadmap 6.2).
       projects: [
@@ -92,8 +98,8 @@ describe('fitCandidates', () => {
           id: 'p1',
           relevant: true,
           bullets: [
-            { id: 'q1', score: 0.2 },
-            { id: 'q2', score: 0.9 },
+            { id: 'q1', score: 0.2, pinned: false },
+            { id: 'q2', score: 0.9, pinned: false },
           ],
         },
       ],

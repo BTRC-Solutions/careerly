@@ -145,6 +145,17 @@ export abstract class TailoredResumeRepository {
   abstract list(sessionId: string): Promise<TailoredResume[]>;
 }
 
+/** CVs can be changed only while the session is under review (maps to 409). */
+export class ResumeNotEditableError extends Error {
+  constructor(
+    readonly sessionId: string,
+    readonly status: string,
+  ) {
+    super(`The CVs of a ${status} session cannot be edited; only those under review can.`);
+    this.name = 'ResumeNotEditableError';
+  }
+}
+
 /** The session has no CV in that language yet (maps to 404). */
 export class TailoredResumeNotFoundError extends Error {
   constructor(

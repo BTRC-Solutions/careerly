@@ -844,6 +844,94 @@
       },
       "deleted": "ya no está en tu perfil"
     },
+    "generate": {
+      "title": "Generar el CV",
+      "action": "Generar CV",
+      "noGaps": "Tu perfil cubre todo lo que pide la oferta.",
+      "withGaps_one": "Queda {{count}} requisito sin cubrir del todo. El CV se escribe con lo que ya tiene tu perfil, incluido lo que respondiste.",
+      "withGaps_other": "Quedan {{count}} requisitos sin cubrir del todo. El CV se escribe con lo que ya tiene tu perfil, incluido lo que respondiste.",
+      "options_one": "En {{languages}} · hasta {{count}} página",
+      "options_other": "En {{languages}} · hasta {{count}} páginas",
+      "retrying": "La generación falló y se va a reintentar en unos segundos…",
+      "steps": {
+        "reading": "Preparando la generación…",
+        "writing": "Escribiendo el CV con la IA…",
+        "checking": "Revisando que todo salga de tu perfil…",
+        "fitting": "Ajustando el CV a las páginas…"
+      },
+      "errors": {
+        "NOT_CONFIGURED": "No hay una API key configurada. Cargala en Configuración y reintentá.",
+        "KEY_REJECTED": "El proveedor de IA rechazó tu API key. Revisala en Configuración y reintentá.",
+        "BLOCKED": "El proveedor de IA no quiso escribir este CV.",
+        "RATE_LIMITED": "El proveedor de IA está limitando las solicitudes. Reintentá en un rato.",
+        "JOB_POSTING_DELETED": "La oferta de esta sesión ya no existe.",
+        "PROFILE_WITHOUT_NAME": "Tu perfil no tiene nombre. Completalo en el perfil y reintentá.",
+        "RENDERER_UNAVAILABLE": "No se encontró Typst para armar el PDF. Reinstalá la app y reintentá.",
+        "COMPILE_ERROR": "La plantilla de esta sesión tiene errores. Revisala en Plantillas y reintentá.",
+        "FAILED": "No se pudo generar el CV. Reintentá."
+      }
+    },
+    "review": {
+      "title": "Revisión del CV",
+      "loadError": "No se pudieron cargar los CVs de esta sesión.",
+      "language": "Idioma del CV",
+      "languages": {
+        "es": "español",
+        "en": "inglés"
+      },
+      "preview": "Vista previa",
+      "previewTitle": "Vista previa del CV en {{language}}",
+      "previewError": "No se pudo armar la vista previa.",
+      "updating": "Actualizando…",
+      "editError": "No se pudo aplicar el cambio: {{message}}",
+      "fit": {
+        "fits_one": "Ocupa {{count}} página, dentro del límite de {{budget}}.",
+        "fits_other": "Ocupa {{count}} páginas, dentro del límite de {{budget}}.",
+        "over_one": "No entra en {{count}} página: ocupa {{pages}}. Pasá algún bullet a «Automático» o excluilo.",
+        "over_other": "No entra en {{count}} páginas: ocupa {{pages}}. Pasá algún bullet a «Automático» o excluilo.",
+        "leftOut_one": "{{count}} bullet quedó afuera para que el CV entre.",
+        "leftOut_other": "{{count}} bullets quedaron afuera para que el CV entre.",
+        "allIn": "Entran todos los bullets."
+      },
+      "summary": "Resumen",
+      "noSummary": "Sin resumen.",
+      "edit": "Editar",
+      "edited": "Editado por vos",
+      "bulletText": "Texto del bullet",
+      "headerOnly": "Se muestra solo con empresa, puesto y fechas.",
+      "source": "Sale de:",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "inclusion": {
+        "label": "Inclusión en el CV",
+        "AUTO": "Automático",
+        "INCLUDED": "Incluir siempre",
+        "EXCLUDED": "Excluir"
+      },
+      "states": {
+        "IN": "En el CV",
+        "EXCLUDED": "Excluido por vos",
+        "LEFT_OUT": {
+          "OVER_BUDGET": "Afuera: no entra en las páginas",
+          "SECTION_LIMIT": "Afuera: límite de bullets del puesto",
+          "OLD_POSITION": "Afuera: puesto de hace más de 10 años",
+          "NOT_RELEVANT": "Afuera: proyecto no relevante",
+          "SPACE_LEFT": "En el CV"
+        }
+      },
+      "guard": {
+        "summary_one": "La guardia de veracidad corrigió {{rewritten}} y dejó afuera {{count}} texto",
+        "summary_other": "La guardia de veracidad corrigió {{rewritten}} y dejó afuera {{count}} textos",
+        "description": "Son textos que la IA escribió con algo que tu perfil no dice. No están en el CV.",
+        "reasons": {
+          "NO_SOURCE": "no cita ningún logro de su experiencia",
+          "UNKNOWN_EXPERIENCE": "era para una experiencia que no está en tu perfil",
+          "TOOL_NOT_IN_SOURCES": "nombra una herramienta que sus fuentes no muestran",
+          "NUMBER_NOT_IN_SOURCES": "tiene una cifra que sus fuentes no tienen"
+        }
+      },
+      "showMatch": "Ver el match con la oferta"
+    },
     "profileChanges": {
       "title": "Cambios en tu perfil",
       "description": "Lo que esta sesión agregó o cambió en tu perfil maestro al responder los gaps. Podés deshacerlo de a uno o todo junto.",

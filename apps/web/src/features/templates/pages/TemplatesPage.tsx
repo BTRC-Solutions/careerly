@@ -3,7 +3,7 @@ import {
   type TemplateSummary,
   USER_TEMPLATE_MAX_BYTES,
 } from '@careerly/contracts';
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { cn } from '../../../shared/lib/cn';
@@ -21,6 +21,7 @@ import {
 } from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { PdfFrame } from '../../../shared/ui/PdfFrame';
 import { Tag } from '../../../shared/ui/Tag';
 import {
   useDeleteTemplate,
@@ -373,21 +374,6 @@ function TemplatePreview({ template }: { template: TemplateSummary }) {
       </div>
     </Card>
   );
-}
-
-/**
- * Shows a PDF in Chromium's viewer (ARCHITECTURE.md §9) through a `blob:` URL, created while the frame
- * shows it and released afterwards.
- */
-function PdfFrame({ pdf, title }: { pdf: Blob; title: string }) {
-  const frame = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    const url = URL.createObjectURL(pdf);
-    // Fit the page width and skip the thumbnails pane: the preview is one or two pages.
-    if (frame.current) frame.current.src = `${url}#navpanes=0&view=FitH`;
-    return () => URL.revokeObjectURL(url);
-  }, [pdf]);
-  return <iframe ref={frame} title={title} className="size-full" />;
 }
 
 // --- Guide -------------------------------------------------------------------------------

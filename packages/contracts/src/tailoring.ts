@@ -98,6 +98,13 @@ export type MatchResult = z.infer<typeof MatchResultSchema>;
 // Tailored CVs (RF-TAIL-10, RF-TAIL-11)
 // ---------------------------------------------------------------------------
 
+/**
+ * Whether a bullet goes into the CV (RF-TAIL-12): `AUTO` lets the page fit decide; `INCLUDED` keeps it whatever
+ * the fit says (the CV may then not fit, RN-04); `EXCLUDED` leaves it out.
+ */
+export const BulletInclusionSchema = z.enum(['AUTO', 'INCLUDED', 'EXCLUDED']);
+export type BulletInclusion = z.infer<typeof BulletInclusionSchema>;
+
 /** A CV bullet and the profile elements it comes from (RN-01). */
 export const TailoredBulletSchema = z.object({
   id: z.string(),
@@ -108,6 +115,7 @@ export const TailoredBulletSchema = z.object({
   score: z.number().min(0).max(1).nullable(),
   /** Edited by the user: RN-01 and RN-02 are no longer checked on it (RN-05). */
   editedByUser: z.boolean(),
+  inclusion: BulletInclusionSchema,
 });
 export type TailoredBullet = z.infer<typeof TailoredBulletSchema>;
 
@@ -225,6 +233,40 @@ export type TailoredResume = z.infer<typeof TailoredResumeSchema>;
 /** `GET /tailoring-sessions/:id/resumes`: the session's CVs, in the order of its languages. */
 export const TailoredResumesViewSchema = z.object({ resumes: z.array(TailoredResumeSchema) });
 export type TailoredResumesView = z.infer<typeof TailoredResumesViewSchema>;
+
+/**
+ * `PATCH /tailoring-sessions/:id/resumes/:language` (RF-TAIL-12): one change to a CV under review; the CV is
+ * fitted to its pages again and returned.
+ * - `EDIT_BULLET`: new text; the bullet is marked as edited by the user (RN-05).
+ * - `EDIT_SUMMARY`: new summary; an empty text removes it.
+ * - `MOVE_BULLET`: new place of a bullet inside its position or project (0 is the first).
+ * - `SET_INCLUSION`: include it always, leave it out, or let the page fit decide.
+ */
+export const EditTailoredResumeRequestSchema = z.discriminatedUnion('op', [
+  z
+    .object({
+      op: z.literal('EDIT_BULLET'),
+      bulletId: z.string(),
+      text: z.string().trim().min(1).max(1000),
+    })
+    .strict(),
+  z.object({ op: z.literal('EDIT_SUMMARY'), text: z.string().trim().max(2000) }).strict(),
+  z
+    .object({
+      op: z.literal('MOVE_BULLET'),
+      bulletId: z.string(),
+      toIndex: z.number().int().nonnegative(),
+    })
+    .strict(),
+  z
+    .object({
+      op: z.literal('SET_INCLUSION'),
+      bulletId: z.string(),
+      inclusion: BulletInclusionSchema,
+    })
+    .strict(),
+]);
+export type EditTailoredResumeRequest = z.infer<typeof EditTailoredResumeRequestSchema>;
 
 // ---------------------------------------------------------------------------
 // Session

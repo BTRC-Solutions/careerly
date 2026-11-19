@@ -480,6 +480,16 @@ relevancia (paso 6.2), el `score` de cada bullet sale del orden en que la IA los
 en `TailoredResumeData.fit`, y la vista previa renderiza esa selección. Un perfil sin nombre, Typst ausente o una
 plantilla rota hacen fallar la generación sin reintentos; un render que tarda demasiado se reintenta.
 
+**Revisión (paso 6.6, RF-TAIL-12):** `PATCH /tailoring-sessions/:id/resumes/:lang` aplica un cambio por pedido
+(`resume-edits.ts`, solo en `REVIEW`): editar un bullet (queda `editedByUser` y la guardia ya no lo revisa,
+RN-05; conserva sus fuentes), editar o quitar el resumen, moverlo dentro de su experiencia o cambiar su
+`inclusion` (`AUTO`: decide el ajuste; `INCLUDED`: fijado, el fitter nunca lo recorta aunque el CV deje de
+entrar; `EXCLUDED`: no es candidato). Después se vuelve a ajustar: si cambió solo un texto y el CV entraba, se
+mide primero la misma selección con un render (~100 ms) y solo si ya no entra se ajusta de nuevo entero. El CV
+muestra los bullets de cada experiencia en su orden (el de la IA o el que eligió el usuario), aunque el recorte
+siga el `score`. La pantalla de la sesión (`features/tailoring`) muestra, en `REVIEW`, cada bullet con su estado
+y sus fuentes al lado de la vista previa del PDF, que se recarga después de cada cambio.
+
 ## 9. Render con Typst (módulo `documents`)
 
 ```
@@ -593,7 +603,7 @@ POST   /tailoring-sessions/:id/ask-gaps            # pasa a AWAITING_ANSWERS y g
 PUT    /tailoring-sessions/:id/gaps/:requirementId # respuesta a una pregunta (trabajo / proyecto o curso / no / salteada)
 POST   /tailoring-sessions/:id/generate            # encola la redacción de un CV por idioma
 GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
-PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
+PATCH  /tailoring-sessions/:id/resumes/:lang       # un cambio (texto, orden, inclusión); vuelve a ajustar
 GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF
 POST   /tailoring-sessions/:id/finalize
 GET    /tailoring-sessions/:id/profile-changes        # lo que la sesión agregó o cambió en el perfil

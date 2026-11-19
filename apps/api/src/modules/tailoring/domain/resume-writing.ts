@@ -77,7 +77,14 @@ export function tailoredResumeData(
         dropped.push(bulletDrop(owner.id, text, 'NO_SOURCE'));
         continue;
       }
-      experience.bullets.push({ id: newId(), text, sourceIds, score: null, editedByUser: false });
+      experience.bullets.push({
+        id: newId(),
+        text,
+        sourceIds,
+        score: null,
+        editedByUser: false,
+        inclusion: 'AUTO',
+      });
     }
     if (experience.bullets.length > 0) experiences.set(owner.id, experience);
   }
@@ -183,7 +190,7 @@ export function buildResumeDocument({
     const bullets = written(kind, id);
     const chosen = selected(kind, id);
     const ordered = !selection
-      ? bullets
+      ? bullets.filter((b) => b.inclusion !== 'EXCLUDED')
       : (chosen?.bulletIds ?? []).flatMap((bulletId) => bullets.filter((b) => b.id === bulletId));
     return ordered.map((b) => b.text.trim()).filter((text) => text !== '');
   };

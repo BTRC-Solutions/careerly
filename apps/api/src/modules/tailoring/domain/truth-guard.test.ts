@@ -116,6 +116,7 @@ function cv(
           ...b,
           score: null,
           editedByUser: edited ?? false,
+          inclusion: 'AUTO',
         })),
       },
     ],

@@ -1,4 +1,10 @@
-import type { MatchResult, Position, Profile, Project } from '@careerly/contracts';
+import type {
+  MatchResult,
+  Position,
+  Profile,
+  Project,
+  TailoredResumeData,
+} from '@careerly/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   buildResumeDocument,
@@ -154,15 +160,30 @@ describe('tailoredResumeData', () => {
             sourceIds: ['a1', 'a2'],
             score: null,
             editedByUser: false,
+            inclusion: 'AUTO',
           },
-          { id: 'b3', text: 'More', sourceIds: ['a2'], score: null, editedByUser: false },
+          {
+            id: 'b3',
+            text: 'More',
+            sourceIds: ['a2'],
+            score: null,
+            editedByUser: false,
+            inclusion: 'AUTO',
+          },
         ],
       },
       {
         kind: 'PROJECT',
         sourceId: 'p2',
         bullets: [
-          { id: 'b2', text: 'Side project', sourceIds: ['p2'], score: null, editedByUser: false },
+          {
+            id: 'b2',
+            text: 'Side project',
+            sourceIds: ['p2'],
+            score: null,
+            editedByUser: false,
+            inclusion: 'AUTO',
+          },
         ],
       },
     ]);
@@ -213,21 +234,35 @@ describe('selectSkills', () => {
 });
 
 describe('buildResumeDocument', () => {
-  const data = {
+  const data: TailoredResumeData = {
     summary: { text: 'Summary.', sourceIds: [] },
     experiences: [
       {
         kind: 'POSITION' as const,
         sourceId: 'now',
         bullets: [
-          { id: 'b1', text: 'Built the API', sourceIds: ['a1'], score: null, editedByUser: false },
+          {
+            id: 'b1',
+            text: 'Built the API',
+            sourceIds: ['a1'],
+            score: null,
+            editedByUser: false,
+            inclusion: 'AUTO',
+          },
         ],
       },
       {
         kind: 'PROJECT' as const,
         sourceId: 'p1',
         bullets: [
-          { id: 'b2', text: 'Wrote a CLI', sourceIds: ['pa1'], score: null, editedByUser: false },
+          {
+            id: 'b2',
+            text: 'Wrote a CLI',
+            sourceIds: ['pa1'],
+            score: null,
+            editedByUser: false,
+            inclusion: 'AUTO',
+          },
         ],
       },
     ],
