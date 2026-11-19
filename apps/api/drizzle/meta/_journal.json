@@ -127,6 +127,13 @@
       "when": 1795047558710,
       "tag": "0017_tailoring_relevance",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1795096553060,
+      "tag": "0018_resume_versions",
+      "breakpoints": true
     }
   ]
 }

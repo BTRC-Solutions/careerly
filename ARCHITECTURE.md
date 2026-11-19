@@ -118,7 +118,7 @@ En los modos de desarrollo la API usa un token fijo, no secreto, definido en los
 <userData>/Careerly/
   careerly.db            # SQLite (modo WAL)
   files/
-    snapshots/<id>.pdf   # PDFs de CVs finalizados (inmutables)
+    snapshots/<id>/      # CVs finalizados (inmutables): cv.pdf, data.json y copia de template.typ
     guides/<id>.pdf      # guías de entrevista exportadas (post-MVP)
   backups/               # automáticos (previos a migraciones y a restaurar) + manual/*.careerly-backup
   logs/                  # logs rotativos, sin contenido sensible
@@ -252,7 +252,7 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `TailoringSession` | status, jobPostingId, languages[], pageBudget, templateId, matchResult (JSON) | Agregado principal del módulo `tailoring`. |
 | `GapQuestion` | requirement, kind (`MISSING`, `PARTIAL`), relatedEvidence, answer (`USED_AT_WORK`, `USED_ELSEWHERE`, `NOT_USED`, `SKIPPED`), answerDetail, includeInResume, createdEntityIds[] | El "No" vive **solo acá**, nunca en el perfil (RN-11, RN-12). |
 | `TailoredResume` | sessionId, language, data (JSON), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
-| `ResumeVersion` | data (JSON), language, templateId, templateVersion, pdfPath, pageCount, contentHash, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio. |
+| `ResumeVersion` | sessionId, language, data (JSON: `document`, lo que recibió la plantilla, y `sources`, el CV revisado con las fuentes de cada bullet), templateId, templateName, templateVersion, pageCount, pageBudget, contentHash, fileName, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio, y un *trigger* de SQLite rechaza cualquier `UPDATE`. Uno por idioma de la sesión (único por `sessionId` + `language`). |
 | `Application` | jobPostingId, status, channel, priority, salaryExpected?, salaryOffered?, appliedAt? | |
 | `SentResume` | applicationId, resumeVersionId, sentAt | Permite varios CVs enviados (p. ej. ES y EN). |
 | `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
@@ -560,9 +560,14 @@ apps/api/templates/       # plantillas incluidas; contrato en apps/api/templates
   verificarlo del todo y lo indica al subirlas.
 - **Vista previa:** endpoint que renderiza el `TailoredResume` actual y devuelve el PDF; el renderer lo muestra
   con el visor de PDF de Chromium integrado en Electron.
-- **Snapshots:** al finalizar se renderiza, se calcula `contentHash` (datos + plantilla + versión), se guarda el
-  PDF en `files/snapshots/` y se crea `ResumeVersion` en una transacción. Los archivos de snapshots son de solo
-  lectura para la app.
+- **Snapshots:** al finalizar se renderiza, se calcula `contentHash` (datos + plantilla + versión) y en
+  `files/snapshots/<id>/` se guardan el PDF (`cv.pdf`), lo que recibió la plantilla (`data.json`) y una copia de la
+  plantilla (`template.typ`): el snapshot es autocontenido y se puede volver a renderizar aunque la plantilla cambie
+  o se borre (RNF-10). Después se crean todos los `ResumeVersion` de la sesión en una transacción; si falla, se
+  borran los archivos. Finalizar es idempotente: una sesión que ya tiene versiones las recupera en lugar de crear
+  otras. Los archivos se escriben una vez y la app después solo los lee. Una plantilla propia usada por CVs
+  finalizados se puede borrar: la lista de plantillas muestra cuántos la usan. Implementado en el paso 7.1
+  (`documents/application/resume-versions.service.ts`).
 
 ## 10. Tareas en segundo plano (módulo `jobs`)
 
@@ -612,7 +617,7 @@ CRUD   /profile/projects, /profile/education, /profile/certifications, /profile/
 GET    /tools?query=                               # catálogo con alias
 
 GET    /templates | POST /templates                # incluidas + propias; subir un .typ (multipart) lo valida con los ejemplos
-PATCH  /templates/:id | DELETE /templates/:id      # solo las propias; no se borra una usada por un snapshot
+PATCH  /templates/:id | DELETE /templates/:id      # solo las propias; los CVs finalizados que la usan conservan su copia
 GET    /templates/:id/preview/:lang                # PDF de la plantilla con el ejemplo de ese idioma
 GET    /templates/starter-kit                      # .zip con classic y los ejemplos, para escribir una propia
 
@@ -636,7 +641,9 @@ POST   /tailoring-sessions/:id/regenerate          # { scope, instructions?, lan
 GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
 PATCH  /tailoring-sessions/:id/resumes/:lang       # un cambio (texto, orden, inclusión); vuelve a ajustar
 GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF
-POST   /tailoring-sessions/:id/finalize
+POST   /tailoring-sessions/:id/finalize            # { confirmOverBudget? }: un ResumeVersion por idioma; 409 RESUME_OVER_BUDGET si alguno excede (RN-04)
+GET    /tailoring-sessions/:id/resume-versions     # CVs finalizados de la sesión, en el orden de sus idiomas
+GET    /resume-versions/:id/pdf                    # exactamente el PDF finalizado, con su nombre de archivo
 GET    /tailoring-sessions/:id/profile-changes        # lo que la sesión agregó o cambió en el perfil
 POST   /tailoring-sessions/:id/revert-profile-changes # { changeIds? }: deshace esos cambios o todos los pendientes
 

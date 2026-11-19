@@ -351,3 +351,93 @@ describe('generating and reviewing the CV', () => {
     ]);
   });
 });
+
+describe('finalizing the CV (roadmap 7.1, RF-TAIL-14)', () => {
+  const VERSION = {
+    id: '9dd4207d-20eb-4030-8074-170c12d3eedb',
+    sessionId: ID,
+    language: 'en',
+    templateId: 'classic',
+    templateName: 'Clásica',
+    templateVersion: 1,
+    pageCount: 1,
+    pageBudget: 1,
+    contentHash: 'a'.repeat(64),
+    fileName: 'Ana García - Senior Backend Engineer - Fintech del Sur (EN).pdf',
+    createdAt: NOW,
+  } as const;
+  let finalizeBodies: unknown[];
+  let versionPdfs: number;
+
+  beforeEach(() => {
+    finalizeBodies = [];
+    versionPdfs = 0;
+    apiServer.use(
+      http.post(api(`/tailoring-sessions/${ID}/finalize`), async ({ request }) => {
+        finalizeBodies.push(await request.json());
+        view = { session: session('FINALIZED', false), job: view.job };
+        return HttpResponse.json(view);
+      }),
+      http.get(api(`/tailoring-sessions/${ID}/resume-versions`), () =>
+        HttpResponse.json({ versions: view.session.status === 'FINALIZED' ? [VERSION] : [] }),
+      ),
+      http.get(api(`/resume-versions/${VERSION.id}/pdf`), () => {
+        versionPdfs += 1;
+        return new HttpResponse(new Uint8Array([37, 80, 68, 70]), {
+          headers: { 'Content-Type': 'application/pdf' },
+        });
+      }),
+    );
+  });
+
+  it('finalizes after confirming, then shows the frozen PDF to download', async () => {
+    view = { session: session('REVIEW', false), job: job('tailoring-generate', 'SUCCEEDED') };
+    await render();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finalizar CV' }));
+    const dialog = await screen.findByRole('dialog', { name: '¿Finalizar los CVs?' });
+    expect(within(dialog).getByText('CV en inglés')).toBeVisible();
+    expect(within(dialog).getByText('1 página')).toBeVisible();
+    expect(within(dialog).queryByText('Excede el límite')).not.toBeInTheDocument();
+    expect(finalizeBodies).toEqual([]);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Finalizar' }));
+
+    expect(await screen.findByRole('heading', { name: 'CV finalizado' })).toBeVisible();
+    expect(finalizeBodies).toEqual([{}]);
+    expect(screen.queryByRole('button', { name: 'Finalizar CV' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abandonar' })).not.toBeInTheDocument();
+    expect(await screen.findByTitle('CV finalizado en inglés')).toBeInTheDocument();
+    expect(screen.getByText(/1 página · plantilla «Clásica»/)).toBeVisible();
+
+    // The download saves exactly the frozen PDF with its name.
+    const saved: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      saved.push(this.download);
+    });
+    const before = versionPdfs;
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar PDF' }));
+    await waitFor(() => expect(saved).toEqual([VERSION.fileName]));
+    expect(versionPdfs).toBe(before + 1);
+    click.mockRestore();
+  });
+
+  it('asks to finalize anyway a CV over the page budget (RN-04)', async () => {
+    resume = {
+      ...RESUME,
+      data: { ...RESUME.data, fit: { ...RESUME.data.fit!, pageCount: 2, fits: false } },
+    };
+    view = { session: session('REVIEW', false), job: job('tailoring-generate', 'SUCCEEDED') };
+    await render();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finalizar CV' }));
+    const dialog = await screen.findByRole('dialog', { name: '¿Finalizar los CVs?' });
+    expect(within(dialog).getByText('Excede el límite')).toBeVisible();
+    expect(within(dialog).getByText(/no entran en 1 página/)).toBeVisible();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Finalizar igual' }));
+
+    expect(await screen.findByRole('heading', { name: 'CV finalizado' })).toBeVisible();
+    expect(finalizeBodies).toEqual([{ confirmOverBudget: true }]);
+  });
+});

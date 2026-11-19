@@ -255,7 +255,11 @@ function TemplateList({
           if (!open) setDeleting(null);
         }}
         title={t('templates.delete.title', { name: deleting?.name ?? '' })}
-        description={t('templates.delete.description')}
+        description={
+          deleting && deleting.finalizedResumes > 0
+            ? t('templates.delete.descriptionUsed', { count: deleting.finalizedResumes })
+            : t('templates.delete.description')
+        }
         confirmLabel={t('common.delete')}
         onConfirm={async () => {
           if (deleting) await deleteTemplate.mutateAsync(deleting.id);

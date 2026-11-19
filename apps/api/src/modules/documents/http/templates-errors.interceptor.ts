@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   type CallHandler,
-  ConflictException,
   type ExecutionContext,
   ForbiddenException,
   HttpException,
@@ -15,6 +14,7 @@ import { catchError, type Observable, throwError } from 'rxjs';
 import {
   RenderError,
   type RenderFailure,
+  ResumeVersionNotFoundError,
   TemplateNotFoundError,
   UserTemplateError,
 } from '../application/documents.ports.js';
@@ -36,9 +36,9 @@ export class TemplatesErrorsInterceptor implements NestInterceptor {
 
 function toHttpError(error: unknown): unknown {
   if (error instanceof TemplateNotFoundError) return new NotFoundException(error.message);
+  if (error instanceof ResumeVersionNotFoundError) return new NotFoundException(error.message);
   if (error instanceof UserTemplateError) {
     if (error.reason === 'BUILT_IN') return new ForbiddenException(error.message);
-    if (error.reason === 'IN_USE') return new ConflictException(error.message);
     return new BadRequestException(error.message);
   }
   if (error instanceof RenderError) {

@@ -2,10 +2,13 @@ import {
   TailoringSessionListSchema,
   type CreateTailoringSessionRequest,
   type EditTailoredResumeRequest,
+  type FinalizeSessionRequest,
   type GapAnswer,
   GapQuestionsSchema,
   type RegenerateResumesRequest,
   type ResumeLanguage,
+  type ResumeVersion,
+  ResumeVersionListSchema,
   type RevertProfileChangesRequest,
   RevertProfileChangesResultSchema,
   SessionProfileChangesSchema,
@@ -18,8 +21,10 @@ import {
 } from '@careerly/contracts';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiGetBlob, apiPatch, apiPost, apiPut } from '../../../shared/api/client';
+import { downloadBlob } from '../../../shared/lib/download';
 import { AI_STATUS_QUERY_KEY, AI_USAGE_QUERY_KEY } from '../../ai/api/useAiStatus';
 import { PROFILE_QUERY_KEY } from '../../profile/api/profile-api';
+import { TEMPLATES_QUERY_KEY } from '../../templates/api/templates-api';
 
 /*
  * Tailoring sessions (RF-TAIL-01): starting one runs the match in the background (RF-TAIL-02), generating runs
@@ -37,6 +42,8 @@ const profileChangesKey = (id: string) => [...sessionKey(id), 'profile-changes']
 const resumesKey = (id: string) => [...sessionKey(id), 'resumes'] as const;
 const previewKey = (id: string, language: ResumeLanguage) =>
   [...resumesKey(id), language, 'preview'] as const;
+const versionsKey = (id: string) => [...sessionKey(id), 'resume-versions'] as const;
+const RESUME_VERSIONS_QUERY_KEY = ['resume-versions'] as const;
 
 const isRunning = (view: TailoringSessionView | undefined) =>
   view?.session.status === 'ANALYZING' ||
@@ -235,6 +242,53 @@ export function useAbandonSession(id: string) {
     onSuccess: (view) => {
       queryClient.setQueryData(sessionKey(id), view);
       void queryClient.invalidateQueries({ queryKey: [...TAILORING_QUERY_KEY, 'list'] });
+    },
+  });
+}
+
+/**
+ * Finalizes the session (RF-TAIL-14): its CVs are frozen with their PDFs. A CV over the page budget needs
+ * `confirmOverBudget` (RN-04).
+ */
+export function useFinalizeSession(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: FinalizeSessionRequest) =>
+      apiPost(`/tailoring-sessions/${id}/finalize`, TailoringSessionViewSchema, request),
+    onSuccess: (view) => {
+      queryClient.setQueryData(sessionKey(id), view);
+      void queryClient.invalidateQueries({ queryKey: versionsKey(id) });
+      void queryClient.invalidateQueries({ queryKey: [...TAILORING_QUERY_KEY, 'list'] });
+      // Their templates now count one more finalized CV.
+      void queryClient.invalidateQueries({ queryKey: TEMPLATES_QUERY_KEY });
+    },
+  });
+}
+
+/** The finalized CVs of the session, in the order of its languages. */
+export function useResumeVersions(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: versionsKey(id),
+    queryFn: () => apiGet(`/tailoring-sessions/${id}/resume-versions`, ResumeVersionListSchema),
+    enabled,
+  });
+}
+
+/** Exactly the PDF that was finalized; it never changes, so it is not fetched again. */
+export function useResumeVersionPdf(versionId: string) {
+  return useQuery({
+    queryKey: [...RESUME_VERSIONS_QUERY_KEY, versionId, 'pdf'],
+    queryFn: () => apiGetBlob(`/resume-versions/${versionId}/pdf`),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Saves a finalized PDF with its name: "Name - Job title - Company (EN).pdf". */
+export function useDownloadResumeVersion() {
+  return useMutation({
+    mutationFn: async (version: ResumeVersion) => {
+      downloadBlob(await apiGetBlob(`/resume-versions/${version.id}/pdf`), version.fileName);
     },
   });
 }

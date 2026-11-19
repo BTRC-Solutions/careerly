@@ -25,6 +25,7 @@ import {
 } from '../api/tailoring-api';
 import { GapQuestionsCard } from '../components/GapQuestionsCard';
 import { SessionOptionsCard } from '../components/SessionOptionsCard';
+import { FinalizedResumes } from '../components/FinalizedResumes';
 import { ResumeReview } from '../components/ResumeReview';
 import { SessionProfileChanges } from '../components/SessionProfileChanges';
 import { countGaps, describeEvidence, summarizeMatch } from '../lib/match-summary';
@@ -66,10 +67,11 @@ export function MatchSummaryPage() {
   const { id = '' } = useParams();
   const view = useTailoringSession(id);
   const jobPostingId = view.data?.session.jobPostingId;
-  const reviewing = view.data?.session.status === 'REVIEW';
+  const status = view.data?.session.status;
+  const wide = status === 'REVIEW' || status === 'FINALIZED';
 
   return (
-    <div className={cn('flex flex-col gap-6', reviewing ? 'max-w-[90rem]' : 'max-w-[52rem]')}>
+    <div className={cn('flex flex-col gap-6', wide ? 'max-w-[90rem]' : 'max-w-[52rem]')}>
       {jobPostingId && (
         <Link
           to={`/job-postings/${jobPostingId}`}
@@ -115,11 +117,18 @@ function Session({ view }: { view: TailoringSessionView }) {
     ? `tailoring.generate.errors.${KNOWN_GENERATION_ERRORS.has(errorCode) ? errorCode : 'FAILED'}`
     : `tailoring.match.errors.${KNOWN_ERRORS.has(errorCode) ? errorCode : 'FAILED'}`;
   const reviewing = session.status === 'REVIEW';
+  const finalized = session.status === 'FINALIZED';
 
   return (
     <>
       <PageHeader
-        title={reviewing ? t('tailoring.review.title') : t('tailoring.match.title')}
+        title={
+          reviewing
+            ? t('tailoring.review.title')
+            : finalized
+              ? t('tailoring.finalized.title')
+              : t('tailoring.match.title')
+        }
         description={subtitle}
         actions={
           !closed && (
@@ -189,9 +198,10 @@ function Session({ view }: { view: TailoringSessionView }) {
       )}
 
       {reviewing && <ResumeReview session={session} />}
+      {finalized && <FinalizedResumes session={session} />}
 
       {session.match &&
-        (reviewing ? (
+        (reviewing || finalized ? (
           <details className="max-w-[52rem]">
             <summary className="cursor-pointer text-sm text-steel-text hover:text-indigo-navy">
               {t('tailoring.review.showMatch')}

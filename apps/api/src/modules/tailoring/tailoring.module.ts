@@ -20,6 +20,7 @@ import {
   ProfileWriter,
   RequirementMatcher,
   ResumePdfRenderer,
+  ResumeVersionStore,
   ResumeWriter,
   TailoredResumeRepository,
   TailoringSessionRepository,
@@ -39,6 +40,7 @@ import {
   CatalogToolResolver,
   CatalogToolVocabulary,
   DocumentsModuleRenderer,
+  DocumentsModuleVersionStore,
   DocumentsTemplateLookup,
   JobPostingsModuleReader,
   JobQueueGenerateQueue,
@@ -85,6 +87,7 @@ import {
     { provide: TailoredResumeRepository, useClass: DrizzleTailoredResumeRepository },
     { provide: ResumePdfRenderer, useClass: DocumentsModuleRenderer },
     { provide: TemplateLookup, useClass: DocumentsTemplateLookup },
+    { provide: ResumeVersionStore, useClass: DocumentsModuleVersionStore },
   ],
 })
 export class TailoringModule {}
