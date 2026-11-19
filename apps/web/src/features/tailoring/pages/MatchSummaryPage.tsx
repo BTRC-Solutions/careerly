@@ -16,7 +16,9 @@ import { Tag } from '../../../shared/ui/Tag';
 import { useJobPosting } from '../../job-postings/api/job-postings-api';
 import { useProfile } from '../../profile/api/profile-api';
 import { useGenerateResumes, useRetryTailoring, useTailoringSession } from '../api/tailoring-api';
+import { GapQuestionsCard } from '../components/GapQuestionsCard';
 import { ResumeReview } from '../components/ResumeReview';
+import { SessionProfileChanges } from '../components/SessionProfileChanges';
 import { countGaps, describeEvidence, summarizeMatch } from '../lib/match-summary';
 
 /** Error codes with their own explanation; anything else gets the generic one. */
@@ -132,9 +134,10 @@ function Session({ view }: { view: TailoringSessionView }) {
       )}
       {retry.error && <InlineError>{retry.error.message}</InlineError>}
 
-      {(session.status === 'MATCHED' || session.status === 'AWAITING_ANSWERS') && (
-        <GenerateCard view={view} />
-      )}
+      <GapQuestionsCard session={session} />
+
+      {((session.status === 'MATCHED' && session.match && countGaps(session.match) === 0) ||
+        session.status === 'AWAITING_ANSWERS') && <GenerateCard view={view} />}
 
       {session.status === 'GENERATING' && (
         <Card>
@@ -163,6 +166,8 @@ function Session({ view }: { view: TailoringSessionView }) {
         ) : (
           <MatchResultView match={session.match} />
         ))}
+
+      <SessionProfileChanges sessionId={session.id} />
     </>
   );
 }

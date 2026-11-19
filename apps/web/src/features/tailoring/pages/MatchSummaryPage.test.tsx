@@ -155,6 +155,9 @@ beforeEach(() => {
       return HttpResponse.json(view);
     }),
     http.get(api('/profile'), () => HttpResponse.json(PROFILE)),
+    http.get(api(`/tailoring-sessions/${ID}/profile-changes`), () =>
+      HttpResponse.json({ changes: [] }),
+    ),
     http.get(api('/job-postings/posting-1'), () =>
       HttpResponse.json({
         id: 'posting-1',

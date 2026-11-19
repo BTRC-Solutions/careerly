@@ -1,4 +1,6 @@
 import {
+  GapQuestionsSchema,
+  type Profile,
   JobAnalysisStateSchema,
   JobPostingSchema,
   TailoredResumeSchema,
@@ -284,6 +286,18 @@ describe('tailoring session match (integration)', () => {
 
     // The session is stored: reading it again gives the same result.
     expect((await view(started.session.id)).session).toEqual(done.session);
+
+    // One question per partial or missing requirement, required ones first, without calling the AI again.
+    const { questions } = GapQuestionsSchema.parse(
+      await json('GET', `/tailoring-sessions/${started.session.id}/gaps`),
+    );
+    expect(questions.map((q) => [q.label, q.gap, q.importance, q.relatedEvidence])).toEqual([
+      ['Postgres', 'MISSING', 'REQUIRED', []],
+      ['Docker', 'PARTIAL', 'REQUIRED', [{ kind: 'POSITION', id: profile.position.id }]],
+      ['FooBarDB', 'MISSING', 'NICE_TO_HAVE', []],
+    ]);
+    expect(gemini!.calls).toHaveLength(2);
+    expect((await api('GET', '/tailoring-sessions/nope/gaps')).status).toBe(404);
   });
 
   it('does not call the AI when the catalog decides every requirement', async () => {
@@ -330,6 +344,8 @@ describe('tailoring session match (integration)', () => {
       match: null,
     });
     expect(failed.job).toMatchObject({ status: 'FAILED', attempts: 1, lastError: 'KEY_REJECTED' });
+    // Without a match there is nothing to ask yet.
+    expect((await api('GET', `/tailoring-sessions/${session.id}/gaps`)).status).toBe(409);
 
     replies.push(ok(EVIDENCE_ANSWER));
     const retry = await api('POST', `/tailoring-sessions/${session.id}/retry`);
@@ -698,13 +714,13 @@ describe('tailoring session match (integration)', () => {
       ).status,
     ).toBe(409);
 
-    // Through the questions (skipping them all, until they can be answered), it can.
-    const asking = await api('POST', `/tailoring-sessions/${session.id}/gaps`);
-    expect(asking.status).toBe(200);
-    expect(TailoringSessionViewSchema.parse(await asking.json()).session.status).toBe(
-      'AWAITING_ANSWERS',
-    );
-    expect((await api('POST', `/tailoring-sessions/${session.id}/gaps`)).status).toBe(409);
+    // Through the questions (even leaving them unanswered), it can.
+    expect((await api('POST', `/tailoring-sessions/${session.id}/ask-gaps`)).status).toBe(200);
+    expect(
+      TailoringSessionViewSchema.parse(await json('GET', `/tailoring-sessions/${session.id}`))
+        .session.status,
+    ).toBe('AWAITING_ANSWERS');
+    expect((await api('POST', `/tailoring-sessions/${session.id}/ask-gaps`)).status).toBe(409);
     expect((await api('POST', `/tailoring-sessions/${session.id}/generate`)).status).toBe(200);
   });
 
@@ -722,5 +738,157 @@ describe('tailoring session match (integration)', () => {
         .status,
     ).toBe(400);
     expect((await api('GET', '/tailoring-sessions/nope')).status).toBe(404);
+  });
+
+  it('stores the gap questions when asked and their answers, in any order', async () => {
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER)]);
+    const profile = await createProfile();
+    const posting = await analyzedPosting();
+    const { session } = TailoringSessionViewSchema.parse(
+      await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+    );
+    await waitFor(settled(session.id));
+    const route = `/tailoring-sessions/${session.id}`;
+    const gaps = async () => GapQuestionsSchema.parse(await json('GET', `${route}/gaps`)).questions;
+
+    // Answering needs the questions to be asked first.
+    expect((await api('PUT', `${route}/gaps/x`, { answer: 'NOT_USED' })).status).toBe(409);
+    const asked = GapQuestionsSchema.parse(await json('POST', `${route}/ask-gaps`)).questions;
+    expect(asked.map((q) => [q.label, q.answer])).toEqual([
+      ['Postgres', null],
+      ['Docker', null],
+      ['FooBarDB', null],
+    ]);
+    expect((await view(session.id)).session.status).toBe('AWAITING_ANSWERS');
+    const [postgres, docker, foobar] = asked;
+
+    // In any order; an answer can change.
+    const put = (requirementId: string, body: unknown) =>
+      api('PUT', `${route}/gaps/${requirementId}`, body).then((r) => r.status);
+    expect(await put(foobar!.requirementId, { answer: 'SKIPPED' })).toBe(200);
+    expect(
+      await put(postgres!.requirementId, {
+        answer: 'USED_AT_WORK',
+        positionIds: [profile.position.id],
+        detail: 'Tuned the queries of the billing service.',
+      }),
+    ).toBe(200);
+    expect(await put(foobar!.requirementId, { answer: 'NOT_USED' })).toBe(200);
+    expect(
+      await put(docker!.requirementId, {
+        answer: 'USED_ELSEWHERE',
+        project: { name: 'Homelab', kind: 'PERSONAL' },
+        detail: 'Ran my services in containers.',
+        includeInResume: false,
+      }),
+    ).toBe(200);
+
+    const answered = await gaps();
+    expect(answered.map((q) => q.answer?.answer)).toEqual([
+      'USED_AT_WORK',
+      'USED_ELSEWHERE',
+      'NOT_USED',
+    ]);
+    expect(answered.every((q) => q.answeredAt !== null)).toBe(true);
+
+    // Answers must point to the profile, and to a question of this session.
+    expect(
+      await put(postgres!.requirementId, {
+        answer: 'USED_AT_WORK',
+        positionIds: ['nope'],
+        detail: 'x',
+      }),
+    ).toBe(400);
+    expect(await put(postgres!.requirementId, { answer: 'USED_AT_WORK' })).toBe(400);
+    expect(await put('not-a-question', { answer: 'NOT_USED' })).toBe(404);
+
+    // A "No" is not written to the profile (RN-11): it lives only in the session.
+    const profileAfter = JSON.stringify(await json('GET', '/profile'));
+    expect(profileAfter).not.toContain('FooBarDB');
+    expect((await gaps())[2]!.answer).toEqual({ answer: 'NOT_USED' });
+  });
+
+  it('adds affirmative answers to the profile and the match, and a "no" only to the session', async () => {
+    // Two sessions on the same job description: the second one is matched without new AI answers needed.
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER), ok(EVIDENCE_ANSWER)]);
+    const profile = await createProfile();
+    const posting = await analyzedPosting();
+    const startSession = async () => {
+      const { session } = TailoringSessionViewSchema.parse(
+        await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+      );
+      await waitFor(settled(session.id));
+      return session.id;
+    };
+    const id = await startSession();
+    const asked = GapQuestionsSchema.parse(
+      await json('POST', `/tailoring-sessions/${id}/ask-gaps`),
+    ).questions;
+    const byLabel = (label: string) => asked.find((q) => q.label === label)!;
+    const answer = (label: string, body: unknown) =>
+      json('PUT', `/tailoring-sessions/${id}/gaps/${byLabel(label).requirementId}`, body).then(
+        (gaps) => GapQuestionsSchema.parse(gaps).questions.find((q) => q.label === label)!,
+      );
+    const getProfile = () => json<Profile>('GET', '/profile');
+    const statusOf = async (label: string) =>
+      (await view(id)).session.match!.requirements.find((r) => r.label === label)!;
+
+    // Yes, at work: an achievement with the catalog tool, from this session.
+    const postgres = await answer('Postgres', {
+      answer: 'USED_AT_WORK',
+      positionIds: [profile.position.id],
+      detail: 'Tuned the queries of the billing service.',
+    });
+    expect(postgres.created).toHaveLength(1);
+    const added = (await getProfile()).positions[0]!.achievements.find(
+      (a) => a.id === postgres.created[0]!.id,
+    )!;
+    expect(added).toMatchObject({
+      text: 'Tuned the queries of the billing service.',
+      origin: 'GAP_ANSWER',
+      originSessionId: id,
+      tools: [{ name: 'PostgreSQL' }],
+    });
+    // The match follows (RF-GAP-05).
+    expect(await statusOf('Postgres')).toMatchObject({
+      status: 'COVERED',
+      evidence: [{ kind: 'ACHIEVEMENT', id: added.id }],
+    });
+
+    // Yes, in a new project: the project and its achievement.
+    const docker = await answer('Docker', {
+      answer: 'USED_ELSEWHERE',
+      project: { name: 'Homelab', kind: 'PERSONAL' },
+      detail: 'Ran my services in containers.',
+      includeInResume: true,
+    });
+    expect(docker.created.map((c) => c.kind)).toEqual(['PROJECT', 'ACHIEVEMENT']);
+    expect((await getProfile()).projects.map((p) => p.name)).toEqual(['Homelab']);
+
+    // Changing an answer to "no" undoes what it added, and the requirement is a gap again.
+    const before = JSON.stringify(await getProfile());
+    const changed = await answer('Docker', { answer: 'NOT_USED' });
+    expect(changed.created).toEqual([]);
+    expect((await getProfile()).projects).toEqual([]);
+    expect(JSON.stringify(await getProfile())).not.toEqual(before);
+    expect(await statusOf('Docker')).toMatchObject({
+      status: 'PARTIAL',
+      evidence: [{ kind: 'POSITION', id: profile.position.id }],
+    });
+
+    // A "no" creates nothing in the profile (RN-11)…
+    const profileBeforeNo = await getProfile();
+    await answer('FooBarDB', { answer: 'NOT_USED' });
+    expect(await getProfile()).toEqual(profileBeforeNo);
+
+    // …and the same requirement is asked again in another session (RN-12).
+    const next = await startSession();
+    const askedAgain = GapQuestionsSchema.parse(
+      await json('POST', `/tailoring-sessions/${next}/ask-gaps`),
+    ).questions;
+    expect(askedAgain.map((q) => [q.label, q.answer])).toEqual([
+      ['Docker', null],
+      ['FooBarDB', null],
+    ]);
   });
 });
