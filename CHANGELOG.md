@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/BTRC-Solutions/careerly/compare/v0.6.0...v0.7.0) (2026-11-19)
+
+
+### Features
+
+* add contacts and extra data to job applications ([85d53c2](https://github.com/BTRC-Solutions/careerly/commit/85d53c2151c3139bccf57ba065662befb1b561d1))
+* add the append-only timeline of job applications ([445390c](https://github.com/BTRC-Solutions/careerly/commit/445390cfbbf205245c38a8404874adca818f8af3))
+* add the application aggregate and its state machine ([fe41dd5](https://github.com/BTRC-Solutions/careerly/commit/fe41dd566e872456e3d557e4bb1c717791eb94c1))
+* add the applications board and table ([99c4271](https://github.com/BTRC-Solutions/careerly/commit/99c4271584b7a8f0d3f4394ae1be8bf5d144875f))
+* create job applications and record the finalized CVs sent ([8cbbea3](https://github.com/BTRC-Solutions/careerly/commit/8cbbea3a8876ba772863d98c2efa668e10d4815f))
+* finalize tailoring sessions into immutable resume versions ([c167eb6](https://github.com/BTRC-Solutions/careerly/commit/c167eb6e1e3c410ed320b2e0de0ca375bb0917ca))
+* **telemetry:** report the metrics of job applications ([1ef0f4a](https://github.com/BTRC-Solutions/careerly/commit/1ef0f4a1aadea895d25f1bb9d28098e840e3b64d))
+
+
+### Miscellaneous Chores
+
+* close phase 7 ([860f4a3](https://github.com/BTRC-Solutions/careerly/commit/860f4a314a563f8d797f350d4b56f9126b65889a))
+
 ## [0.6.0](https://github.com/BTRC-Solutions/careerly/compare/v0.5.0...v0.6.0) (2026-11-19)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@careerly/web",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "Careerly UI (Electron renderer). Also runs in the browser with `npm run dev:web`.",
   "type": "module",
