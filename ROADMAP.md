@@ -120,7 +120,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | ✅ (#79) |
 | 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ✅ (#80) |
 
-## Fase 7 — Snapshots y postulaciones · `v0.7.0`
+## Fase 7 — Snapshots y postulaciones · `v0.7.0` · ✅ cerrada (2026-11-19)
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
@@ -128,9 +128,9 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 7.2 | Agregado `Application` con su máquina de estados (dominio puro + tests). `[RN-08, RN-09, RN-10]` | Todas las transiciones cubiertas por tests. | ✅ (tabla estado × destino en `application.test.ts`, más retrocesos, envío, `GHOSTED` y reabrir) |
 | 7.3 | Crear postulación desde una JD o desde una sesión finalizada; asociar uno o más snapshots enviados. `[RF-APP-01, RF-APP-02, RF-APP-08]` | Desde la postulación se abre y guarda exactamente el PDF enviado. | ✅ (una postulación por JD; test de integración del PDF exacto; probado en la UI) |
 | 7.4 | Vista kanban con arrastrar para cambiar de estado + vista tabla con filtros y búsqueda. `[RF-APP-03, RF-APP-06]` | Usable con teclado (accesibilidad). | ✅ (arrastre con teclado columna por columna y anuncios, más el menú «Mover a…»; probado en el navegador) |
-| 7.5 | Línea de tiempo: eventos automáticos de estado, notas y entrevistas. `[RF-APP-04]` | Los eventos aparecen en orden y no se pueden alterar. | ⬜ |
-| 7.6 | Contactos y datos adicionales (canal, prioridad, salarios). `[RF-APP-05, RF-APP-07]` | CRUD completo. | ⬜ |
-| 7.7 | Telemetría: métricas de postulaciones (cantidad, plataforma de origen con lista de portales, categoría y seniority, título recortado, embudo, modalidad y país). `[RF-TEL-03b–g]` | Test: ningún nombre de empresa, URL completa, contacto, nota ni salario llega al reporte. | ⬜ |
+| 7.5 | Línea de tiempo: eventos automáticos de estado, notas y entrevistas. `[RF-APP-04]` | Los eventos aparecen en orden y no se pueden alterar. | ✅ (PR #89; las entradas no se editan ni se borran, también en la base) |
+| 7.6 | Contactos y datos adicionales (canal, prioridad, salarios). `[RF-APP-05, RF-APP-07]` | CRUD completo. | ✅ (PR #90; contactos con alta, edición y baja, más canal, prioridad y salarios) |
+| 7.7 | Telemetría: métricas de postulaciones (cantidad, plataforma de origen con lista de portales, categoría y seniority, título recortado, embudo, modalidad y país). `[RF-TEL-03b–g]` | Test: ningún nombre de empresa, URL completa, contacto, nota ni salario llega al reporte. | ✅ (PR #91; test de integración sin empresas, URLs, contactos, notas ni salarios en el reporte) |
 
 ## Fase 8 — Dashboard, pulido y primer release · `v0.8.0 · MVP`
 
