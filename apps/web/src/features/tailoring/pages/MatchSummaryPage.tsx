@@ -209,7 +209,7 @@ function Session({ view }: { view: TailoringSessionView }) {
   );
 }
 
-const GENERATION_STEPS = new Set(['reading', 'writing', 'checking', 'fitting']);
+const GENERATION_STEPS = new Set(['reading', 'scoring', 'writing', 'checking', 'fitting']);
 
 /** Writes the CVs: right away without gaps; with them, skipping the questions until they can be answered. */
 function GenerateCard({ view }: { view: TailoringSessionView }) {

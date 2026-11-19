@@ -19,6 +19,7 @@ import type {
   ToolRef,
 } from '@careerly/contracts';
 import type { SemanticAnswer } from '../domain/match.js';
+import type { RelevanceCandidate, RelevanceScore, ScoredAnswer } from '../domain/relevance.js';
 import type { WrittenResume } from '../domain/resume-writing.js';
 import type { ToolTerm, TruthIssue, TruthRewrite } from '../domain/truth-guard.js';
 
@@ -118,6 +119,30 @@ export abstract class RequirementMatcher {
     requirements: JobRequirement[],
     profile: Profile,
   ): Promise<{ answers: SemanticAnswer[]; promptVersion: string; model: string }>;
+}
+
+/** Port: the AI that scores how relevant each achievement and project is for the job (§7.2, step 7). */
+export abstract class RelevanceScorer {
+  abstract score(
+    candidates: RelevanceCandidate[],
+    profile: Profile,
+    analysis: JobAnalysis,
+  ): Promise<{ answers: ScoredAnswer[]; promptVersion: string; model: string }>;
+}
+
+/** The relevance scores of a session (one set per session, replaced when scoring again). */
+export interface SessionRelevance {
+  sessionId: string;
+  scores: RelevanceScore[];
+  promptVersion: string | null;
+  model: string | null;
+  scoredAt: string;
+}
+
+/** Port: stored relevance scores. */
+export abstract class RelevanceRepository {
+  abstract save(relevance: SessionRelevance): Promise<void>;
+  abstract find(sessionId: string): Promise<SessionRelevance | null>;
 }
 
 /** What the CV writer gets for one language. */

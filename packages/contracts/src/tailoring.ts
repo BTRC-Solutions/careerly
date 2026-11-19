@@ -113,7 +113,7 @@ export const TailoredBulletSchema = z.object({
   text: z.string().trim().min(1),
   /** Achievements (or the project itself) it is based on; never empty for generated bullets. */
   sourceIds: z.array(z.string()).min(1),
-  /** Relevance for the job description, 0–1; `null` until relevance scoring exists (roadmap 6.2). */
+  /** Relevance for the job description, 0–1: the best of its sources (roadmap 6.2); `null` if none was scored. */
   score: z.number().min(0).max(1).nullable(),
   /** Edited by the user: RN-01 and RN-02 are no longer checked on it (RN-05). */
   editedByUser: z.boolean(),

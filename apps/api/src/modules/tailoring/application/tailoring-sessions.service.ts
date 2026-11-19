@@ -27,9 +27,11 @@ import { fitToPages } from '../domain/page-fitter.js';
 import { mergeRegenerated, restrictToScope, WHOLE_CV } from '../domain/regeneration.js';
 import { applyResumeEdit } from '../domain/resume-edits.js';
 import { defaultPageBudget } from '../domain/session-options.js';
+import { scoreBullets } from '../domain/relevance.js';
 import { fitCandidates, orderAsWritten } from '../domain/resume-fit.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
+import { RelevanceService } from './relevance.service.js';
 import {
   applySessionEvent,
   changeSessionOptions,
@@ -86,6 +88,7 @@ export class TailoringSessionsService {
     private readonly renderer: ResumePdfRenderer,
     private readonly vocabulary: ToolVocabulary,
     private readonly templates: TemplateLookup,
+    private readonly relevance: RelevanceService,
   ) {}
 
   async start(request: CreateTailoringSessionRequest): Promise<TailoringSessionView> {
@@ -313,6 +316,9 @@ export class TailoringSessionsService {
       languages: session.languages,
     };
     const existing = await this.resumes.list(id);
+    // Scored once for every language, with the profile as it is now (gap answers included).
+    report({ step: 'scoring' });
+    const { scores } = await this.relevance.score(id);
 
     const written: TailoredResume[] = [];
     for (const [index, language] of languages.entries()) {
@@ -341,6 +347,7 @@ export class TailoringSessionsService {
       if (before) data = mergeRegenerated(before.data, data, scope);
 
       report({ step: 'fitting', ...progress });
+      data = scoreBullets(data, scores);
       data = await this.fit(data, profile, language, session, today);
       written.push({
         sessionId: id,

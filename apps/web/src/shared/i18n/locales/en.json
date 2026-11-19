@@ -857,6 +857,7 @@
       "retrying": "The generation failed and will be retried in a few seconds…",
       "steps": {
         "reading": "Getting ready…",
+        "scoring": "Finding what in your profile matters most for this job…",
         "writing": "Writing the CV with AI…",
         "checking": "Checking that everything comes from your profile…",
         "fitting": "Fitting the CV to its pages…"

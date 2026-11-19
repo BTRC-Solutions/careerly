@@ -857,6 +857,7 @@
       "retrying": "La generación falló y se va a reintentar en unos segundos…",
       "steps": {
         "reading": "Preparando la generación…",
+        "scoring": "Viendo qué de tu perfil importa más para esta oferta…",
         "writing": "Escribiendo el CV con la IA…",
         "checking": "Revisando que todo salga de tu perfil…",
         "fitting": "Ajustando el CV a las páginas…"

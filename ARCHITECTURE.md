@@ -340,6 +340,15 @@ proyecto, o primero el proyecto si es nuevo. Si el requisito es una herramienta 
 match se recalcula sin IA (`matchWithAnswers`, RF-GAP-05): un requisito cuya respuesta agregó logros queda cubierto
 con ellos como evidencia, y vuelve a como estaba si la respuesta pasa a "no".
 
+**Puntuación (paso 6.2, `tailoring/domain/relevance.ts`):** antes de redactar, el LLM (`relevance-score.v1`, modelo
+chico) puntúa de 0 a 1 cada logro y cada proyecto del perfil frente a la JD, con las mismas referencias cortas que
+el match. `relevanceScores` descarta lo que no es un candidato real, deja en 0 lo que no se puntuó y sube a 0,5 lo
+que el match citó como evidencia de un requisito cubierto o parcial. Se guarda un puntaje por candidato en
+`tailoring_relevance` (una fila por sesión, solo ids y números). Corre al empezar cada generación, con el perfil
+como está en ese momento (respuestas a gaps incluidas): cada bullet toma el mejor puntaje de sus fuentes
+(`scoreBullets`) y el ajuste de páginas se queda con los mejores; a igual puntaje, en el orden en que los escribió
+la IA.
+
 **Redacción (paso 6.3, `tailoring/domain/resume-writing.ts`):** `POST /tailoring-sessions/:id/generate` aplica
 `GENERATE` y encola la tarea `tailoring-generate` (3 intentos; al rendirse, `FAILED` con `failedStep =
 GENERATING`). Se genera desde `MATCHED` sin gaps, desde
@@ -351,7 +360,7 @@ GENERATING`). Se genera desde `MATCHED` sin gaps, desde
   referencias de los logros que usa.
 - `tailoredResumeData` se queda solo con lo trazable (RN-01): experiencias que existen y bullets cuyas fuentes son
   logros de esa misma experiencia (o el propio proyecto); un bullet sin fuentes se descarta sin reintento. Máximo
-  6 bullets por experiencia. El `score` queda en `null` hasta el 6.2.
+  6 bullets por experiencia. El `score` lo pone la puntuación (paso 6.2).
 - `TailoredResume` (tabla `tailored_resumes`, uno por sesión e idioma) guarda solo lo redactado e ids: resumen,
   bullets con `sourceIds` y las herramientas de la sección de habilidades (`selectSkills`: primero las que pide
   la JD, después las más usadas). Regenerar los reemplaza.

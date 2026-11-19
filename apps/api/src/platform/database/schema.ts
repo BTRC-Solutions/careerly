@@ -475,3 +475,17 @@ export const tailoredResumes = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.sessionId, table.language] })],
 );
+
+/**
+ * Relevance of each achievement and project of the profile for a session's job description (ARCHITECTURE §7.2,
+ * step 7), one row per session; replaced every time the session scores again.
+ */
+export const tailoringRelevance = sqliteTable('tailoring_relevance', {
+  sessionId: text('session_id').primaryKey(),
+  /** JSON array of `RelevanceScore`: ids and scores, no profile text. */
+  scores: text('scores').notNull(),
+  /** `null` when there was nothing to score and the AI was not called. */
+  promptVersion: text('prompt_version'),
+  model: text('model'),
+  scoredAt: text('scored_at').notNull(),
+});

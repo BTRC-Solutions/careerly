@@ -21,6 +21,7 @@ import {
   TEST_TOKEN,
   testConfig,
 } from '../../test-support/test-server.js';
+import { RelevanceService } from './application/relevance.service.js';
 
 /*
  * Tailoring session up to the match, end to end (roadmap 5.2, RF-TAIL-01, RF-TAIL-02): a real profile and
@@ -383,12 +384,14 @@ describe('tailoring session match (integration)', () => {
   }
 
   const NODE_ONLY = { ...JD_ANALYSIS, requirements: JD_ANALYSIS.requirements.slice(0, 1) };
+  // The relevance scoring that opens every generation (roadmap 6.2); unscored bullets keep the writer's order.
+  const NO_SCORES = { scores: [] };
 
   // Generating fits the CV to its pages by rendering it with Typst (CI always has it).
   it.runIf(HAS_TYPST)(
     'writes one CV per language with sources from the profile (RF-TAIL-10, RF-TAIL-11)',
     async () => {
-      await start([ok(NODE_ONLY), ok(writing('es')), ok(writing('en'))]);
+      await start([ok(NODE_ONLY), ok(NO_SCORES), ok(writing('es')), ok(writing('en'))]);
       const id = await matchedWithoutGaps(['es', 'en']);
       const profile = await json<{ positions: { id: string; achievements: { id: string }[] }[] }>(
         'GET',
@@ -431,7 +434,8 @@ describe('tailoring session match (integration)', () => {
               id: expect.any(String),
               text: 'Diseñé la API REST pública que usan 40 partners',
               sourceIds: [achievement.id],
-              score: null,
+              // Its achievement is the match's evidence for Node.js: at least 0.5 (roadmap 6.2).
+              score: 0.5,
               editedByUser: false,
               inclusion: 'AUTO',
             },
@@ -446,8 +450,9 @@ describe('tailoring session match (integration)', () => {
       expect(es!.data.toolIds).toEqual([node.id, docker.id]);
 
       // One call per language, the profile first and the job description as untrusted data.
-      expect(gemini!.calls).toHaveLength(3);
-      const [, toSpanish, toEnglish] = gemini!.calls;
+      // After the match and the relevance scoring.
+      expect(gemini!.calls).toHaveLength(4);
+      const [, , toSpanish, toEnglish] = gemini!.calls;
       expect(toSpanish).toMatch(/^Master profile of the candidate:/);
       expect(toSpanish).toMatch(/\[A1\] Designed the public REST API/);
       expect(toSpanish).toMatch(
@@ -495,7 +500,7 @@ describe('tailoring session match (integration)', () => {
           { item: 'B2', text: 'Led 10 engineers building the API', sources: ['A1'] },
         ],
       };
-      await start([ok(NODE_ONLY), ok(invented), ok(rewrites)]);
+      await start([ok(NODE_ONLY), ok(NO_SCORES), ok(invented), ok(rewrites)]);
       const id = await matchedWithoutGaps(['en']);
 
       await api('POST', `/tailoring-sessions/${id}/generate`);
@@ -520,8 +525,8 @@ describe('tailoring session match (integration)', () => {
       });
 
       // Only the texts with issues went back, as untrusted data, with what broke the rules.
-      expect(gemini!.calls).toHaveLength(3);
-      const rewriteCall = gemini!.calls[2]!;
+      expect(gemini!.calls).toHaveLength(4);
+      const rewriteCall = gemini!.calls[3]!;
       expect(rewriteCall).toMatch(/^Master profile of the candidate:/);
       expect(rewriteCall).toMatch(
         /<untrusted source="cv-texts">\n\[B1\] A bullet of \[W1\], citing \[A1\]\n {2}Text: Designed the public REST API on Kubernetes\n {2}Problems: it mentions Kubernetes, which its sources do not show\./,
@@ -548,7 +553,7 @@ describe('tailoring session match (integration)', () => {
       expect(failed.job).toMatchObject({ type: 'tailoring-generate', lastError: 'KEY_REJECTED' });
       expect(await resumesOf(id)).toEqual([]);
 
-      replies.push(ok(writing('en')));
+      replies.push(ok(NO_SCORES), ok(writing('en')));
       expect((await api('POST', `/tailoring-sessions/${id}/retry`)).status).toBe(200);
       const done = await waitFor(generated(id));
       expect(done.session).toMatchObject({ status: 'REVIEW', failedStep: null });
@@ -589,7 +594,7 @@ describe('tailoring session match (integration)', () => {
           bullets: [0, 1, 2, 3, 4, 5].map((n) => ({ text: long(n), sources: [`A${w}`] })),
         })),
       };
-      replies.push(ok(writingLong));
+      replies.push(ok(NO_SCORES), ok(writingLong));
       const posting = await analyzedPosting();
       const { session } = TailoringSessionViewSchema.parse(
         await json('POST', '/tailoring-sessions', {
@@ -640,7 +645,7 @@ describe('tailoring session match (integration)', () => {
           },
         ],
       };
-      await start([ok(NODE_ONLY), ok(twoBullets)]);
+      await start([ok(NODE_ONLY), ok(NO_SCORES), ok(twoBullets)]);
       const id = await matchedWithoutGaps(['en']);
       await api('POST', `/tailoring-sessions/${id}/generate`);
       await waitFor(generated(id));
@@ -721,7 +726,7 @@ describe('tailoring session match (integration)', () => {
         summarySources: ['W1'],
         experiences: [],
       };
-      const replies = [ok(NODE_ONLY), ok(first)];
+      const replies = [ok(NODE_ONLY), ok(NO_SCORES), ok(first)];
       await start(replies);
       const id = await matchedWithoutGaps(['en']);
       await api('POST', `/tailoring-sessions/${id}/generate`);
@@ -735,7 +740,7 @@ describe('tailoring session match (integration)', () => {
         api('POST', `/tailoring-sessions/${id}/regenerate`, body);
 
       // One experience again, with indications: the edited summary and the edited bullet stay.
-      replies.push(ok(again));
+      replies.push(ok(NO_SCORES), ok(again));
       const response = await regenerate({
         scope: { kind: 'EXPERIENCE', experienceId: generatedResume!.data.experiences[0]!.sourceId },
         instructions: '  More focus on documentation  ',
@@ -763,7 +768,7 @@ describe('tailoring session match (integration)', () => {
       expect(logs.output()).not.toContain('More focus on documentation');
 
       // Only the summary: the bullets stay as they are.
-      replies.push(ok(summaryOnly));
+      replies.push(ok(NO_SCORES), ok(summaryOnly));
       expect((await regenerate({ scope: { kind: 'SUMMARY' } })).status).toBe(200);
       await waitFor(generated(id));
       [resume] = await resumesOf(id);
@@ -1020,5 +1025,44 @@ describe('tailoring session match (integration)', () => {
       (await api('POST', '/tailoring-sessions', { jobPostingId: posting.id, templateId: 'nope' }))
         .status,
     ).toBe(400);
+  });
+
+  it('scores the achievements and projects for the job, floored by the match evidence', async () => {
+    const relevanceAnswer = {
+      scores: [
+        { ref: '[A1] Designed the public REST API', score: 0.3 },
+        { ref: 'P1', score: 0.8 },
+        // Not an achievement or project, and an invented reference: dropped.
+        { ref: 'W1', score: 1 },
+        { ref: 'A9', score: 1 },
+      ],
+    };
+    await start([ok(JD_ANALYSIS), ok(EVIDENCE_ANSWER), ok(relevanceAnswer)]);
+    const profile = await createProfile();
+    const project = await json<{ id: string }>('POST', '/profile/projects', {
+      name: 'Payments SDK',
+      kind: 'OPEN_SOURCE',
+    });
+    const posting = await analyzedPosting();
+    const { session } = TailoringSessionViewSchema.parse(
+      await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+    );
+    await waitFor(settled(session.id));
+
+    const relevance = await server!.app.get(RelevanceService).score(session.id);
+    expect(relevance).toMatchObject({
+      promptVersion: 'relevance-score.v1',
+      model: expect.any(String),
+    });
+    expect(relevance.scores).toEqual([
+      // The match cites it as evidence of covered requirements: at least 0.5.
+      { kind: 'ACHIEVEMENT', id: profile.achievement.id, score: 0.5 },
+      { kind: 'PROJECT', id: project.id, score: 0.8 },
+    ]);
+    expect(await server!.app.get(RelevanceService).find(session.id)).toEqual(relevance);
+
+    const sent = gemini!.calls[2]!;
+    expect(sent).toMatch(/<untrusted source="job-description">[\s\S]*Designing REST APIs/);
+    expect(logs.output()).not.toContain('Payments SDK');
   });
 });

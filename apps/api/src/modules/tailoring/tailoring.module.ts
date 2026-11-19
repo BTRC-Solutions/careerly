@@ -5,6 +5,7 @@ import { JobsModule } from '../jobs/index.js';
 import { ProfileModule } from '../profile/index.js';
 import { GapsService } from './application/gaps.service.js';
 import { SessionProfileChangesService } from './application/session-profile-changes.service.js';
+import { RelevanceService } from './application/relevance.service.js';
 import { TailoringSessionsService } from './application/tailoring-sessions.service.js';
 import {
   GenerateQueue,
@@ -13,6 +14,8 @@ import {
   MatchQueue,
   ProfileChangeLog,
   ProfileReader,
+  RelevanceRepository,
+  RelevanceScorer,
   ProfileWriter,
   RequirementMatcher,
   ResumePdfRenderer,
@@ -26,7 +29,9 @@ import {
 import { TailoringController } from './http/tailoring.controller.js';
 import { DrizzleGapQuestionRepository } from './infrastructure/drizzle-gap-question.repository.js';
 import { DrizzleTailoredResumeRepository } from './infrastructure/drizzle-tailored-resume.repository.js';
+import { DrizzleRelevanceRepository } from './infrastructure/drizzle-relevance.repository.js';
 import { DrizzleTailoringSessionRepository } from './infrastructure/drizzle-tailoring-session.repository.js';
+import { LlmRelevanceScorer } from './infrastructure/llm-relevance-scorer.js';
 import { LlmRequirementMatcher } from './infrastructure/llm-requirement-matcher.js';
 import { LlmResumeWriter } from './infrastructure/llm-resume-writer.js';
 import {
@@ -55,6 +60,7 @@ import {
   controllers: [TailoringController],
   providers: [
     TailoringSessionsService,
+    RelevanceService,
     GapsService,
     SessionProfileChangesService,
     TailoringMatchJobHandler,
@@ -67,6 +73,8 @@ import {
     { provide: ToolResolver, useClass: CatalogToolResolver },
     { provide: ToolVocabulary, useClass: CatalogToolVocabulary },
     { provide: RequirementMatcher, useClass: LlmRequirementMatcher },
+    { provide: RelevanceScorer, useClass: LlmRelevanceScorer },
+    { provide: RelevanceRepository, useClass: DrizzleRelevanceRepository },
     { provide: MatchQueue, useClass: JobQueueMatchQueue },
     { provide: ProfileChangeLog, useClass: ProfileModuleChangeLog },
     { provide: GenerateQueue, useClass: JobQueueGenerateQueue },
