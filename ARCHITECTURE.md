@@ -317,10 +317,26 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   ids reales.
 - El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
 
+**Preguntas de gaps (paso 5.4, `tailoring/domain/gap.ts`):** una por requisito parcial o faltante del último match,
+sean herramientas o no (RF-GAP-04), con los obligatorios primero. Se arman sin IA: la API devuelve de qué trata
+cada pregunta (requisito, tipo, herramienta del catálogo y, si es parcial, la evidencia relacionada, RF-GAP-03) y la
+interfaz la redacta con plantillas en su idioma (`tailoring.gaps.templates.<tipo>.<gap>`).
+Al empezar a responder (paso 5.5) las preguntas se guardan en `gap_questions` con su respuesta: así la lista no
+cambia mientras el usuario responde en cualquier orden, y volver desde la revisión conserva lo ya respondido. Un
+"No" o una pregunta salteada viven solo ahí, nunca en el perfil (RN-11, RN-12).
+
+**Respuestas al perfil (paso 5.6):** una respuesta afirmativa se agrega enseguida al perfil por el puerto
+`ProfileWriter`, que usa `ProfileChangesService` (origen `GAP_ANSWER` y la sesión, con registro para deshacer).
+"En un trabajo" crea un logro con lo que contó en cada experiencia elegida; "en un proyecto o curso" lo crea en ese
+proyecto, o primero el proyecto si es nuevo. Si el requisito es una herramienta del catálogo, el logro la lleva.
+`gap_questions.created` guarda lo que agregó cada respuesta: cambiarla deshace eso antes de aplicar la nueva. El
+match se recalcula sin IA (`matchWithAnswers`, RF-GAP-05): un requisito cuya respuesta agregó logros queda cubierto
+con ellos como evidencia, y vuelve a como estaba si la respuesta pasa a "no".
+
 **Redacción (paso 6.3, `tailoring/domain/resume-writing.ts`):** `POST /tailoring-sessions/:id/generate` aplica
 `GENERATE` y encola la tarea `tailoring-generate` (3 intentos; al rendirse, `FAILED` con `failedStep =
-GENERATING`). Mientras no se puedan responder los gaps (pasos 5.4–5.5), `POST /tailoring-sessions/:id/gaps` lleva
-la sesión a `AWAITING_ANSWERS` y desde ahí se genera salteándolos.
+GENERATING`). Se genera desde `MATCHED` sin gaps, desde
+`AWAITING_ANSWERS` (con las respuestas ya aplicadas al perfil y al match) o de nuevo desde la revisión.
 
 - Una llamada al LLM por idioma (`resume-writing.v1`, modelo grande), con el perfil primero y las mismas
   referencias cortas del match. La JD analizada (requisitos con su estado en el match, palabras clave) va como
@@ -572,15 +588,16 @@ POST   /tailoring-sessions                         # { jobPostingId, languages[]
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions/:id/events              # SSE
-POST   /tailoring-sessions/:id/gaps                # pasa a las preguntas de gaps (AWAITING_ANSWERS)
-GET    /tailoring-sessions/:id/gaps
-PUT    /tailoring-sessions/:id/gaps                # respuestas
+GET    /tailoring-sessions/:id/gaps                # preguntas de gaps, desde el último match y sin IA (409 sin match)
+POST   /tailoring-sessions/:id/ask-gaps            # pasa a AWAITING_ANSWERS y guarda las preguntas (conserva respuestas previas)
+PUT    /tailoring-sessions/:id/gaps/:requirementId # respuesta a una pregunta (trabajo / proyecto o curso / no / salteada)
 POST   /tailoring-sessions/:id/generate            # encola la redacción de un CV por idioma
 GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
 PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
 GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF
 POST   /tailoring-sessions/:id/finalize
-POST   /tailoring-sessions/:id/revert-profile-changes
+GET    /tailoring-sessions/:id/profile-changes        # lo que la sesión agregó o cambió en el perfil
+POST   /tailoring-sessions/:id/revert-profile-changes # { changeIds? }: deshace esos cambios o todos los pendientes
 
 GET    /resume-versions/:id
 GET    /resume-versions/:id/pdf

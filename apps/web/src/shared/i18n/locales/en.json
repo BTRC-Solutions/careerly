@@ -843,6 +843,81 @@
         "LANGUAGE": "Language"
       },
       "deleted": "no longer in your profile"
+    },
+    "profileChanges": {
+      "title": "Changes to your profile",
+      "description": "What this session added to or changed in your master profile while answering the gaps. You can undo them one by one or all at once.",
+      "kinds": {
+        "CREATE": "Added",
+        "UPDATE": "Changed"
+      },
+      "gone": "No longer in your profile.",
+      "undo": "Undo",
+      "undoOne": "Undo the change to “{{name}}”",
+      "undoAll": "Undo all",
+      "undone": "Undone",
+      "confirmTitle": "Undo this session's changes?",
+      "confirmDescription_one": "{{count}} change to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "confirmDescription_other": "{{count}} changes to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "kept_one": "You edited {{count}} field after this session: your version was kept.",
+      "kept_other": "You edited {{count}} fields after this session: your version was kept."
+    },
+    "gaps": {
+      "templates": {
+        "TOOL": {
+          "MISSING": "Have you used {{name}}?",
+          "PARTIAL": "What did you do with {{name}}?"
+        },
+        "SKILL": {
+          "MISSING": "Do you have experience in “{{name}}”?",
+          "PARTIAL": "Do you have more experience in “{{name}}”?"
+        },
+        "LANGUAGE": {
+          "MISSING": "Do you have this language level: “{{name}}”?",
+          "PARTIAL": "Do you reach the level they ask for: “{{name}}”?"
+        },
+        "OTHER": {
+          "MISSING": "Do you meet “{{name}}”?",
+          "PARTIAL": "Do you fully meet “{{name}}”?"
+        }
+      },
+      "partialHint": {
+        "TOOL": "{{name}} is in your profile, but no achievement shows how you used it. This is what is there:",
+        "SKILL": "Your profile has something related, but less than they ask for:",
+        "LANGUAGE": "Your profile has this language, but not at the level they ask for:",
+        "OTHER": "Your profile has something related, but less than they ask for:"
+      },
+      "title": "Questions about what is missing",
+      "intro_one": "There is {{count}} requirement your profile does not show, or shows only in part. Tell us if you have it: what you add stays in your profile.",
+      "intro_other": "There are {{count}} requirements your profile does not show, or shows only in part. Tell us if you have them: what you add stays in your profile.",
+      "start": "Answer",
+      "description": "Answer in any order. What you skip counts as \"no\" for this CV, and a \"no\" is never saved to your profile.",
+      "progress": "{{answered}} of {{total}} answered",
+      "answerLegend": "Your answer",
+      "answers": {
+        "USED_AT_WORK": "Yes, at a job",
+        "USED_ELSEWHERE": "Yes, in a project or course",
+        "NOT_USED": "No",
+        "SKIPPED": "Skipped"
+      },
+      "positions": "In which experience?",
+      "noPositions": "You have not added any experience to your profile yet.",
+      "project": "Project or course",
+      "newProject": "A new one…",
+      "projectName": "Name",
+      "projectKind": "Kind",
+      "detail": "What did you do?",
+      "detailHint": "In 1 or 2 lines. It is added to your profile as an achievement.",
+      "includeInResume": "Include it in this CV",
+      "notInThisResume": "Not included in this CV.",
+      "skip": "Skip",
+      "change": "Change",
+      "errors": {
+        "detail": "Tell in 1 or 2 lines what you did.",
+        "positions": "Pick at least one experience.",
+        "projectName": "Give the project or course a name."
+      },
+      "addedToProfile": "Added to your master profile. You can undo it from \"Changes to your profile\"."
     }
   }
 }
