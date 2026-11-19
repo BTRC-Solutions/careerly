@@ -111,7 +111,8 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
   ni CHANGELOGs a mano.
 - Despliegue de la telemetría: Actions construye las imágenes en GHCR y Jenkins despliega en el VPS (staging
   automático, prod con aprobación). Ver ARCHITECTURE.md §19.6.
-- Ramas `feat/<fase-o-paso>-<descripcion>` → PR a `main`. CI (Windows + Ubuntu) debe quedar en verde.
+- Ramas `feat/<fase-o-paso>-<descripcion>` → PR a `main`. CI (Windows + Ubuntu) debe quedar en verde. Se
+  mergea solo con squash: el título del PR, en Conventional Commits, es la entrada del CHANGELOG.
 - Textos de UI siempre por i18n (`apps/web/src/shared/i18n/locales/{es,en}.json`), nunca hardcodeados.
 - Tests: dominio y casos de uso con fakes en memoria; integración con SQLite temporal
   (`apps/api/src/test-support/temp-dir.ts`). En la web, la lógica pura corre en Node; las pantallas, con
