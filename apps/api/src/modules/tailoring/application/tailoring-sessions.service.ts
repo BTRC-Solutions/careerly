@@ -5,12 +5,16 @@ import {
   type JobRequirement,
   type MatchResult,
   type RequirementMatch,
+  type ResumeLanguage,
   ResumeLanguageSchema,
+  type TailoredResume,
+  type TailoredResumesView,
   type TailoringSession as StoredSession,
   type TailoringSessionView,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
+import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import {
   applySessionEvent,
   startTailoringSession,
@@ -18,10 +22,15 @@ import {
   type TailoringSessionEvent,
 } from '../domain/tailoring-session.js';
 import {
+  GenerateQueue,
   JobDescriptionReader,
   MatchQueue,
   ProfileReader,
   RequirementMatcher,
+  ResumePdfRenderer,
+  ResumeWriter,
+  TailoredResumeNotFoundError,
+  TailoredResumeRepository,
   TailoringSessionNotFoundError,
   TailoringSessionRepository,
   ToolResolver,
@@ -29,9 +38,16 @@ import {
 
 const DEFAULT_TEMPLATE_ID = 'classic';
 
+/** Paper of tailored CVs until it can be chosen. */
+const PAPER = 'a4';
+
+/** Statuses whose background work is the generation, not the match. */
+const GENERATION_STATUSES = new Set(['GENERATING', 'REVIEW', 'FINALIZED']);
+
 /**
- * Tailoring sessions (RF-TAIL-01) up to the match (RF-TAIL-02): starting one queues the match, which runs in
- * the background and moves the session to `MATCHED`, or to `FAILED` after its last attempt.
+ * Tailoring sessions (RF-TAIL-01): starting one queues the match (RF-TAIL-02), which runs in the background and
+ * moves the session to `MATCHED`. Generating queues the writing of one CV per language (RF-TAIL-10, RF-TAIL-11),
+ * which moves it to `REVIEW`. A background step that gives up moves the session to `FAILED`.
  */
 @Injectable()
 export class TailoringSessionsService {
@@ -42,6 +58,10 @@ export class TailoringSessionsService {
     private readonly tools: ToolResolver,
     private readonly matcher: RequirementMatcher,
     private readonly queue: MatchQueue,
+    private readonly writer: ResumeWriter,
+    private readonly resumes: TailoredResumeRepository,
+    private readonly generation: GenerateQueue,
+    private readonly renderer: ResumePdfRenderer,
   ) {}
 
   async start(request: CreateTailoringSessionRequest): Promise<TailoringSessionView> {
@@ -62,14 +82,104 @@ export class TailoringSessionsService {
 
   async get(id: string): Promise<TailoringSessionView> {
     const session = await this.load(id);
-    return { session, job: this.queue.current(id) };
+    return { session, job: this.currentJob(session) };
   }
 
-  /** Retries the step that failed (only the match exists so far). */
+  /** Retries the step that failed. */
   async retry(id: string): Promise<TailoringSessionView> {
     const session = await this.transition(await this.load(id), { type: 'RETRY' });
-    const job = session.status === 'ANALYZING' ? this.queue.request(id) : this.queue.current(id);
+    const job =
+      session.status === 'ANALYZING' ? this.queue.request(id) : this.generation.request(id);
     return { session, job };
+  }
+
+  /**
+   * Writes the session's CVs in the background: without gaps, after answering them, or again from the review
+   * (it replaces the CVs, edits included, until regenerating keeps them in roadmap 6.7).
+   */
+  async generate(id: string): Promise<TailoringSessionView> {
+    const session = await this.transition(await this.load(id), { type: 'GENERATE' });
+    return { session, job: this.generation.request(id) };
+  }
+
+  /** The session's CVs, in the order of its languages. */
+  async listResumes(id: string): Promise<TailoredResumesView> {
+    const session = await this.load(id);
+    const stored = await this.resumes.list(id);
+    const resumes = session.languages.flatMap((language) => {
+      const resume = stored.find((r) => r.language === language);
+      return resume ? [resume] : [];
+    });
+    return { resumes };
+  }
+
+  /**
+   * The CV of a language as a PDF, with the session's template and the profile as it is now (companies, dates
+   * and the rest are copied from it, RN-03). Not fitted to the page budget yet (roadmap 6.5).
+   */
+  async renderResume(id: string, language: ResumeLanguage): Promise<Uint8Array> {
+    const session = await this.load(id);
+    const resume = (await this.resumes.list(id)).find((r) => r.language === language);
+    if (!resume) throw new TailoredResumeNotFoundError(id, language);
+    const document = buildResumeDocument({
+      data: resume.data,
+      profile: await this.profile.read(),
+      language,
+      paper: PAPER,
+    });
+    return (await this.renderer.render(document, session.templateId)).pdf;
+  }
+
+  /**
+   * The generation job's work: one AI call per language, saved as it finishes. Idempotent: a session that is
+   * no longer generating is left as it is.
+   */
+  async runGenerate(
+    id: string,
+    report: (progress: Partial<JobProgress>) => void = () => {},
+  ): Promise<void> {
+    const session = await this.load(id);
+    if (session.status !== 'GENERATING') return;
+
+    report({ step: 'reading' });
+    const [analysis, profile] = await Promise.all([
+      this.jobDescriptions.analysis(session.jobPostingId),
+      this.profile.read(),
+    ]);
+
+    const written: TailoredResume[] = [];
+    for (const [index, language] of session.languages.entries()) {
+      report({ step: 'writing', done: index, total: session.languages.length });
+      const answer = await this.writer.write({ profile, analysis, match: session.match, language });
+      const { data } = tailoredResumeData(answer.resume, profile, session.match, randomUUID);
+      written.push({
+        sessionId: id,
+        language,
+        data,
+        promptVersion: answer.promptVersion,
+        model: answer.model,
+        generatedAt: new Date().toISOString(),
+      });
+    }
+
+    // Read again: the session may have changed while the AI wrote.
+    const current = await this.load(id);
+    if (current.status !== 'GENERATING') return;
+    for (const resume of written) await this.resumes.save(resume);
+    await this.transition(current, { type: 'RESUMES_READY' });
+  }
+
+  /** After the generation job's last failed attempt: the session can be retried by the user. */
+  async markGenerateFailed(id: string): Promise<void> {
+    const session = await this.sessions.find(id);
+    if (session?.status === 'GENERATING') await this.transition(session, { type: 'FAIL' });
+  }
+
+  private currentJob(session: StoredSession) {
+    const generating =
+      GENERATION_STATUSES.has(session.status) ||
+      (session.status === 'FAILED' && session.failedStep === 'GENERATING');
+    return generating ? this.generation.current(session.id) : this.queue.current(session.id);
   }
 
   /**

@@ -6,13 +6,18 @@ import type {
   JobAnalysis,
   JobRequirement,
   JobView,
+  MatchResult,
   Profile,
+  ResumeDocument,
+  ResumeLanguage,
+  TailoredResume,
   RevertProfileChangesResult,
   SessionProfileChange,
   TailoringSession as StoredSession,
   ToolRef,
 } from '@careerly/contracts';
 import type { SemanticAnswer } from '../domain/match.js';
+import type { WrittenResume } from '../domain/resume-writing.js';
 
 /** The session does not exist (maps to 404). */
 export class TailoringSessionNotFoundError extends Error {
@@ -99,6 +104,63 @@ export abstract class RequirementMatcher {
   ): Promise<{ answers: SemanticAnswer[]; promptVersion: string; model: string }>;
 }
 
+/** What the CV writer gets for one language. */
+export interface ResumeWritingInput {
+  profile: Profile;
+  analysis: JobAnalysis;
+  match: MatchResult | null;
+  language: ResumeLanguage;
+}
+
+/** Port: the AI that words bullets and summary for one language (ARCHITECTURE §7.2, step 8). */
+export abstract class ResumeWriter {
+  abstract write(
+    input: ResumeWritingInput,
+  ): Promise<{ resume: WrittenResume; promptVersion: string; model: string }>;
+}
+
+/** Port: the session's tailored CVs, one per language. */
+export abstract class TailoredResumeRepository {
+  /** Inserts or replaces the CV of its session and language. */
+  abstract save(resume: TailoredResume): Promise<void>;
+  abstract list(sessionId: string): Promise<TailoredResume[]>;
+}
+
+/** The session has no CV in that language yet (maps to 404). */
+export class TailoredResumeNotFoundError extends Error {
+  constructor(
+    readonly sessionId: string,
+    readonly language: ResumeLanguage,
+  ) {
+    super('This session has no CV in that language yet.');
+    this.name = 'TailoredResumeNotFoundError';
+  }
+}
+
+/**
+ * The CV could not be rendered: its template no longer exists (`TEMPLATE_NOT_FOUND`, maps to 404), Typst is
+ * missing (`RENDERER_UNAVAILABLE`, 503) or the template fails (`COMPILE_ERROR`, `TIMEOUT`, 422). The
+ * diagnostics are for the template's author, who is the user: they are shown, never logged.
+ */
+export class ResumeRenderFailedError extends Error {
+  constructor(
+    readonly reason: 'TEMPLATE_NOT_FOUND' | 'RENDERER_UNAVAILABLE' | 'COMPILE_ERROR' | 'TIMEOUT',
+    message: string,
+    readonly diagnostics: string | null = null,
+  ) {
+    super(message);
+    this.name = 'ResumeRenderFailedError';
+  }
+}
+
+/** Port: renders a CV with a template, through the documents module; throws `ResumeRenderFailedError`. */
+export abstract class ResumePdfRenderer {
+  abstract render(
+    document: ResumeDocument,
+    templateId: string,
+  ): Promise<{ pdf: Uint8Array; pageCount: number }>;
+}
+
 /** The session has no gap question for this requirement (maps to 404). */
 export class GapQuestionNotFoundError extends Error {
   constructor(readonly requirementId: string) {
@@ -149,6 +211,14 @@ export abstract class TailoringSessionRepository {
 /** Port: the background job that matches a session (one per session; retrying restarts it). */
 export abstract class MatchQueue {
   /** Max attempts of a match job; the last failure marks the session `FAILED`. */
+  static readonly MAX_ATTEMPTS = 3;
+  abstract request(sessionId: string): JobView;
+  abstract current(sessionId: string): JobView | null;
+}
+
+/** Port: the background job that writes a session's CVs (one per session; regenerating restarts it). */
+export abstract class GenerateQueue {
+  /** Max attempts of a generation job; the last failure marks the session `FAILED`. */
   static readonly MAX_ATTEMPTS = 3;
   abstract request(sessionId: string): JobView;
   abstract current(sessionId: string): JobView | null;
