@@ -1152,12 +1152,12 @@ servidor propio (§19.7).
 | Métrica | Fuente | Forma en el reporte |
 |---|---|---|
 | Uso activo | Peticiones de la interfaz al backend en el día | `activeUsage.active: true` |
-| Postulaciones creadas | `applications` | `applications.created: n` |
-| Plataforma de origen | URL de la JD (`job-postings`) → dominio → lista de portales conocidos | `sources: { "linkedin.com": n, "other": n, "unknown": n }` |
-| Categoría y seniority | Análisis de la JD (RF-JD-02) | `positionCategories: { "backend:senior": n }` |
-| Título | Título de la JD, recortado a 80 caracteres | `positionTitles: ["…"]` |
-| Embudo | Eventos `STATUS_CHANGE` de `applications` | `funnel: { "SCREENING": n, … }` |
-| Modalidad y país | Análisis de la JD | `workMode: {…}`, `countries: { "AR": n }` |
+| Postulaciones creadas | `applications` (vía `ApplicationsUsageService.usageBetween`) | `applications.created: n`. Las postulaciones creadas ese día local (7.7). Esta métrica y las siguientes, salvo el embudo, describen esas postulaciones con los datos de su JD (`job-postings`), y un día sin postulaciones nuevas no las incluye. |
+| Plataforma de origen | URL de la JD (`job-postings`) → dominio → lista de portales conocidos | `sources: { "linkedin.com": n, "other": n, "unknown": n }`. Un subdominio cuenta como su portal (`ar.linkedin.com` → `linkedin.com`). De la URL solo sale ese dominio. |
+| Categoría y seniority | Análisis de la JD (RF-JD-02) | `positionCategories: { "backend:senior": n }`. Las JDs sin análisis no cuentan. |
+| Título | Título de la JD, recortado a 80 caracteres | `positionTitles: ["…"]`. Con los espacios unificados y como máximo 50 títulos por día. |
+| Embudo | Eventos `STATUS_CHANGE` de la línea de tiempo (7.5) | `funnel: { "SCREENING": n, … }`. Los cambios de estado del día, por el estado al que llegaron. Crear la postulación no cuenta (ya está en `applications.created`). |
+| Modalidad y país | Análisis de la JD | `workMode: {…}`, `countries: { "AR": n }`. Sin análisis, la modalidad es `unknown`. Un país que no sea un código ISO 3166-1 alfa-2 se omite. |
 | Uso de funciones | `tailoring` (vía `TailoringUsageService.usageBetween`), `ai` (`AiGeneration`, vía `AiUsageService.tokensOn`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }`. `aiTokens` suma los tokens de entrada y salida de todos los intentos del día local, incluidos los fallidos (4.9). Un CV cuenta una vez por sesión e idioma, el día en que se generó por última vez (regenerarlo lo pasa a ese día), y `outputLanguages` cuenta esos CVs por idioma. `gapsAnswered` cuenta las respuestas vigentes dadas ese día, sin las salteadas (6.9). Solo números: nunca el texto del CV, de las respuestas ni de la JD. Un día sin nada de esto no incluye la métrica. |
 
 ### 19.3 Formato del reporte

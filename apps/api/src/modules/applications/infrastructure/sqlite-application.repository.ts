@@ -4,10 +4,11 @@ import {
   type ApplicationEvent,
   ApplicationEventSchema,
   ApplicationPrioritySchema,
+  type ApplicationStatus,
   ApplicationStatusSchema,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { applicationEvents, applications, sentResumes } from '../../../platform/database/schema.js';
@@ -21,6 +22,10 @@ type Row = typeof applications.$inferSelect;
 type SentRow = typeof sentResumes.$inferSelect;
 
 const GhostedFromSchema = z.enum(ACTIVE_APPLICATION_STATUSES).nullable();
+const ReachedSchema = z.object({
+  from: ApplicationStatusSchema.nullable(),
+  to: ApplicationStatusSchema,
+});
 
 /**
  * Applications, their sent CVs and their timeline. Saving writes them in one `node:sqlite` transaction (the
@@ -134,6 +139,31 @@ export class SqliteApplicationRepository extends ApplicationRepository {
       .where(eq(applications.id, id))
       .returning({ id: applications.id });
     return deleted.length > 0;
+  }
+
+  async createdBetween(from: string, to: string): Promise<string[]> {
+    const rows = await this.database.db
+      .select({ jobPostingId: applications.jobPostingId })
+      .from(applications)
+      .where(and(gte(applications.createdAt, from), lt(applications.createdAt, to)));
+    return rows.map((row) => row.jobPostingId);
+  }
+
+  async statusesReachedBetween(from: string, to: string): Promise<ApplicationStatus[]> {
+    const rows = await this.database.db
+      .select({ payload: applicationEvents.payload })
+      .from(applicationEvents)
+      .where(
+        and(
+          eq(applicationEvents.type, 'STATUS_CHANGE'),
+          gte(applicationEvents.occurredAt, from),
+          lt(applicationEvents.occurredAt, to),
+        ),
+      );
+    return rows.flatMap((row) => {
+      const change = ReachedSchema.parse(JSON.parse(row.payload));
+      return change.from === null ? [] : [change.to];
+    });
   }
 
   private async withSent(rows: Row[]): Promise<StoredApplication[]> {

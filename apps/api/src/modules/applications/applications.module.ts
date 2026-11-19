@@ -8,6 +8,7 @@ import {
   JobPostingReader,
 } from './application/applications.ports.js';
 import { ApplicationsService } from './application/applications.service.js';
+import { ApplicationsUsageService } from './application/applications-usage.service.js';
 import { ApplicationsController } from './http/applications.controller.js';
 import {
   ApplicationDeletionCheck,
@@ -27,11 +28,13 @@ import { SqliteContactRepository } from './infrastructure/sqlite-contact.reposit
   controllers: [ApplicationsController],
   providers: [
     ApplicationsService,
+    ApplicationsUsageService,
     ApplicationDeletionCheck,
     { provide: ApplicationRepository, useClass: SqliteApplicationRepository },
     { provide: ContactRepository, useClass: SqliteContactRepository },
     { provide: JobPostingReader, useClass: JobPostingsModuleReader },
     { provide: FinalizedResumesReader, useClass: TailoringModuleFinalizedResumes },
   ],
+  exports: [ApplicationsUsageService],
 })
 export class ApplicationsModule {}
