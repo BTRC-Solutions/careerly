@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { RequirementImportanceSchema, RequirementKindSchema } from './job-postings.js';
 import { JobViewSchema } from './jobs.js';
-import { ToolRefSchema } from './profile.js';
+import { ProjectKindSchema, ToolRefSchema } from './profile.js';
 import { ResumeLanguageSchema } from './resume.js';
 
 /*
@@ -194,3 +194,122 @@ export const CreateTailoringSessionRequestSchema = z
   })
   .strict();
 export type CreateTailoringSessionRequest = z.infer<typeof CreateTailoringSessionRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Profile changes of a session (RF-TAIL-05, RF-TAIL-06)
+// ---------------------------------------------------------------------------
+
+/** The profile elements a gap answer can create or change (same names as the evidence kinds). */
+export const ProfileChangeEntitySchema = z.enum(['POSITION', 'PROJECT', 'ACHIEVEMENT']);
+export type ProfileChangeEntity = z.infer<typeof ProfileChangeEntitySchema>;
+
+/** One change the session made to the master profile: an element it created, or one it updated. */
+export const SessionProfileChangeSchema = z.object({
+  id: z.string(),
+  entity: ProfileChangeEntitySchema,
+  entityId: z.string(),
+  kind: z.enum(['CREATE', 'UPDATE']),
+  createdAt: z.iso.datetime(),
+  /** When it was undone; `null` while it is still in the profile. */
+  revertedAt: z.iso.datetime().nullable(),
+});
+export type SessionProfileChange = z.infer<typeof SessionProfileChangeSchema>;
+
+/** `GET /tailoring-sessions/:id/profile-changes`: oldest first, undone ones included. */
+export const SessionProfileChangesSchema = z.object({
+  changes: z.array(SessionProfileChangeSchema),
+});
+export type SessionProfileChanges = z.infer<typeof SessionProfileChangesSchema>;
+
+/** `POST /tailoring-sessions/:id/revert-profile-changes`: only `changeIds`, or every pending change. */
+export const RevertProfileChangesRequestSchema = z
+  .object({ changeIds: z.array(z.string().min(1)).min(1).max(500).optional() })
+  .strict();
+export type RevertProfileChangesRequest = z.infer<typeof RevertProfileChangesRequestSchema>;
+
+export const RevertProfileChangesResultSchema = z.object({
+  changes: z.array(SessionProfileChangeSchema),
+  /** Fields the user edited after the session: undoing kept the user's value. */
+  keptFields: z.array(
+    z.object({
+      entity: ProfileChangeEntitySchema,
+      entityId: z.string(),
+      fields: z.array(z.string()),
+    }),
+  ),
+});
+export type RevertProfileChangesResult = z.infer<typeof RevertProfileChangesResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Gap questions (RF-TAIL-04, ARCHITECTURE §7.2 step 5)
+// ---------------------------------------------------------------------------
+
+/** `MISSING`: nothing in the profile shows it. `PARTIAL`: there is related, weaker evidence (RF-GAP-03). */
+export const GapKindSchema = z.enum(['MISSING', 'PARTIAL']);
+export type GapKind = z.infer<typeof GapKindSchema>;
+
+/**
+ * One question per partial or missing requirement, built without AI. It carries what the question is about,
+ * not its text: the interface words it from templates in its own language.
+ */
+export const GapQuestionSchema = z.object({
+  /** The requirement it asks about; also the question's id within the session. */
+  requirementId: z.string(),
+  label: z.string(),
+  kind: RequirementKindSchema,
+  importance: RequirementImportanceSchema,
+  /** The catalog tool, for tool requirements that resolved to one (the question uses its name). */
+  tool: ToolRefSchema.nullable(),
+  gap: GapKindSchema,
+  /** What the profile already shows that is related; empty when `MISSING`. */
+  relatedEvidence: z.array(EvidenceSchema),
+  /** `null` until answered; an unanswered question counts as skipped (RF-GAP-01). */
+  answer: z.lazy(() => GapAnswerSchema).nullable(),
+  answeredAt: z.iso.datetime().nullable(),
+  /**
+   * What the answer added to the master profile (RF-TAIL-05): the achievements and the new project, with origin
+   * `GAP_ANSWER`. Empty for "no" and skipped answers, which never touch the profile (RN-11).
+   */
+  created: z.array(EvidenceSchema),
+});
+export type GapQuestion = z.infer<typeof GapQuestionSchema>;
+
+/** `GET /tailoring-sessions/:id/gaps`: required requirements first, then in the job description's order. */
+export const GapQuestionsSchema = z.object({ questions: z.array(GapQuestionSchema) });
+export type GapQuestions = z.infer<typeof GapQuestionsSchema>;
+
+/**
+ * The answer to a gap question (RF-GAP-01, REQUIREMENTS §5.5). `PUT /tailoring-sessions/:id/gaps/:requirementId`.
+ * - `USED_AT_WORK`: in one or more positions of the profile, with 1–2 lines of what the user did.
+ * - `USED_ELSEWHERE`: in a project, course or certification, existing or new, and whether this CV shows it.
+ * - `NOT_USED`: "no". It lives only in the session, never in the profile (RN-11, RN-12).
+ * - `SKIPPED`: treated as "no" for this CV.
+ */
+const GapDetailSchema = z.string().trim().min(1).max(1000);
+
+export const GapAnswerSchema = z.discriminatedUnion('answer', [
+  z
+    .object({
+      answer: z.literal('USED_AT_WORK'),
+      positionIds: z.array(z.string().min(1)).min(1).max(10),
+      detail: GapDetailSchema,
+    })
+    .strict(),
+  z
+    .object({
+      answer: z.literal('USED_ELSEWHERE'),
+      /** An existing project, or a new one to create. */
+      project: z.union([
+        z.object({ id: z.string().min(1) }).strict(),
+        z.object({ name: z.string().trim().min(1).max(160), kind: ProjectKindSchema }).strict(),
+      ]),
+      detail: GapDetailSchema,
+      /** "Is it relevant for THIS CV?" */
+      includeInResume: z.boolean(),
+    })
+    .strict(),
+  z.object({ answer: z.literal('NOT_USED') }).strict(),
+  z.object({ answer: z.literal('SKIPPED') }).strict(),
+]);
+export type GapAnswer = z.infer<typeof GapAnswerSchema>;
+export type GapAnswerKind = GapAnswer['answer'];

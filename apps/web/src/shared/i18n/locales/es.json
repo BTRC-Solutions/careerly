@@ -843,6 +843,81 @@
         "LANGUAGE": "Idioma"
       },
       "deleted": "ya no está en tu perfil"
+    },
+    "profileChanges": {
+      "title": "Cambios en tu perfil",
+      "description": "Lo que esta sesión agregó o cambió en tu perfil maestro al responder los gaps. Podés deshacerlo de a uno o todo junto.",
+      "kinds": {
+        "CREATE": "Agregado",
+        "UPDATE": "Modificado"
+      },
+      "gone": "Ya no está en tu perfil.",
+      "undo": "Deshacer",
+      "undoOne": "Deshacer el cambio en «{{name}}»",
+      "undoAll": "Deshacer todos",
+      "undone": "Deshecho",
+      "confirmTitle": "¿Deshacer los cambios de esta sesión?",
+      "confirmDescription_one": "Se va a deshacer {{count}} cambio en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "confirmDescription_other": "Se van a deshacer {{count}} cambios en tu perfil maestro: lo agregado se borra y lo modificado vuelve a como estaba.",
+      "kept_one": "{{count}} campo lo editaste después de esta sesión: se mantuvo tu versión.",
+      "kept_other": "{{count}} campos los editaste después de esta sesión: se mantuvo tu versión."
+    },
+    "gaps": {
+      "templates": {
+        "TOOL": {
+          "MISSING": "¿Usaste {{name}}?",
+          "PARTIAL": "¿Qué hiciste con {{name}}?"
+        },
+        "SKILL": {
+          "MISSING": "¿Tenés experiencia en «{{name}}»?",
+          "PARTIAL": "¿Tenés más experiencia en «{{name}}»?"
+        },
+        "LANGUAGE": {
+          "MISSING": "¿Tenés este nivel de idioma: «{{name}}»?",
+          "PARTIAL": "¿Llegás al nivel que piden: «{{name}}»?"
+        },
+        "OTHER": {
+          "MISSING": "¿Cumplís con «{{name}}»?",
+          "PARTIAL": "¿Cumplís del todo con «{{name}}»?"
+        }
+      },
+      "partialHint": {
+        "TOOL": "{{name}} figura en tu perfil, pero ningún logro muestra cómo lo usaste. Esto es lo que ya hay:",
+        "SKILL": "Tu perfil tiene algo relacionado, pero menos de lo que piden:",
+        "LANGUAGE": "Tu perfil tiene este idioma, pero no con el nivel que piden:",
+        "OTHER": "Tu perfil tiene algo relacionado, pero menos de lo que piden:"
+      },
+      "title": "Preguntas sobre lo que falta",
+      "intro_one": "Hay {{count}} requisito que tu perfil no muestra o muestra a medias. Contanos si lo tenés: lo que sumes queda en tu perfil.",
+      "intro_other": "Hay {{count}} requisitos que tu perfil no muestra o muestra a medias. Contanos si los tenés: lo que sumes queda en tu perfil.",
+      "start": "Responder",
+      "description": "Respondé en el orden que quieras. Lo que saltees cuenta como \"no\" para este CV, y un \"no\" nunca se guarda en tu perfil.",
+      "progress": "{{answered}} de {{total}} respondidas",
+      "answerLegend": "Tu respuesta",
+      "answers": {
+        "USED_AT_WORK": "Sí, en un trabajo",
+        "USED_ELSEWHERE": "Sí, en un proyecto o curso",
+        "NOT_USED": "No",
+        "SKIPPED": "Salteada"
+      },
+      "positions": "¿En qué experiencia?",
+      "noPositions": "Todavía no cargaste experiencias en tu perfil.",
+      "project": "Proyecto o curso",
+      "newProject": "Uno nuevo…",
+      "projectName": "Nombre",
+      "projectKind": "Tipo",
+      "detail": "¿Qué hiciste?",
+      "detailHint": "En 1 o 2 líneas. Se agrega a tu perfil como un logro.",
+      "includeInResume": "Incluirlo en este CV",
+      "notInThisResume": "No se incluye en este CV.",
+      "skip": "Saltear",
+      "change": "Cambiar",
+      "errors": {
+        "detail": "Contá en 1 o 2 líneas qué hiciste.",
+        "positions": "Elegí al menos una experiencia.",
+        "projectName": "Poné un nombre al proyecto o curso."
+      },
+      "addedToProfile": "Se agregó a tu perfil maestro. Podés deshacerlo desde \"Cambios en tu perfil\"."
     }
   }
 }
