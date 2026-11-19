@@ -7,10 +7,12 @@ import type {
   JobRequirement,
   JobView,
   MatchResult,
+  PageBudget,
   Profile,
   RegenerationScope,
   ResumeDocument,
   ResumeLanguage,
+  ResumeVersion,
   TailoredResume,
   RevertProfileChangesResult,
   SessionProfileChange,
@@ -106,6 +108,8 @@ export abstract class JobDescriptionReader {
    * `JobDescriptionNotReadyError` if it has no analysis or one is running.
    */
   abstract analysis(jobPostingId: string): Promise<JobAnalysis>;
+  /** The title and company of the posting, as the user saved them; throws `TailoringJobPostingNotFoundError`. */
+  abstract posting(jobPostingId: string): Promise<{ title: string | null; company: string | null }>;
 }
 
 /** Port: resolves a tool name to the catalog, aliases included (RF-GAP-02). */
@@ -234,6 +238,38 @@ export abstract class ResumePdfRenderer {
     document: ResumeDocument,
     templateId: string,
   ): Promise<{ pdf: Uint8Array; pageCount: number }>;
+}
+
+/** Some CVs are over the page budget and the user did not confirm finalizing them anyway (RN-04, 409). */
+export class ResumesOverBudgetError extends Error {
+  constructor(readonly languages: ResumeLanguage[]) {
+    super(
+      `The CVs in ${languages.join(', ')} are over the page budget; confirm to finalize them anyway.`,
+    );
+    this.name = 'ResumesOverBudgetError';
+  }
+}
+
+/** One CV of the session to freeze. */
+export interface ResumeToFreeze {
+  language: ResumeLanguage;
+  document: ResumeDocument;
+  sources: TailoredResumeData;
+  pageBudget: PageBudget;
+  fileName: string;
+}
+
+/**
+ * Port: the finalized CVs (RF-TAIL-14), through the documents module. Freezing is idempotent per session:
+ * a session that already has them gets them back. Throws `ResumeRenderFailedError`.
+ */
+export abstract class ResumeVersionStore {
+  abstract freeze(
+    sessionId: string,
+    templateId: string,
+    resumes: ResumeToFreeze[],
+  ): Promise<ResumeVersion[]>;
+  abstract list(sessionId: string): Promise<ResumeVersion[]>;
 }
 
 /** The session has no gap question for this requirement (maps to 404). */

@@ -14,7 +14,13 @@ import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { Dialog, DialogActions } from '../../../shared/ui/Dialog';
 import { Field, Select, Textarea } from '../../../shared/ui/form';
-import { ArrowDownIcon, ArrowUpIcon, PencilIcon, RefreshIcon } from '../../../shared/ui/icons';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CheckIcon,
+  PencilIcon,
+  RefreshIcon,
+} from '../../../shared/ui/icons';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { PdfFrame } from '../../../shared/ui/PdfFrame';
 import { Tag } from '../../../shared/ui/Tag';
@@ -31,6 +37,8 @@ import {
   type ReviewExperience,
   reviewExperiences,
 } from '../lib/resume-review';
+import { FinalizeDialog } from './FinalizeDialog';
+import { LanguageToggle } from './LanguageToggle';
 
 type Edit = (edit: EditTailoredResumeRequest) => void;
 
@@ -51,6 +59,7 @@ export function ResumeReview({ session }: { session: TailoringSession }) {
   const resumes = useTailoredResumes(session.id, true);
   const [language, setLanguage] = useState<ResumeLanguage>(session.languages[0] ?? 'es');
   const resume = resumes.data?.resumes.find((r) => r.language === language);
+  const [finalizing, setFinalizing] = useState(false);
 
   if (resumes.isPending) {
     return (
@@ -69,31 +78,21 @@ export function ResumeReview({ session }: { session: TailoringSession }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {session.languages.length > 1 && (
-        <div
-          role="group"
-          aria-label={t('tailoring.review.language')}
-          className="flex w-fit rounded-control border border-silver-lining p-0.5"
-        >
-          {session.languages.map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={option === language}
-              onClick={() => setLanguage(option)}
-              className={cn(
-                'rounded-[6px] px-3 py-1 text-sm font-medium transition-colors',
-                option === language
-                  ? 'bg-indigo-navy text-pure-white'
-                  : 'text-steel-text hover:text-indigo-navy',
-              )}
-            >
-              {t(`tailoring.review.languages.${option}`)}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <LanguageToggle languages={session.languages} value={language} onChange={setLanguage} />
+        <Button className="ml-auto" onClick={() => setFinalizing(true)}>
+          <CheckIcon />
+          {t('tailoring.finalize.action')}
+        </Button>
+      </div>
       <ResumeEditor key={language} session={session} resume={resume} />
+      {finalizing && (
+        <FinalizeDialog
+          session={session}
+          resumes={resumes.data?.resumes ?? []}
+          onClose={() => setFinalizing(false)}
+        />
+      )}
     </div>
   );
 }

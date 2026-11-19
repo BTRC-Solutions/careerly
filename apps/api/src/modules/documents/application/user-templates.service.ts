@@ -4,8 +4,8 @@ import { Injectable } from '@nestjs/common';
 import {
   type ResumeTemplate,
   ResumeRenderer,
+  ResumeVersionRepository,
   TemplateCatalog,
-  TemplateUsage,
   UserTemplateError,
   UserTemplateStore,
 } from './documents.ports.js';
@@ -20,11 +20,15 @@ export class UserTemplatesService {
     private readonly catalog: TemplateCatalog,
     private readonly store: UserTemplateStore,
     private readonly renderer: ResumeRenderer,
-    private readonly usage: TemplateUsage,
+    private readonly versions: ResumeVersionRepository,
   ) {}
 
   async list(): Promise<TemplateSummary[]> {
-    return (await this.catalog.list()).map(toSummary);
+    const [templates, usage] = await Promise.all([
+      this.catalog.list(),
+      this.versions.countByTemplate(),
+    ]);
+    return templates.map((template) => toSummary(template, usage.get(template.id) ?? 0));
   }
 
   /** Throws {@link UserTemplateError} for a file that is not text, and `RenderError` for one that does not render. */
@@ -43,24 +47,22 @@ export class UserTemplatesService {
       await this.store.delete(id);
       throw error;
     }
-    return toSummary(template);
+    return toSummary(template, 0);
   }
 
   async rename(id: string, name: string): Promise<TemplateSummary> {
     await this.requireUserTemplate(id);
     await this.store.rename(id, name);
-    return toSummary(await this.catalog.get(id));
+    const usage = await this.versions.countByTemplate();
+    return toSummary(await this.catalog.get(id), usage.get(id) ?? 0);
   }
 
-  /** Templates used by a snapshot are kept (roadmap 4.12). */
+  /**
+   * Deletes the template with all its versions. The finalized CVs made with it keep their own copy
+   * (`files/snapshots/<id>/template.typ`), so they do not change (RNF-10).
+   */
   async delete(id: string): Promise<void> {
     await this.requireUserTemplate(id);
-    if (await this.usage.isUsed(id)) {
-      throw new UserTemplateError(
-        'IN_USE',
-        'This template is used by a saved CV, so it cannot be deleted.',
-      );
-    }
     await this.store.delete(id);
   }
 
@@ -90,7 +92,7 @@ function readTypstSource(file: Buffer): string {
   return source;
 }
 
-export function toSummary(template: ResumeTemplate): TemplateSummary {
+function toSummary(template: ResumeTemplate, finalizedResumes: number): TemplateSummary {
   const { id, name, version, builtIn } = template;
-  return { id, name, version, builtIn };
+  return { id, name, version, builtIn, finalizedResumes };
 }

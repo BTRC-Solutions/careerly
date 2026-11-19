@@ -36,8 +36,8 @@ beforeEach(() => {
   apiServer.use(
     http.get(api('/templates'), () =>
       HttpResponse.json([
-        { id: 'classic', name: 'Clásica', version: 1, builtIn: true },
-        { id: 'mine', name: 'Mi plantilla', version: 2, builtIn: false },
+        { id: 'classic', name: 'Clásica', version: 1, builtIn: true, finalizedResumes: 0 },
+        { id: 'mine', name: 'Mi plantilla', version: 2, builtIn: false, finalizedResumes: 0 },
       ]),
     ),
     http.patch(api('/tailoring-sessions/session-1/options'), async ({ request }) => {

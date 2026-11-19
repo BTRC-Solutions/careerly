@@ -14,12 +14,19 @@ import { TemplatesPage } from './TemplatesPage';
 
 setupApiServer();
 
-const CLASSIC: TemplateSummary = { id: 'classic', name: 'Clásica', version: 1, builtIn: true };
+const CLASSIC: TemplateSummary = {
+  id: 'classic',
+  name: 'Clásica',
+  version: 1,
+  builtIn: true,
+  finalizedResumes: 0,
+};
 const MINE: TemplateSummary = {
   id: 'custom-1a2b3c4d',
   name: 'Moderna',
   version: 1,
   builtIn: false,
+  finalizedResumes: 0,
 };
 
 /** The templates the mocked API has; handlers change it like the real one would. */
@@ -101,6 +108,7 @@ describe('TemplatesPage', () => {
       name: 'Mi diseño',
       version: 1,
       builtIn: false,
+      finalizedResumes: 0,
     };
     let uploaded = '';
     apiServer.use(
@@ -217,6 +225,20 @@ describe('TemplatesPage', () => {
     await waitFor(() => expect(list.queryByText('Moderna')).not.toBeInTheDocument());
     expect(deleted).toEqual(['custom-1a2b3c4d']);
     expect(await previewHeading()).toHaveTextContent('Vista previa: Clásica');
+  });
+
+  it('warns that finalized CVs use the template, which keep their own copy', async () => {
+    templates = [CLASSIC, { ...MINE, finalizedResumes: 2 }];
+    const { user } = await renderScreen(<TemplatesPage />);
+    await user.click(await (await templateList()).findByText('Moderna'));
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar «Moderna»' }));
+    const dialog = await screen.findByRole('dialog', { name: '¿Eliminar «Moderna»?' });
+    expect(
+      within(dialog).getByText(
+        'Se borra el archivo de la plantilla. La usan 2 CVs finalizados, que no cambian: guardan su propia copia.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('offers to retry when the templates cannot be loaded', async () => {

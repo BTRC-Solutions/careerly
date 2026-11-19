@@ -754,7 +754,9 @@
     "delete": {
       "action": "Eliminar «{{name}}»",
       "title": "¿Eliminar «{{name}}»?",
-      "description": "Se borra el archivo de la plantilla. Los CVs que ya generaste no cambian."
+      "description": "Se borra el archivo de la plantilla. Los CVs que ya generaste no cambian.",
+      "descriptionUsed_one": "Se borra el archivo de la plantilla. La usa {{count}} CV finalizado, que no cambia: guarda su propia copia.",
+      "descriptionUsed_other": "Se borra el archivo de la plantilla. La usan {{count}} CVs finalizados, que no cambian: guardan su propia copia."
     },
     "preview": {
       "title": "Vista previa: {{name}}",
@@ -949,6 +951,33 @@
       "instructionsHint": "Qué querés distinto en esta versión. La IA nunca agrega nada que tu perfil no diga.",
       "placeholder": "Por ejemplo: más foco en liderazgo, más corto.",
       "submit": "Regenerar"
+    },
+    "finalize": {
+      "action": "Finalizar CV",
+      "title": "¿Finalizar los CVs?",
+      "description_one": "Se guarda una versión que ya no cambia, con su PDF. Después no se puede editar ni regenerar.",
+      "description_other": "Se guarda una versión de cada uno ({{count}}) que ya no cambia, con su PDF. Después no se pueden editar ni regenerar.",
+      "cv": "CV en {{language}}",
+      "pages_one": "{{count}} página",
+      "pages_other": "{{count}} páginas",
+      "overBudget": "Excede el límite",
+      "overBudgetHint_one": "Hay CVs que no entran en {{count}} página. Podés volver y ajustarlos, o finalizarlos así.",
+      "overBudgetHint_other": "Hay CVs que no entran en {{count}} páginas. Podés volver y ajustarlos, o finalizarlos así.",
+      "confirm": "Finalizar",
+      "confirmAnyway": "Finalizar igual",
+      "finalizing": "Finalizando…",
+      "error": "No se pudo finalizar: {{message}}"
+    },
+    "finalized": {
+      "title": "CV finalizado",
+      "details_one": "Finalizado el {{date}} · {{count}} página · plantilla «{{template}}»",
+      "details_other": "Finalizado el {{date}} · {{count}} páginas · plantilla «{{template}}»",
+      "frozen": "Es exactamente el PDF que se guardó: no cambia aunque edites tu perfil o la plantilla.",
+      "download": "Descargar PDF",
+      "downloadError": "No se pudo descargar el PDF.",
+      "pdfTitle": "CV finalizado en {{language}}",
+      "pdfError": "No se pudo abrir el PDF.",
+      "loadError": "No se pudieron cargar los CVs finalizados."
     },
     "open": {
       "title": "Sesiones en curso",

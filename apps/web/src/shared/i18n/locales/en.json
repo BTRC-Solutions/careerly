@@ -754,7 +754,9 @@
     "delete": {
       "action": "Delete “{{name}}”",
       "title": "Delete “{{name}}”?",
-      "description": "The template file is deleted. CVs you already generated do not change."
+      "description": "The template file is deleted. CVs you already generated do not change.",
+      "descriptionUsed_one": "The template file is deleted. {{count}} finalized CV uses it and does not change: it keeps its own copy.",
+      "descriptionUsed_other": "The template file is deleted. {{count}} finalized CVs use it and do not change: they keep their own copy."
     },
     "preview": {
       "title": "Preview: {{name}}",
@@ -949,6 +951,33 @@
       "instructionsHint": "What you want different in this version. The AI never adds anything your profile does not say.",
       "placeholder": "For example: more focus on leadership, shorter.",
       "submit": "Regenerate"
+    },
+    "finalize": {
+      "action": "Finalize CV",
+      "title": "Finalize the CVs?",
+      "description_one": "A version that no longer changes is saved, with its PDF. It can no longer be edited or regenerated.",
+      "description_other": "A version of each one ({{count}}) that no longer changes is saved, with its PDF. They can no longer be edited or regenerated.",
+      "cv": "CV in {{language}}",
+      "pages_one": "{{count}} page",
+      "pages_other": "{{count}} pages",
+      "overBudget": "Over the limit",
+      "overBudgetHint_one": "Some CVs do not fit in {{count}} page. You can go back and adjust them, or finalize them as they are.",
+      "overBudgetHint_other": "Some CVs do not fit in {{count}} pages. You can go back and adjust them, or finalize them as they are.",
+      "confirm": "Finalize",
+      "confirmAnyway": "Finalize anyway",
+      "finalizing": "Finalizing…",
+      "error": "Could not finalize: {{message}}"
+    },
+    "finalized": {
+      "title": "Finalized CV",
+      "details_one": "Finalized on {{date}} · {{count}} page · “{{template}}” template",
+      "details_other": "Finalized on {{date}} · {{count}} pages · “{{template}}” template",
+      "frozen": "This is exactly the PDF that was saved: it does not change if you edit your profile or the template.",
+      "download": "Download PDF",
+      "downloadError": "Could not download the PDF.",
+      "pdfTitle": "Finalized CV in {{language}}",
+      "pdfError": "Could not open the PDF.",
+      "loadError": "Could not load the finalized CVs."
     },
     "open": {
       "title": "Sessions in progress",

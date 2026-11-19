@@ -10,11 +10,14 @@ import {
   CreateTailoringSessionRequestSchema,
   type EditTailoredResumeRequest,
   EditTailoredResumeRequestSchema,
+  type FinalizeSessionRequest,
+  FinalizeSessionRequestSchema,
   type RegenerateResumesRequest,
   RegenerateResumesRequestSchema,
   type TailoredResume,
   type ResumeLanguage,
   ResumeLanguageSchema,
+  type ResumeVersionList,
   type TailoredResumesView,
   type RevertProfileChangesRequest,
   RevertProfileChangesRequestSchema,
@@ -55,6 +58,7 @@ import {
   JobDescriptionNotReadyError,
   ResumeNotEditableError,
   ResumeRenderFailedError,
+  ResumesOverBudgetError,
   TailoredResumeNotFoundError,
   SessionProfileChangeNotFoundError,
   SessionNotMatchedError,
@@ -102,6 +106,12 @@ function toHttpError(error: unknown): unknown {
     error instanceof TailoringTemplateNotFoundError
   ) {
     return new BadRequestException(error.message);
+  }
+  if (error instanceof ResumesOverBudgetError) {
+    return new HttpException(
+      { code: 'RESUME_OVER_BUDGET' satisfies ApiErrorCode, message: error.message },
+      HttpStatus.CONFLICT,
+    );
   }
   if (error instanceof ResumeRenderFailedError) return renderHttpError(error);
   return error;
@@ -248,6 +258,25 @@ export class TailoringController {
   ): Promise<StreamableFile> {
     const pdf = await this.sessions.renderResume(id, language);
     return new StreamableFile(pdf, { type: 'application/pdf' });
+  }
+
+  /**
+   * Finalizes the session (RF-TAIL-14): one immutable CV per language, with its PDF. A CV over the page budget
+   * needs `confirmOverBudget` (RN-04).
+   */
+  @Post(':id/finalize')
+  @HttpCode(HttpStatus.OK)
+  finalize(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(FinalizeSessionRequestSchema)) body: FinalizeSessionRequest,
+  ): Promise<TailoringSessionView> {
+    return this.sessions.finalize(id, body);
+  }
+
+  /** The session's finalized CVs; their PDFs are at `GET /resume-versions/:id/pdf`. */
+  @Get(':id/resume-versions')
+  listVersions(@Param('id') id: string): Promise<ResumeVersionList> {
+    return this.sessions.listVersions(id);
   }
 
   /** What the session added to or changed in the master profile (RF-TAIL-05). */

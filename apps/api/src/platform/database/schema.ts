@@ -489,3 +489,32 @@ export const tailoringRelevance = sqliteTable('tailoring_relevance', {
   model: text('model'),
   scoredAt: text('scored_at').notNull(),
 });
+
+/**
+ * Finalized CVs (RF-TAIL-14, RNF-10): one per language of a finalized session. **Immutable**: rows are only
+ * inserted, never updated. The PDF, the data the template received and a copy of the template live in
+ * `files/snapshots/<id>/`. `session_id` points to the tailoring module without a foreign key.
+ */
+export const resumeVersions = sqliteTable(
+  'resume_versions',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    /** `ResumeLanguage`. */
+    language: text('language').notNull(),
+    /** JSON `ResumeVersionData`: the template's data and the sources of every bullet. */
+    data: text('data').notNull(),
+    templateId: text('template_id').notNull(),
+    templateName: text('template_name').notNull(),
+    templateVersion: integer('template_version').notNull(),
+    pageCount: integer('page_count').notNull(),
+    pageBudget: integer('page_budget').notNull(),
+    contentHash: text('content_hash').notNull(),
+    fileName: text('file_name').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('resume_versions_session_language_idx').on(table.sessionId, table.language),
+    index('resume_versions_template_idx').on(table.templateId),
+  ],
+);
