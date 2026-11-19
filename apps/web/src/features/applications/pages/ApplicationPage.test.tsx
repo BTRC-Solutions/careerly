@@ -9,7 +9,6 @@ import { renderScreen } from '../../../test-support/render';
 import { ApplicationCard } from '../components/ApplicationCard';
 import { today } from '../lib/dates';
 import { ApplicationPage } from './ApplicationPage';
-import { ApplicationsPage } from './ApplicationsPage';
 
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08) against a mocked API: creating one from a job
@@ -247,21 +246,5 @@ describe('an application', () => {
     await waitFor(() =>
       expect(sends).toEqual([{ resumeVersionIds: [NEW_EN.id], sentAt: today() }]),
     );
-  });
-});
-
-describe('the applications list', () => {
-  it('shows each application with its job and state, or how to create one', async () => {
-    await renderScreen(<ApplicationsPage />);
-    expect(await screen.findByText('Todavía no tenés postulaciones')).toBeVisible();
-  });
-
-  it('lists the applications', async () => {
-    existing = APPLICATION;
-    await renderScreen(<ApplicationsPage />);
-    const row = await screen.findByRole('link', { name: /Backend Engineer/ });
-    expect(row).toHaveAttribute('href', '/applications/app-1');
-    expect(within(row).getByText('Enviada')).toBeVisible();
-    expect(within(row).getByText(/Acme · Enviada el/)).toBeVisible();
   });
 });

@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import type {
+  ActiveApplicationStatus,
   Application as ApplicationView,
   ApplicationList,
   CreateApplicationRequest,
   ListApplicationsQuery,
+  MoveApplicationRequest,
   ResumeVersion,
   ResumeVersionList,
   SendApplicationRequest,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { applyApplicationEvent, newApplication } from '../domain/application.js';
+import { applyApplicationEvent, isTerminal, newApplication } from '../domain/application.js';
 import {
   ApplicationAlreadyExistsError,
   ApplicationNotFoundError,
@@ -65,6 +67,15 @@ export class ApplicationsService {
     return toView(application, versions);
   }
 
+  /** Moves it to another state (kanban, RF-APP-03); see {@link move}. */
+  async move(id: string, request: MoveApplicationRequest): Promise<ApplicationView> {
+    const stored = await this.load(id);
+    const versions = await this.finalized.forJobPosting(stored.jobPostingId);
+    const application = move(stored, request, versions, new Date().toISOString());
+    await this.applications.save(application);
+    return toView(application, versions);
+  }
+
   async get(id: string): Promise<ApplicationView> {
     const application = await this.load(id);
     return toView(application, await this.finalized.forJobPosting(application.jobPostingId));
@@ -87,6 +98,7 @@ export class ApplicationsService {
           id: application.id,
           jobPostingId: application.jobPostingId,
           status: application.status,
+          ghostedFrom: application.ghostedFrom,
           appliedAt: application.appliedAt,
           createdAt: application.createdAt,
           updatedAt: application.updatedAt,
@@ -130,6 +142,57 @@ function send(
   versions: ResumeVersion[],
   now: string,
 ): StoredApplication {
+  const next = attach(application, request, versions, now);
+  if (application.status !== 'SAVED') return next;
+  return transition(next, { to: 'APPLIED', sent: request }, now);
+}
+
+/**
+ * Moves the application to another state (RF-APP-03) through the aggregate: a closed one is reopened (RN-10),
+ * going back needs `confirmBackward` (RN-09), and sending it for the first time needs `sent` (or CVs it
+ * already has). Throws `UnknownResumeVersionError` and the aggregate's errors.
+ */
+function move(
+  application: StoredApplication,
+  request: MoveApplicationRequest,
+  versions: ResumeVersion[],
+  now: string,
+): StoredApplication {
+  const next = request.sent ? attach(application, request.sent, versions, now) : application;
+  return transition(next, request, now);
+}
+
+function transition(
+  application: StoredApplication,
+  request: MoveApplicationRequest,
+  now: string,
+): StoredApplication {
+  const sending = {
+    appliedAt: request.sent?.sentAt ?? today(),
+    sentWithoutCareerlyCv: request.sent?.sentWithoutCareerlyCv,
+  };
+  const { application: moved } = applyApplicationEvent(
+    application,
+    isTerminal(application.status)
+      ? { type: 'REOPEN', to: request.to as ActiveApplicationStatus, at: now, ...sending }
+      : {
+          type: 'MOVE',
+          to: request.to,
+          at: now,
+          confirmBackward: request.confirmBackward,
+          ...sending,
+        },
+  );
+  return { ...application, ...moved, updatedAt: now };
+}
+
+/** Adds the sent CVs it does not have yet, only finalized ones of its job description. */
+function attach(
+  application: StoredApplication,
+  request: SendApplicationRequest,
+  versions: ResumeVersion[],
+  now: string,
+): StoredApplication {
   const known = new Set(versions.map((version) => version.id));
   const unknown = request.resumeVersionIds.find((id) => !known.has(id));
   if (unknown) throw new UnknownResumeVersionError(unknown);
@@ -139,7 +202,7 @@ function send(
   const added = [...new Set(request.resumeVersionIds)]
     .filter((id) => !already.has(id))
     .map((resumeVersionId) => ({ resumeVersionId, sentAt }));
-  let next: StoredApplication = {
+  return {
     ...application,
     sentResumes: [...application.sentResumes, ...added],
     sentResumeCount: application.sentResumes.length + added.length,
@@ -147,17 +210,6 @@ function send(
       application.sentWithoutCareerlyCv || request.sentWithoutCareerlyCv === true,
     updatedAt: now,
   };
-  if (application.status === 'SAVED') {
-    const moved = applyApplicationEvent(next, {
-      type: 'MOVE',
-      to: 'APPLIED',
-      at: now,
-      appliedAt: sentAt,
-      sentWithoutCareerlyCv: request.sentWithoutCareerlyCv,
-    });
-    next = { ...next, ...moved.application };
-  }
-  return next;
 }
 
 /** Today in the local time zone of the computer (YYYY-MM-DD): the day the user sees. */

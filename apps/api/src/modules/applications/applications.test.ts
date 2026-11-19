@@ -245,6 +245,52 @@ describe('job applications (integration)', () => {
     expect((await api('DELETE', `/job-postings/${jd.id}`)).status).toBe(204);
   });
 
+  it('moves through the states with the rules of the aggregate (RF-APP-03, RN-08 to RN-10)', async () => {
+    await start();
+    const jd = await posting('Platform Engineer');
+    const { id } = await create({ jobPostingId: jd.id });
+    const moveTo = (body: unknown) => api('POST', `/applications/${id}/status`, body);
+    const status = async () => ApplicationSchema.parse(await json('GET', `/applications/${id}`));
+
+    // Skipping ahead from SAVED needs to say how it was sent.
+    expect((await moveTo({ to: 'SCREENING' })).status).toBe(409);
+    expect((await moveTo({ to: 'REJECTED' })).status).toBe(409);
+    const screening = ApplicationSchema.parse(
+      await (
+        await moveTo({
+          to: 'SCREENING',
+          sent: { resumeVersionIds: [], sentWithoutCareerlyCv: true, sentAt: '2026-11-12' },
+        })
+      ).json(),
+    );
+    expect(screening).toMatchObject({
+      status: 'SCREENING',
+      appliedAt: '2026-11-12',
+      sentWithoutCareerlyCv: true,
+    });
+
+    // Going back needs a confirmation (RN-09).
+    expect((await moveTo({ to: 'APPLIED' })).status).toBe(409);
+    expect((await moveTo({ to: 'APPLIED', confirmBackward: true })).status).toBe(200);
+
+    // Ghosted remembers where it was; closed only by reopening (RN-10).
+    expect((await moveTo({ to: 'GHOSTED' })).status).toBe(200);
+    expect(await status()).toMatchObject({ status: 'GHOSTED', ghostedFrom: 'APPLIED' });
+    expect(
+      ApplicationListSchema.parse(await json('GET', '/applications')).applications[0],
+    ).toMatchObject({ status: 'GHOSTED', ghostedFrom: 'APPLIED' });
+    expect((await moveTo({ to: 'REJECTED' })).status).toBe(200);
+    expect((await moveTo({ to: 'GHOSTED' })).status).toBe(409);
+    expect((await moveTo({ to: 'WITHDRAWN' })).status).toBe(409);
+    expect((await moveTo({ to: 'INTERVIEWING' })).status).toBe(200);
+    expect(await status()).toMatchObject({
+      status: 'INTERVIEWING',
+      ghostedFrom: null,
+      appliedAt: '2026-11-12',
+    });
+    expect((await moveTo({ to: 'NOPE' })).status).toBe(400);
+  });
+
   it.runIf(HAS_TYPST)(
     'sends finalized CVs of its job description and serves exactly their PDF (RF-APP-08)',
     async () => {

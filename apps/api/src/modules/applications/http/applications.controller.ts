@@ -5,6 +5,8 @@ import {
   CreateApplicationRequestSchema,
   type ListApplicationsQuery,
   ListApplicationsQuerySchema,
+  type MoveApplicationRequest,
+  MoveApplicationRequestSchema,
   type ResumeVersionList,
   type SendApplicationRequest,
   SendApplicationRequestSchema,
@@ -109,6 +111,19 @@ export class ApplicationsController {
     @Body(new ZodValidationPipe(SendApplicationRequestSchema)) body: SendApplicationRequest,
   ): Promise<Application> {
     return this.applications.send(id, body);
+  }
+
+  /**
+   * Moves it to another state (kanban, RF-APP-03), validated by the aggregate: 409 when the move needs a
+   * confirmation or a sent CV, or the application is closed and the target is not an active state.
+   */
+  @Post(':id/status')
+  @HttpCode(HttpStatus.OK)
+  move(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(MoveApplicationRequestSchema)) body: MoveApplicationRequest,
+  ): Promise<Application> {
+    return this.applications.move(id, body);
   }
 
   /** Deletes the application and the record of what was sent; the finalized CVs themselves stay. */

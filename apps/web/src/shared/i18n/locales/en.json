@@ -761,7 +761,8 @@
       "create": "Create application",
       "mark": "Mark as sent",
       "add": "Add sent CV",
-      "finalizedOn": "Finalized on {{date}} · {{file}}"
+      "finalizedOn": "Finalized on {{date}} · {{file}}",
+      "moveTitle": "How did you send it? (it moves to {{status}})"
     },
     "detail": {
       "withoutCv": "It was sent without a CV made with Careerly.",
@@ -778,6 +779,77 @@
     "delete": {
       "title": "Delete this application?",
       "description": "The application and the record of what you sent are deleted. The finalized CVs and the job posting stay."
+    },
+    "views": {
+      "label": "View",
+      "board": "Board",
+      "table": "Table"
+    },
+    "board": {
+      "columns": {
+        "SAVED": "Saved",
+        "APPLIED": "Applied",
+        "SCREENING": "Screening",
+        "INTERVIEWING": "Interviewing",
+        "OFFER": "Offer",
+        "GHOSTED": "No answer",
+        "CLOSED": "Closed"
+      },
+      "showClosed_one": "Show {{count}}",
+      "showClosed_other": "Show all {{count}}",
+      "hideClosed": "Hide",
+      "drag": "Drag “{{title}}”",
+      "moveMenu": "Move “{{title}}” to…",
+      "moveTo": "Move to…",
+      "instructions": "To move an application with the keyboard, press space to pick it up, use the arrow keys to take it to another column and press space again to drop it. Escape cancels. You can also use the “Move to…” menu on each card.",
+      "announce": {
+        "start": "Picked up “{{title}}”.",
+        "over": "“{{title}}” is over the {{column}} column.",
+        "outside": "“{{title}}” is not over a column.",
+        "end": "Dropped “{{title}}” in the {{column}} column.",
+        "cancel": "Moving “{{title}}” was cancelled."
+      }
+    },
+    "move": {
+      "done": "“{{title}}” moved to {{status}}.",
+      "confirm": "Move",
+      "backTitle": "Go back to {{status}}?",
+      "backDescription": "“{{title}}” goes back to an earlier state.",
+      "reopenTitle": "Reopen in {{status}}?",
+      "reopenDescription": "“{{title}}” was closed and is in progress again, in {{status}}.",
+      "closeTitle": "Close the application",
+      "closeQuestion": "How did it end?",
+      "cannotClose": "This application cannot be closed from where it is.",
+      "refused": {
+        "NOT_SENT": "“{{title}}” was not sent yet: it cannot move to {{status}}. To discard it, move it to Withdrawn.",
+        "INVALID_TARGET": "“{{title}}” is closed: it only reopens in a state in progress.",
+        "CLOSED": "“{{title}}” is closed: reopen it first.",
+        "NOT_CLOSED": "“{{title}}” is not closed.",
+        "SAME_STATUS": "“{{title}}” is already in {{status}}.",
+        "NEEDS_CONFIRMATION": "Going back to {{status}} needs a confirmation.",
+        "NEEDS_SENT_CV": "Moving to {{status}} needs saying how it was sent."
+      }
+    },
+    "table": {
+      "search": "Search",
+      "searchPlaceholder": "Job title or company",
+      "company": "Company",
+      "anyCompany": "All",
+      "sentFrom": "Sent from",
+      "sentTo": "Sent until",
+      "statuses": "States",
+      "clear": "Clear filters",
+      "count_one": "{{count}} application",
+      "count_other": "{{count}} applications",
+      "caption": "Applications",
+      "columns": {
+        "job": "Job",
+        "company": "Company",
+        "status": "State",
+        "sent": "Sent",
+        "updated": "Last change",
+        "actions": "Actions"
+      }
     }
   },
   "templates": {
