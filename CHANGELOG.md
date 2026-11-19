@@ -6,19 +6,12 @@
 ### Features
 
 * add contacts and extra data to job applications ([85d53c2](https://github.com/BTRC-Solutions/careerly/commit/85d53c2151c3139bccf57ba065662befb1b561d1))
-* add contacts and extra data to job applications (F7.6) ([5918eb0](https://github.com/BTRC-Solutions/careerly/commit/5918eb0a1ac918d2b853de85e992eb569ca9cac1))
 * add the append-only timeline of job applications ([445390c](https://github.com/BTRC-Solutions/careerly/commit/445390cfbbf205245c38a8404874adca818f8af3))
-* add the append-only timeline of job applications (F7.5) ([6b42579](https://github.com/BTRC-Solutions/careerly/commit/6b425796714e97bf7962b4a15c9669c7ac674d95))
 * add the application aggregate and its state machine ([fe41dd5](https://github.com/BTRC-Solutions/careerly/commit/fe41dd566e872456e3d557e4bb1c717791eb94c1))
-* add the application aggregate and its state machine ([42b2454](https://github.com/BTRC-Solutions/careerly/commit/42b2454540572c94fc474104e42271392a47b677))
 * add the applications board and table ([99c4271](https://github.com/BTRC-Solutions/careerly/commit/99c4271584b7a8f0d3f4394ae1be8bf5d144875f))
-* add the applications board and table ([9cfcf71](https://github.com/BTRC-Solutions/careerly/commit/9cfcf710c72c6bdaed609c6c61781b51500400c7))
 * create job applications and record the finalized CVs sent ([8cbbea3](https://github.com/BTRC-Solutions/careerly/commit/8cbbea3a8876ba772863d98c2efa668e10d4815f))
-* create job applications and record the finalized CVs sent ([0f12169](https://github.com/BTRC-Solutions/careerly/commit/0f121696a600be855aec69ef50caf4077efa1ddc))
 * finalize tailoring sessions into immutable resume versions ([c167eb6](https://github.com/BTRC-Solutions/careerly/commit/c167eb6e1e3c410ed320b2e0de0ca375bb0917ca))
-* finalize tailoring sessions into immutable resume versions ([08e181f](https://github.com/BTRC-Solutions/careerly/commit/08e181f88681e8c6ec7136a313eef8e1fd923b29))
 * **telemetry:** report the metrics of job applications ([1ef0f4a](https://github.com/BTRC-Solutions/careerly/commit/1ef0f4a1aadea895d25f1bb9d28098e840e3b64d))
-* **telemetry:** report the metrics of job applications (F7.7) ([82aac49](https://github.com/BTRC-Solutions/careerly/commit/82aac496a97f6e019a26795cb6ea3f784694b399))
 
 
 ### Miscellaneous Chores
