@@ -124,12 +124,46 @@ export type TailoredExperience = z.infer<typeof TailoredExperienceSchema>;
  * What the AI wrote for one language. Only the worded parts: company, title, dates, education and the rest are
  * copied from the profile when the CV is built (RN-03).
  */
+/**
+ * Why the truthfulness guard rejected a text (RN-01, RN-02, ARCHITECTURE §7.2 step 9):
+ * - `NO_SOURCE`: it cites nothing of its own experience (RN-01).
+ * - `UNKNOWN_EXPERIENCE`: it was written for a position or project that is not in the profile.
+ * - `TOOL_NOT_IN_SOURCES`: it mentions a tool its sources do not show (RN-02).
+ * - `NUMBER_NOT_IN_SOURCES`: it has a number (a metric, an amount) its sources do not have.
+ */
+export const TruthIssueReasonSchema = z.enum([
+  'NO_SOURCE',
+  'UNKNOWN_EXPERIENCE',
+  'TOOL_NOT_IN_SOURCES',
+  'NUMBER_NOT_IN_SOURCES',
+]);
+export type TruthIssueReason = z.infer<typeof TruthIssueReasonSchema>;
+
+/** A text the guard left out of the CV, kept so the review can show what was dropped and why. */
+export const GuardDropSchema = z.object({
+  kind: z.enum(['BULLET', 'SUMMARY']),
+  /** The position or project it was written for; `null` for the summary. */
+  experienceId: z.string().nullable(),
+  text: z.string(),
+  reasons: z.array(TruthIssueReasonSchema).min(1),
+});
+export type GuardDrop = z.infer<typeof GuardDropSchema>;
+
+/** What the truthfulness guard did to the AI's answer. */
+export const GuardLogSchema = z.object({
+  /** Texts that broke a rule and were fixed by rewriting them once. */
+  rewritten: z.number().int().nonnegative(),
+  dropped: z.array(GuardDropSchema),
+});
+export type GuardLog = z.infer<typeof GuardLogSchema>;
+
 export const TailoredResumeDataSchema = z.object({
   summary: z.object({ text: z.string().trim().min(1), sourceIds: z.array(z.string()) }).nullable(),
   /** Positions and projects with bullets; positions left out are shown with no bullets (RN-07). */
   experiences: z.array(TailoredExperienceSchema),
   /** Profile tools for the skills section, the ones the job description asks for first. */
   toolIds: z.array(z.string()),
+  guard: GuardLogSchema,
 });
 export type TailoredResumeData = z.infer<typeof TailoredResumeDataSchema>;
 

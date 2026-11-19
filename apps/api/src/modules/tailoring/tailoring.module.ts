@@ -20,6 +20,7 @@ import {
   TailoredResumeRepository,
   TailoringSessionRepository,
   ToolResolver,
+  ToolVocabulary,
 } from './application/tailoring.ports.js';
 import { TailoringController } from './http/tailoring.controller.js';
 import { DrizzleGapQuestionRepository } from './infrastructure/drizzle-gap-question.repository.js';
@@ -29,6 +30,7 @@ import { LlmRequirementMatcher } from './infrastructure/llm-requirement-matcher.
 import { LlmResumeWriter } from './infrastructure/llm-resume-writer.js';
 import {
   CatalogToolResolver,
+  CatalogToolVocabulary,
   DocumentsModuleRenderer,
   JobPostingsModuleReader,
   JobQueueGenerateQueue,
@@ -61,6 +63,7 @@ import {
     { provide: ProfileWriter, useClass: ProfileModuleWriter },
     { provide: JobDescriptionReader, useClass: JobPostingsModuleReader },
     { provide: ToolResolver, useClass: CatalogToolResolver },
+    { provide: ToolVocabulary, useClass: CatalogToolVocabulary },
     { provide: RequirementMatcher, useClass: LlmRequirementMatcher },
     { provide: MatchQueue, useClass: JobQueueMatchQueue },
     { provide: ProfileChangeLog, useClass: ProfileModuleChangeLog },

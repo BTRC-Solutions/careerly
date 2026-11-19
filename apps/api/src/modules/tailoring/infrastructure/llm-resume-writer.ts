@@ -1,10 +1,16 @@
-import type { Evidence, ResumeLanguage } from '@careerly/contracts';
+import type { Evidence, Profile, ResumeLanguage } from '@careerly/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { LlmClient, untrustedText } from '../../ai/index.js';
-import { ResumeWriter, type ResumeWritingInput } from '../application/tailoring.ports.js';
+import {
+  type ResumeRewritingInput,
+  ResumeWriter,
+  type ResumeWritingInput,
+} from '../application/tailoring.ports.js';
 import type { WrittenResume } from '../domain/resume-writing.js';
+import type { TruthIssue, TruthRewrite } from '../domain/truth-guard.js';
 import { describeProfile, parseRef } from './llm-requirement-matcher.js';
+import { RESUME_REWRITING_V1 } from './prompts/resume-rewriting.v1.js';
 import { RESUME_WRITING_V1 } from './prompts/resume-writing.v1.js';
 
 /** The answer the model must produce (plain schema: it is also sent as JSON Schema). */
@@ -40,7 +46,6 @@ export class LlmResumeWriter extends ResumeWriter {
 
   async write({ profile, analysis, match, language }: ResumeWritingInput) {
     const { text: profileText, refs } = describeProfile(profile);
-    const ownSummary = profile.personalInfo.summary?.trim();
     const status = new Map(match?.requirements.map((r) => [r.requirementId, r.status]));
     const jobText = [
       `Role: ${analysis.roleCategory}, ${analysis.seniority}.`,
@@ -61,16 +66,7 @@ export class LlmResumeWriter extends ResumeWriter {
       tier: 'large',
       input: [
         // The profile goes first: it is the large, stable part of the session's prompts (caching).
-        {
-          type: 'text',
-          text: [
-            `Master profile of the candidate:\n\n${profileText}`,
-            ownSummary &&
-              `\nThe candidate's own summary (source material, not final text):\n${ownSummary}`,
-          ]
-            .filter(Boolean)
-            .join('\n'),
-        },
+        { type: 'text', text: profileBlock(profileText, profile) },
         { type: 'text', text: 'The job description, as analyzed:' },
         untrustedText('job-description-analysis', jobText),
         {
@@ -89,6 +85,102 @@ export class LlmResumeWriter extends ResumeWriter {
     );
     return { resume, promptVersion: RESUME_WRITING_V1.id, model: usage.model };
   }
+
+  async rewrite({ profile, language, data, issues }: ResumeRewritingInput) {
+    const { text: profileText, refs } = describeProfile(profile);
+    const refOf = new Map([...refs].map(([ref, evidence]) => [evidence.id, ref]));
+    const cite = (ids: string[]) =>
+      ids.map((id) => `[${refOf.get(id) ?? '?'}]`).join(', ') || 'none';
+
+    const items = issues.map((issue, index) => {
+      const { target } = issue;
+      if (target.kind === 'SUMMARY') {
+        return {
+          ref: 'S1',
+          target,
+          line: `[S1] The summary, citing ${cite(data.summary?.sourceIds ?? [])}`,
+        };
+      }
+      const bullet = data.experiences
+        .find((e) => e.sourceId === target.experienceId)
+        ?.bullets.find((b) => b.id === target.bulletId);
+      const ref = `B${index + 1}`;
+      return {
+        ref,
+        target,
+        line: `[${ref}] A bullet of [${refOf.get(target.experienceId) ?? '?'}], citing ${cite(bullet?.sourceIds ?? [])}`,
+      };
+    });
+    const itemsText = items
+      .map(({ line }, index) => {
+        const issue = issues[index]!;
+        return [line, `  Text: ${issue.text}`, `  Problems: ${problems(issue)}`].join('\n');
+      })
+      .join('\n\n');
+
+    const { data: answer, usage } = await this.llm.generateStructured({
+      task: 'resume-writing',
+      prompt: RESUME_REWRITING_V1,
+      tier: 'large',
+      input: [
+        { type: 'text', text: profileBlock(profileText, profile) },
+        {
+          type: 'text',
+          text: `Rewrite these texts of the CV, in ${LANGUAGE_NAMES[language]}:`,
+        },
+        // Written by the AI from a job description, which may carry instructions: data, not orders.
+        untrustedText('cv-texts', itemsText),
+      ],
+      schema: ResumeRewritingAnswerSchema,
+      timeoutMs: TIMEOUT_MS,
+    });
+
+    const byRef = new Map(items.map((item) => [item.ref, item.target]));
+    const ids = (list: string[]) => list.flatMap((r) => refs.get(parseRef(r) ?? '')?.id ?? []);
+    const rewrites: TruthRewrite[] = answer.rewrites.flatMap((item) => {
+      const target = byRef.get(parseRef(item.item) ?? '');
+      return target ? [{ target, text: item.text, sourceIds: ids(item.sources) }] : [];
+    });
+    this.logger.log(
+      `Rewrote ${rewrites.length} of ${issues.length} ${language} text(s) using ${usage.model} ` +
+        `(${usage.attempts} attempt(s)).`,
+    );
+    return { rewrites };
+  }
+}
+
+/** The answer to a rewrite (plain schema: it is also sent as JSON Schema). */
+const ResumeRewritingAnswerSchema = z.object({
+  rewrites: z.array(z.object({ item: z.string(), text: z.string(), sources: z.array(z.string()) })),
+});
+
+/** What broke the rules, for the model. Tool names and numbers come from the AI's own text, not the JD. */
+function problems(issue: TruthIssue): string {
+  const list: string[] = [];
+  for (const reason of issue.reasons) {
+    if (reason === 'TOOL_NOT_IN_SOURCES') {
+      list.push(`it mentions ${issue.tools.join(', ')}, which its sources do not show`);
+    } else if (reason === 'NUMBER_NOT_IN_SOURCES') {
+      list.push(`it has the number(s) ${issue.numbers.join(', ')}, which its sources do not have`);
+    } else {
+      list.push('it cites nothing of its own experience');
+    }
+  }
+  return `${list.join('; ')}.`;
+}
+
+/**
+ * The profile as the first block of every writing call, the same each time so the provider can cache it.
+ * The candidate's own summary is source material, not final text.
+ */
+function profileBlock(profileText: string, profile: Profile): string {
+  const ownSummary = profile.personalInfo.summary?.trim();
+  return [
+    `Master profile of the candidate:\n\n${profileText}`,
+    ownSummary && `\nThe candidate's own summary (source material, not final text):\n${ownSummary}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 /**

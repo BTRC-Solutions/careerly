@@ -4,7 +4,7 @@
  *
  * - `tailoredResumeData` keeps only what can be traced to the profile (RN-01): an experience that exists, and
  *   bullets whose sources are achievements of that same experience (or the project itself). A bullet left
- *   without sources is dropped. The full truthfulness guard (tools, regeneration) is roadmap 6.4.
+ *   without sources is dropped (logged in `guard`). Tools and numbers are checked by `truth-guard.ts`.
  * - `selectSkills` picks the profile tools for the skills section, the ones the job description asks for first.
  * - `buildResumeDocument` turns it into the document a template renders. Companies, titles, dates, education,
  *   certifications and languages are copied from the profile, never from the AI (RN-03). Positions go in reverse
@@ -12,6 +12,7 @@
  */
 
 import type {
+  GuardDrop,
   MatchResult,
   Position,
   Profile,
@@ -21,6 +22,7 @@ import type {
   ResumePaper,
   TailoredExperience,
   TailoredResumeData,
+  TruthIssueReason,
 } from '@careerly/contracts';
 
 /** What the writer answered, with its references already turned into profile ids. */
@@ -33,37 +35,34 @@ export interface WrittenResume {
   }[];
 }
 
-/** Bullets kept and dropped, to log how much the writer had to be corrected (counts only, no text). */
-export interface WritingStats {
-  bullets: number;
-  droppedBullets: number;
-  droppedSources: number;
-}
-
 /** Most bullets per experience, so a talkative model does not flood the review (the fitter trims later). */
 export const MAX_BULLETS_PER_EXPERIENCE = 6;
 
 /** Most tools in the skills section. */
 export const MAX_SKILLS = 20;
 
+/**
+ * The AI's answer as tailored CV data, with what cannot be traced already out (RN-01): bullets for an unknown
+ * experience or without a source of their own are dropped and logged, not rewritten. The rest of the guard
+ * (tools and numbers) runs on the result (`truth-guard.ts`).
+ */
 export function tailoredResumeData(
   written: WrittenResume,
   profile: Profile,
   match: MatchResult | null,
   newId: () => string,
-): { data: TailoredResumeData; stats: WritingStats } {
-  const stats: WritingStats = { bullets: 0, droppedBullets: 0, droppedSources: 0 };
+): TailoredResumeData {
+  const dropped: GuardDrop[] = [];
   const experiences = new Map<string, TailoredExperience>();
 
   for (const item of written.experiences) {
     const owner = findExperience(profile, item.kind, item.sourceId);
     if (!owner) {
-      stats.droppedBullets += item.bullets.length;
+      for (const bullet of item.bullets) {
+        dropped.push(bulletDrop(item.sourceId, bullet.text, 'UNKNOWN_EXPERIENCE'));
+      }
       continue;
     }
-    const allowed = new Set(owner.achievements.map((a) => a.id));
-    if (item.kind === 'PROJECT') allowed.add(owner.id);
-
     const experience = experiences.get(owner.id) ?? {
       kind: item.kind,
       sourceId: owner.id,
@@ -71,47 +70,51 @@ export function tailoredResumeData(
     };
     for (const bullet of item.bullets) {
       const text = bullet.text.trim();
-      const sourceIds = unique(bullet.sourceIds);
-      const valid = sourceIds.filter((id) => allowed.has(id));
-      stats.droppedSources += sourceIds.length - valid.length;
-      if (
-        text === '' ||
-        valid.length === 0 ||
-        experience.bullets.length >= MAX_BULLETS_PER_EXPERIENCE
-      ) {
-        stats.droppedBullets += 1;
+      if (text === '' || experience.bullets.length >= MAX_BULLETS_PER_EXPERIENCE) continue;
+      const sourceIds = bulletSourceIds(profile, item.kind, owner.id, bullet.sourceIds);
+      if (sourceIds.length === 0) {
+        dropped.push(bulletDrop(owner.id, text, 'NO_SOURCE'));
         continue;
       }
-      experience.bullets.push({
-        id: newId(),
-        text,
-        sourceIds: valid,
-        score: null,
-        editedByUser: false,
-      });
-      stats.bullets += 1;
+      experience.bullets.push({ id: newId(), text, sourceIds, score: null, editedByUser: false });
     }
     if (experience.bullets.length > 0) experiences.set(owner.id, experience);
   }
 
-  const known = profileElementIds(profile);
   const summaryText = written.summary?.text.trim() ?? '';
-  const summary =
-    summaryText === ''
-      ? null
-      : {
-          text: summaryText,
-          sourceIds: unique(written.summary!.sourceIds).filter((id) => known.has(id)),
-        };
-
   return {
-    data: {
-      summary,
-      experiences: [...experiences.values()],
-      toolIds: selectSkills(profile, match),
-    },
-    stats,
+    summary:
+      summaryText === ''
+        ? null
+        : { text: summaryText, sourceIds: summarySourceIds(profile, written.summary!.sourceIds) },
+    experiences: [...experiences.values()],
+    toolIds: selectSkills(profile, match),
+    guard: { rewritten: 0, dropped },
   };
+}
+
+/** The sources a bullet may cite: achievements of its own experience, or the project itself (RN-01). */
+export function bulletSourceIds(
+  profile: Profile,
+  kind: 'POSITION' | 'PROJECT',
+  experienceId: string,
+  sourceIds: string[],
+): string[] {
+  const owner = findExperience(profile, kind, experienceId);
+  if (!owner) return [];
+  const allowed = new Set(owner.achievements.map((a) => a.id));
+  if (kind === 'PROJECT') allowed.add(owner.id);
+  return unique(sourceIds).filter((id) => allowed.has(id));
+}
+
+/** The sources a summary may cite: anything in the profile. */
+export function summarySourceIds(profile: Profile, sourceIds: string[]): string[] {
+  const known = profileElementIds(profile);
+  return unique(sourceIds).filter((id) => known.has(id));
+}
+
+function bulletDrop(experienceId: string, text: string, reason: TruthIssueReason): GuardDrop {
+  return { kind: 'BULLET', experienceId, text: text.trim(), reasons: [reason] };
 }
 
 /**
@@ -230,7 +233,7 @@ export function buildResumeDocument({
   };
 }
 
-function findExperience(
+export function findExperience(
   profile: Profile,
   kind: 'POSITION' | 'PROJECT',
   id: string,

@@ -140,7 +140,7 @@ describe('tailoredResumeData', () => {
       ],
     };
 
-    const { data, stats } = tailoredResumeData(written, PROFILE, null, ids());
+    const data = tailoredResumeData(written, PROFILE, null, ids());
 
     expect(data.summary).toEqual({ text: 'Summary.', sourceIds: ['now', 'a1'] });
     expect(data.experiences).toEqual([
@@ -166,7 +166,15 @@ describe('tailoredResumeData', () => {
         ],
       },
     ]);
-    expect(stats).toEqual({ bullets: 3, droppedBullets: 4, droppedSources: 3 });
+    // Dropped without a rewrite, and logged; an empty text is just ignored.
+    expect(data.guard).toEqual({
+      rewritten: 0,
+      dropped: [
+        { kind: 'BULLET', experienceId: 'now', text: 'Borrowed', reasons: ['NO_SOURCE'] },
+        { kind: 'BULLET', experienceId: 'now', text: 'From the position', reasons: ['NO_SOURCE'] },
+        { kind: 'BULLET', experienceId: 'ghost', text: 'Ghost', reasons: ['UNKNOWN_EXPERIENCE'] },
+      ],
+    });
   });
 
   it('caps the bullets of an experience and leaves out an empty summary', () => {
@@ -174,7 +182,7 @@ describe('tailoredResumeData', () => {
       text: `Bullet ${i}`,
       sourceIds: ['a1'],
     }));
-    const { data } = tailoredResumeData(
+    const data = tailoredResumeData(
       {
         summary: { text: ' ', sourceIds: [] },
         experiences: [{ kind: 'POSITION', sourceId: 'now', bullets }],
@@ -224,6 +232,7 @@ describe('buildResumeDocument', () => {
       },
     ],
     toolIds: ['node', 'unknown', 'docker'],
+    guard: { rewritten: 0, dropped: [] },
   };
 
   it('copies the facts from the profile and the wording from the tailored CV (RN-03, RN-06, RN-07)', () => {

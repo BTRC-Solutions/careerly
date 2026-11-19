@@ -35,7 +35,9 @@ import {
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
   ToolResolver,
+  ToolVocabulary,
 } from '../application/tailoring.ports.js';
+import type { ToolTerm } from '../domain/truth-guard.js';
 
 export const TAILORING_MATCH_JOB = 'tailoring-match';
 export const TAILORING_GENERATE_JOB = 'tailoring-generate';
@@ -235,6 +237,21 @@ export class CatalogToolResolver extends ToolResolver {
   async resolve(name: string): Promise<ToolRef | null> {
     const tool = await this.catalog.resolve(name);
     return tool ? { id: tool.id, name: tool.name } : null;
+  }
+}
+
+/** The names and aliases of the profile module's tool catalog. */
+@Injectable()
+export class CatalogToolVocabulary extends ToolVocabulary {
+  constructor(private readonly catalog: ToolCatalogService) {
+    super();
+  }
+
+  async terms(): Promise<ToolTerm[]> {
+    const tools = await this.catalog.all();
+    return tools.flatMap((tool) =>
+      [tool.name, ...tool.aliases].map((term) => ({ toolId: tool.id, term })),
+    );
   }
 }
 
