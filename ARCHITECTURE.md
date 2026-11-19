@@ -614,6 +614,7 @@ PATCH  /job-postings/:id/analysis                  # correcciones del usuario
 
 POST   /tailoring-sessions                         # { jobPostingId, languages[]?, pageBudget?, templateId? }; encola el match
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
+PATCH  /tailoring-sessions/:id/options             # idiomas, páginas y plantilla; no mientras genera ni finalizada
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
 GET    /tailoring-sessions?open=true&jobPostingId=   # sesiones para retomar (las no finalizadas ni abandonadas)
 POST   /tailoring-sessions/:id/abandon             # deja la sesión (ABANDONED)

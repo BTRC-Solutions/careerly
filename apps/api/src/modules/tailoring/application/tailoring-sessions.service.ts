@@ -19,17 +19,20 @@ import {
   type TailoredResumesView,
   type TailoringSession as StoredSession,
   type TailoringSessionView,
+  type UpdateTailoringOptionsRequest,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { isToolMatchable, matchTool, semanticMatches } from '../domain/match.js';
 import { fitToPages } from '../domain/page-fitter.js';
 import { mergeRegenerated, restrictToScope, WHOLE_CV } from '../domain/regeneration.js';
 import { applyResumeEdit } from '../domain/resume-edits.js';
+import { defaultPageBudget } from '../domain/session-options.js';
 import { fitCandidates, orderAsWritten } from '../domain/resume-fit.js';
 import { buildResumeDocument, tailoredResumeData } from '../domain/resume-writing.js';
 import { applyRewrites, findTruthIssues } from '../domain/truth-guard.js';
 import {
   applySessionEvent,
+  changeSessionOptions,
   TailoringSessionValidationError,
   startTailoringSession,
   type TailoringSession,
@@ -48,6 +51,8 @@ import {
   TailoredResumeRepository,
   TailoringSessionNotFoundError,
   TailoringSessionRepository,
+  TailoringTemplateNotFoundError,
+  TemplateLookup,
   ToolResolver,
   ToolVocabulary,
 } from './tailoring.ports.js';
@@ -63,7 +68,8 @@ const GENERATION_STATUSES = new Set(['GENERATING', 'REVIEW', 'FINALIZED']);
 /**
  * Tailoring sessions (RF-TAIL-01): starting one queues the match (RF-TAIL-02), which runs in the background and
  * moves the session to `MATCHED`. Generating queues the writing of one CV per language (RF-TAIL-10, RF-TAIL-11),
- * which moves it to `REVIEW`. A background step that gives up moves the session to `FAILED`.
+ * which moves it to `REVIEW`. A background step that gives up moves the session to `FAILED`. The CV
+ * options (RF-TAIL-07 to RF-TAIL-09) are set when starting and can change until the session is finalized.
  */
 @Injectable()
 export class TailoringSessionsService {
@@ -79,17 +85,21 @@ export class TailoringSessionsService {
     private readonly generation: GenerateQueue,
     private readonly renderer: ResumePdfRenderer,
     private readonly vocabulary: ToolVocabulary,
+    private readonly templates: TemplateLookup,
   ) {}
 
   async start(request: CreateTailoringSessionRequest): Promise<TailoringSessionView> {
     const analysis = await this.jobDescriptions.analysis(request.jobPostingId);
     const jdLanguage = ResumeLanguageSchema.safeParse(analysis.language);
+    const templateId = request.templateId ?? DEFAULT_TEMPLATE_ID;
+    await this.checkTemplate(templateId);
     const session = startTailoringSession({
       id: randomUUID(),
       jobPostingId: request.jobPostingId,
       languages: request.languages ?? [jdLanguage.success ? jdLanguage.data : 'es'],
-      pageBudget: request.pageBudget ?? 1,
-      templateId: request.templateId ?? DEFAULT_TEMPLATE_ID,
+      pageBudget:
+        request.pageBudget ?? defaultPageBudget((await this.profile.read()).positions, thisMonth()),
+      templateId,
     });
     const now = new Date().toISOString();
     const stored: StoredSession = { ...session, createdAt: now, updatedAt: now };
@@ -125,6 +135,22 @@ export class TailoringSessionsService {
   async get(id: string): Promise<TailoringSessionView> {
     const session = await this.load(id);
     return { session, job: this.currentJob(session) };
+  }
+
+  /** Changes the CV options; they apply to the next generation. */
+  async updateOptions(
+    id: string,
+    changes: UpdateTailoringOptionsRequest,
+  ): Promise<TailoringSessionView> {
+    if (changes.templateId !== undefined) await this.checkTemplate(changes.templateId);
+    const { createdAt, updatedAt: _updatedAt, ...session } = await this.load(id);
+    const saved: StoredSession = {
+      ...changeSessionOptions(session, changes),
+      createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    await this.sessions.save(saved);
+    return { session: saved, job: this.queue.current(id) };
   }
 
   /** Retries the step that failed. */
@@ -400,6 +426,12 @@ export class TailoringSessionsService {
     return { ...requirement, tool: await this.tools.resolve(requirement.label) };
   }
 
+  private async checkTemplate(templateId: string) {
+    if (!(await this.templates.exists(templateId))) {
+      throw new TailoringTemplateNotFoundError(templateId);
+    }
+  }
+
   private async load(id: string): Promise<StoredSession> {
     const session = await this.sessions.find(id);
     if (!session) throw new TailoringSessionNotFoundError(id);
@@ -416,4 +448,9 @@ export class TailoringSessionsService {
     await this.sessions.save(saved);
     return saved;
   }
+}
+
+/** The current month, "YYYY-MM" (UTC). */
+function thisMonth(): string {
+  return new Date().toISOString().slice(0, 7);
 }

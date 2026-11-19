@@ -21,6 +21,8 @@ import {
   type RevertProfileChangesResult,
   type SessionProfileChanges,
   type TailoringSessionView,
+  type UpdateTailoringOptionsRequest,
+  UpdateTailoringOptionsRequestSchema,
 } from '@careerly/contracts';
 import {
   BadRequestException,
@@ -58,6 +60,7 @@ import {
   SessionNotMatchedError,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
+  TailoringTemplateNotFoundError,
 } from '../application/tailoring.ports.js';
 import { BulletNotFoundError } from '../domain/resume-edits.js';
 import { ResumeWithoutNameError } from '../domain/resume-writing.js';
@@ -94,7 +97,10 @@ function toHttpError(error: unknown): unknown {
   ) {
     return new ConflictException(error.message);
   }
-  if (error instanceof TailoringSessionValidationError) {
+  if (
+    error instanceof TailoringSessionValidationError ||
+    error instanceof TailoringTemplateNotFoundError
+  ) {
     return new BadRequestException(error.message);
   }
   if (error instanceof ResumeRenderFailedError) return renderHttpError(error);
@@ -180,6 +186,16 @@ export class TailoringController {
     @Body(new ZodValidationPipe(GapAnswerSchema)) body: GapAnswer,
   ): Promise<GapQuestions> {
     return this.gapsService.answer(id, requirementId, body);
+  }
+
+  /** Changes the CV options (RF-TAIL-07 to RF-TAIL-09); not while generating or once finalized. */
+  @Patch(':id/options')
+  updateOptions(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateTailoringOptionsRequestSchema))
+    body: UpdateTailoringOptionsRequest,
+  ): Promise<TailoringSessionView> {
+    return this.sessions.updateOptions(id, body);
   }
 
   /** Retries the step that failed. */

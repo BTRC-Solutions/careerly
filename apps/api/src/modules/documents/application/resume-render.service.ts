@@ -1,7 +1,7 @@
 import type { ResumeDocument } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import { toTemplateData } from '../domain/resume-labels.js';
-import { ResumeRenderer, TemplateCatalog } from './documents.ports.js';
+import { ResumeRenderer, TemplateCatalog, TemplateNotFoundError } from './documents.ports.js';
 
 /** The template used when none is chosen: the built-in `classic` (RF-TAIL-09). */
 export const DEFAULT_TEMPLATE_ID = 'classic';
@@ -20,6 +20,17 @@ export class ResumeRenderService {
     private readonly templates: TemplateCatalog,
     private readonly renderer: ResumeRenderer,
   ) {}
+
+  /** Whether `templateId` is a template that can be rendered (built in or the user's). */
+  async hasTemplate(templateId: string): Promise<boolean> {
+    try {
+      await this.templates.get(templateId);
+      return true;
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) return false;
+      throw error;
+    }
+  }
 
   async render(
     document: ResumeDocument,

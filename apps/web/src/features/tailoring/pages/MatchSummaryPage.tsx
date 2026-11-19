@@ -24,6 +24,7 @@ import {
   useTailoringSession,
 } from '../api/tailoring-api';
 import { GapQuestionsCard } from '../components/GapQuestionsCard';
+import { SessionOptionsCard } from '../components/SessionOptionsCard';
 import { ResumeReview } from '../components/ResumeReview';
 import { SessionProfileChanges } from '../components/SessionProfileChanges';
 import { countGaps, describeEvidence, summarizeMatch } from '../lib/match-summary';
@@ -167,6 +168,8 @@ function Session({ view }: { view: TailoringSessionView }) {
         </Card>
       )}
       {retry.error && <InlineError>{retry.error.message}</InlineError>}
+
+      <SessionOptionsCard session={session} />
 
       <GapQuestionsCard session={session} />
 

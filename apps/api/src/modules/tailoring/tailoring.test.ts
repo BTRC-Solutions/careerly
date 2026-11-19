@@ -979,4 +979,46 @@ describe('tailoring session match (integration)', () => {
       ['FooBarDB', null],
     ]);
   });
+
+  it('picks the page budget from the years of experience and changes the options later', async () => {
+    await start([ok({ ...JD_ANALYSIS, requirements: JD_ANALYSIS.requirements.slice(0, 3) })]);
+    // Since 2010: more than 8 years, so 2 pages by default (RF-TAIL-08).
+    await json('POST', '/profile/positions', {
+      company: 'Old Co',
+      title: 'Developer',
+      startDate: '2010-01',
+      endDate: '2018-12',
+    });
+    const posting = await analyzedPosting();
+    const { session } = TailoringSessionViewSchema.parse(
+      await json('POST', '/tailoring-sessions', { jobPostingId: posting.id }),
+    );
+    expect(session).toMatchObject({ languages: ['en'], pageBudget: 2, templateId: 'classic' });
+    await waitFor(settled(session.id));
+
+    const changed = await api('PATCH', `/tailoring-sessions/${session.id}/options`, {
+      languages: ['es', 'en'],
+      pageBudget: 1,
+    });
+    expect(changed.status).toBe(200);
+    expect((await view(session.id)).session).toMatchObject({
+      status: 'MATCHED',
+      languages: ['es', 'en'],
+      pageBudget: 1,
+      templateId: 'classic',
+    });
+
+    const patch = (body: unknown) =>
+      api('PATCH', `/tailoring-sessions/${session.id}/options`, body).then((r) => r.status);
+    expect(await patch({ templateId: 'nope' })).toBe(400);
+    expect(await patch({ languages: ['es', 'es'] })).toBe(400);
+    expect(await patch({})).toBe(400);
+    expect((await api('PATCH', '/tailoring-sessions/nope/options', { pageBudget: 2 })).status).toBe(
+      404,
+    );
+    expect(
+      (await api('POST', '/tailoring-sessions', { jobPostingId: posting.id, templateId: 'nope' }))
+        .status,
+    ).toBe(400);
+  });
 });

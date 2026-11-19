@@ -85,6 +85,19 @@ export abstract class ProfileChangeLog {
   ): Promise<RevertProfileChangesResult['keptFields']>;
 }
 
+/** The chosen template does not exist (maps to 400). */
+export class TailoringTemplateNotFoundError extends Error {
+  constructor(readonly templateId: string) {
+    super(`Template not found: ${templateId}.`);
+    this.name = 'TailoringTemplateNotFoundError';
+  }
+}
+
+/** Port: the CV templates, through the documents module (RF-TAIL-09). */
+export abstract class TemplateLookup {
+  abstract exists(templateId: string): Promise<boolean>;
+}
+
 /** Port: a job description's analysis, through the job-postings module. */
 export abstract class JobDescriptionReader {
   /**

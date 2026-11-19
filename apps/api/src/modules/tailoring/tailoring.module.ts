@@ -19,6 +19,7 @@ import {
   ResumeWriter,
   TailoredResumeRepository,
   TailoringSessionRepository,
+  TemplateLookup,
   ToolResolver,
   ToolVocabulary,
 } from './application/tailoring.ports.js';
@@ -32,6 +33,7 @@ import {
   CatalogToolResolver,
   CatalogToolVocabulary,
   DocumentsModuleRenderer,
+  DocumentsTemplateLookup,
   JobPostingsModuleReader,
   JobQueueGenerateQueue,
   JobQueueMatchQueue,
@@ -71,6 +73,7 @@ import {
     { provide: ResumeWriter, useClass: LlmResumeWriter },
     { provide: TailoredResumeRepository, useClass: DrizzleTailoredResumeRepository },
     { provide: ResumePdfRenderer, useClass: DocumentsModuleRenderer },
+    { provide: TemplateLookup, useClass: DocumentsTemplateLookup },
   ],
 })
 export class TailoringModule {}

@@ -34,6 +34,7 @@ import {
   ProfileWriter,
   TailoringJobPostingNotFoundError,
   TailoringSessionNotFoundError,
+  TemplateLookup,
   ToolResolver,
   ToolVocabulary,
 } from '../application/tailoring.ports.js';
@@ -225,6 +226,18 @@ export class ProfileModuleWriter extends ProfileWriter {
       )
       .map((change) => change.id);
     if (changeIds.length > 0) await this.changes.revert(sessionId, changeIds);
+  }
+}
+
+/** CV templates through the documents module. */
+@Injectable()
+export class DocumentsTemplateLookup extends TemplateLookup {
+  constructor(private readonly render: ResumeRenderService) {
+    super();
+  }
+
+  exists(templateId: string): Promise<boolean> {
+    return this.render.hasTemplate(templateId);
   }
 }
 

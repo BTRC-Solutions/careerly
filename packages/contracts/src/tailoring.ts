@@ -342,23 +342,25 @@ export const TailoringSessionViewSchema = z.object({
 });
 export type TailoringSessionView = z.infer<typeof TailoringSessionViewSchema>;
 
+const SessionLanguagesSchema = z
+  .array(ResumeLanguageSchema)
+  .min(1)
+  .refine((languages) => new Set(languages).size === languages.length, {
+    message: 'Languages must not repeat.',
+  });
+const SessionTemplateIdSchema = z.string().trim().min(1).max(200);
+
 /**
  * `POST /tailoring-sessions` (RF-TAIL-01). The job description must be analyzed. Options left out take
- * defaults: the job description's language (or Spanish), 1 page and the `classic` template. Choosing them in
- * the interface comes with step 6.1.
+ * defaults: the job description's language (or Spanish), 1 page under 8 years of experience and 2 from 8 on
+ * (RF-TAIL-08), and the `classic` template.
  */
 export const CreateTailoringSessionRequestSchema = z
   .object({
     jobPostingId: z.string().min(1),
-    languages: z
-      .array(ResumeLanguageSchema)
-      .min(1)
-      .refine((languages) => new Set(languages).size === languages.length, {
-        message: 'Languages must not repeat.',
-      })
-      .optional(),
+    languages: SessionLanguagesSchema.optional(),
     pageBudget: PageBudgetSchema.optional(),
-    templateId: z.string().trim().min(1).max(200).optional(),
+    templateId: SessionTemplateIdSchema.optional(),
   })
   .strict();
 export type CreateTailoringSessionRequest = z.infer<typeof CreateTailoringSessionRequestSchema>;
@@ -520,3 +522,17 @@ export const TailoringSessionListSchema = z.object({
   sessions: z.array(TailoringSessionSummarySchema),
 });
 export type TailoringSessionList = z.infer<typeof TailoringSessionListSchema>;
+
+/**
+ * `PATCH /tailoring-sessions/:id/options` (RF-TAIL-07 to RF-TAIL-09): only what changes. Not while generating
+ * or once finalized; the new options apply to the next generation.
+ */
+export const UpdateTailoringOptionsRequestSchema = z
+  .object({
+    languages: SessionLanguagesSchema.optional(),
+    pageBudget: PageBudgetSchema.optional(),
+    templateId: SessionTemplateIdSchema.optional(),
+  })
+  .strict()
+  .refine((request) => Object.keys(request).length > 0, { message: 'Nothing to change.' });
+export type UpdateTailoringOptionsRequest = z.infer<typeof UpdateTailoringOptionsRequestSchema>;

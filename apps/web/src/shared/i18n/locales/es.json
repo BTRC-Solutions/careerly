@@ -1043,6 +1043,21 @@
         "projectName": "Poné un nombre al proyecto o curso."
       },
       "addedToProfile": "Se agregó a tu perfil maestro. Podés deshacerlo desde \"Cambios en tu perfil\"."
+    },
+    "options": {
+      "title": "Opciones del CV",
+      "description": "Se aplican la próxima vez que generes los CVs.",
+      "locked": "No se pueden cambiar mientras se generan los CVs ni con la sesión finalizada.",
+      "languages": "Idiomas",
+      "languageNames": {
+        "es": "Español",
+        "en": "Inglés"
+      },
+      "pages": "Límite de páginas",
+      "pageCount_one": "{{count}} página",
+      "pageCount_other": "{{count}} páginas",
+      "pagesHint": "Por defecto, 1 página con menos de 8 años de experiencia y 2 desde 8 años.",
+      "template": "Plantilla"
     }
   }
 }

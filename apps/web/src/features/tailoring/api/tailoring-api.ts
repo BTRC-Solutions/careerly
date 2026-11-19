@@ -14,6 +14,7 @@ import {
   TailoredResumesViewSchema,
   type TailoringSessionView,
   TailoringSessionViewSchema,
+  type UpdateTailoringOptionsRequest,
 } from '@careerly/contracts';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiGetBlob, apiPatch, apiPost, apiPut } from '../../../shared/api/client';
@@ -235,5 +236,15 @@ export function useAbandonSession(id: string) {
       queryClient.setQueryData(sessionKey(id), view);
       void queryClient.invalidateQueries({ queryKey: [...TAILORING_QUERY_KEY, 'list'] });
     },
+  });
+}
+
+/** Changes the CV options of the session (RF-TAIL-07 to RF-TAIL-09). */
+export function useUpdateTailoringOptions(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: UpdateTailoringOptionsRequest) =>
+      apiPatch(`/tailoring-sessions/${id}/options`, TailoringSessionViewSchema, changes),
+    onSuccess: (view) => queryClient.setQueryData(sessionKey(id), view),
   });
 }
