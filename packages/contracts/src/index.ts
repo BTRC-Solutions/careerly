@@ -13,3 +13,4 @@ export * from './jobs.js';
 export * from './job-postings.js';
 export * from './tailoring.js';
 export * from './resume-versions.js';
+export * from './applications.js';

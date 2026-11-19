@@ -253,7 +253,7 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `GapQuestion` | requirement, kind (`MISSING`, `PARTIAL`), relatedEvidence, answer (`USED_AT_WORK`, `USED_ELSEWHERE`, `NOT_USED`, `SKIPPED`), answerDetail, includeInResume, createdEntityIds[] | El "No" vive **solo acá**, nunca en el perfil (RN-11, RN-12). |
 | `TailoredResume` | sessionId, language, data (JSON), pageCount, fitLog | Editable hasta finalizar. Cada bullet guarda `sourceIds[]`, `score` y `editedByUser`. |
 | `ResumeVersion` | sessionId, language, data (JSON: `document`, lo que recibió la plantilla, y `sources`, el CV revisado con las fuentes de cada bullet), templateId, templateName, templateVersion, pageCount, pageBudget, contentHash, fileName, createdAt | **Inmutable.** Sin `UPDATE` en el repositorio, y un *trigger* de SQLite rechaza cualquier `UPDATE`. Uno por idioma de la sesión (único por `sessionId` + `language`). |
-| `Application` | jobPostingId, status, channel, priority, salaryExpected?, salaryOffered?, appliedAt? | |
+| `Application` | jobPostingId, status, ghostedFrom?, appliedAt?, sentWithoutCareerlyCv, channel, priority, salaryExpected?, salaryOffered? | Agregado principal del módulo `applications`, con su máquina de estados (ver abajo). |
 | `SentResume` | applicationId, resumeVersionId, sentAt | Permite varios CVs enviados (p. ej. ES y EN). |
 | `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
 | `AiGeneration` | task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Base del consumo y presupuesto (RF-CONF-06, RF-CONF-07). |
@@ -268,6 +268,23 @@ solo con los campos tocados, su valor anterior y el nuevo). `ProfileChangesServi
 módulo `profile` para `tailoring`, escribe desde los gaps y deshace la sesión entera o cambio por cambio. La
 función pura `planRevert` decide qué hacer: borra lo creado (lo más nuevo primero) y devuelve cada campo a su
 valor anterior, salvo que el usuario lo haya editado después de la sesión: en ese caso se respeta la edición.
+
+**Máquina de estados de la postulación (REQUIREMENTS §6.2, RN-08 a RN-10):** implementada en el paso 7.2
+(`applications/domain/application.ts`, puro). Cada cambio devuelve la postulación nueva y un `StatusChange`
+(`from`, `to`, `backward`, `reopened`, `at`) que la línea de tiempo registra (7.5). Reglas que el diagrama no fija:
+
+- Hacia adelante se pueden saltar estados (RN-08); volver a uno anterior exige `confirmBackward` (RN-09).
+- `ACCEPTED`, `REJECTED` y `WITHDRAWN` son terminales: solo se sale con `REOPEN`, al estado activo que elija el
+  usuario (RN-10).
+- `GHOSTED` no es terminal: guarda en `ghostedFrom` el estado en que estaba. Volver a ese o a uno posterior es
+  libre; a uno anterior es un retroceso. Desde `GHOSTED` también se puede cerrar.
+- Desde `SAVED` no se envió nada: solo se avanza o se pasa a `WITHDRAWN` (descartada), no a `REJECTED` ni a
+  `GHOSTED`.
+- Llegar por primera vez a `APPLIED` o más allá (con cualquier salto, o al reabrir) exige un CV finalizado
+  asociado o confirmar que se envió sin CV de Careerly. Ahí se fija `appliedAt` (la fecha que indique el usuario,
+  o ahora), que se conserva aunque se vuelva a `SAVED`.
+- Un cambio rechazado dice por qué (`ApplicationTransitionRefusal`: `CLOSED`, `NEEDS_CONFIRMATION`,
+  `NEEDS_SENT_CV`, etc.), para que la interfaz pida lo que falta.
 
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.
