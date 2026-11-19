@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ApplicationStatusSchema } from './applications.js';
 
 // ---------------------------------------------------------------------------
 // Telemetry (RF-TEL-01 to RF-TEL-10, RN-18 to RN-21, ARCHITECTURE §19).
@@ -83,17 +84,6 @@ export const SenioritySchema = z.enum([
   'unknown',
 ]);
 export type Seniority = z.infer<typeof SenioritySchema>;
-export const ApplicationStatusSchema = z.enum([
-  'SAVED',
-  'APPLIED',
-  'SCREENING',
-  'INTERVIEWING',
-  'OFFER',
-  'ACCEPTED',
-  'REJECTED',
-  'WITHDRAWN',
-  'GHOSTED',
-]);
 export const TelemetryWorkModeSchema = z.enum(['remote', 'hybrid', 'onsite', 'unknown']);
 export type TelemetryWorkMode = z.infer<typeof TelemetryWorkModeSchema>;
 export const OutputLanguageSchema = z.enum(['es', 'en']);
