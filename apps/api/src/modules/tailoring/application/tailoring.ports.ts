@@ -186,6 +186,8 @@ export abstract class TailoredResumeRepository {
   /** Inserts or replaces the CV of its session and language. */
   abstract save(resume: TailoredResume): Promise<void>;
   abstract list(sessionId: string): Promise<TailoredResume[]>;
+  /** The language of each CV last generated in `[from, to)` (ISO instants), for usage telemetry. */
+  abstract languagesGeneratedBetween(from: string, to: string): Promise<ResumeLanguage[]>;
 }
 
 /** CVs can be changed only while the session is under review (maps to 409). */
@@ -255,6 +257,8 @@ export abstract class GapQuestionRepository {
     answeredAt: string,
     created: Evidence[],
   ): Promise<void>;
+  /** The answers given in `[from, to)` (ISO instants) that are still current, skipped ones included. */
+  abstract answersBetween(from: string, to: string): Promise<GapAnswer[]>;
 }
 
 /**

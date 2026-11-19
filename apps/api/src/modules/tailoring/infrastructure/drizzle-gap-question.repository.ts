@@ -6,7 +6,7 @@ import {
   GapQuestionSchema,
 } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte, isNotNull, lt } from 'drizzle-orm';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { gapQuestions } from '../../../platform/database/schema.js';
 import { inTransaction } from '../../../platform/database/sqlite.js';
@@ -64,6 +64,20 @@ export class DrizzleGapQuestionRepository extends GapQuestionRepository {
       .where(
         and(eq(gapQuestions.sessionId, sessionId), eq(gapQuestions.requirementId, requirementId)),
       );
+  }
+
+  async answersBetween(from: string, to: string): Promise<GapAnswer[]> {
+    const rows = await this.database.db
+      .select({ answer: gapQuestions.answer })
+      .from(gapQuestions)
+      .where(
+        and(
+          isNotNull(gapQuestions.answer),
+          gte(gapQuestions.answeredAt, from),
+          lt(gapQuestions.answeredAt, to),
+        ),
+      );
+    return rows.map((row) => GapAnswerSchema.parse(JSON.parse(row.answer!)));
   }
 }
 

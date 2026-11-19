@@ -6,6 +6,7 @@ import { ProfileModule } from '../profile/index.js';
 import { GapsService } from './application/gaps.service.js';
 import { SessionProfileChangesService } from './application/session-profile-changes.service.js';
 import { RelevanceService } from './application/relevance.service.js';
+import { TailoringUsageService } from './application/tailoring-usage.service.js';
 import { TailoringSessionsService } from './application/tailoring-sessions.service.js';
 import {
   GenerateQueue,
@@ -58,10 +59,12 @@ import {
 @Module({
   imports: [JobsModule, ProfileModule, JobPostingsModule, DocumentsModule],
   controllers: [TailoringController],
+  exports: [TailoringUsageService],
   providers: [
     TailoringSessionsService,
     RelevanceService,
     GapsService,
+    TailoringUsageService,
     SessionProfileChangesService,
     TailoringMatchJobHandler,
     TailoringGenerateJobHandler,

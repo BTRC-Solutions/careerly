@@ -1096,7 +1096,7 @@ servidor propio (§19.7).
 | Título | Título de la JD, recortado a 80 caracteres | `positionTitles: ["…"]` |
 | Embudo | Eventos `STATUS_CHANGE` de `applications` | `funnel: { "SCREENING": n, … }` |
 | Modalidad y país | Análisis de la JD | `workMode: {…}`, `countries: { "AR": n }` |
-| Uso de funciones | `tailoring`, `ai` (`AiGeneration`, vía `AiUsageService.tokensOn`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }`. `aiTokens` suma los tokens de entrada y salida de todos los intentos del día local, incluidos los fallidos (4.9). Hasta la Fase 6 los demás campos van en 0, y un día sin uso de IA no incluye la métrica. |
+| Uso de funciones | `tailoring` (vía `TailoringUsageService.usageBetween`), `ai` (`AiGeneration`, vía `AiUsageService.tokensOn`) | `features: { resumesGenerated, outputLanguages, gapsAnswered, aiTokens }`. `aiTokens` suma los tokens de entrada y salida de todos los intentos del día local, incluidos los fallidos (4.9). Un CV cuenta una vez por sesión e idioma, el día en que se generó por última vez (regenerarlo lo pasa a ese día), y `outputLanguages` cuenta esos CVs por idioma. `gapsAnswered` cuenta las respuestas vigentes dadas ese día, sin las salteadas (6.9). Solo números: nunca el texto del CV, de las respuestas ni de la JD. Un día sin nada de esto no incluye la métrica. |
 
 ### 19.3 Formato del reporte
 

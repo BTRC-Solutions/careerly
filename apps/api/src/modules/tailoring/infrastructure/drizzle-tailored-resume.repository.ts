@@ -1,6 +1,11 @@
-import { type TailoredResume, TailoredResumeSchema } from '@careerly/contracts';
+import {
+  type ResumeLanguage,
+  ResumeLanguageSchema,
+  type TailoredResume,
+  TailoredResumeSchema,
+} from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, gte, lt } from 'drizzle-orm';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { tailoredResumes } from '../../../platform/database/schema.js';
 import { TailoredResumeRepository } from '../application/tailoring.ports.js';
@@ -41,5 +46,13 @@ export class DrizzleTailoredResumeRepository extends TailoredResumeRepository {
     return rows.map((row) =>
       TailoredResumeSchema.parse({ ...row, data: JSON.parse(row.data) as unknown }),
     );
+  }
+
+  async languagesGeneratedBetween(from: string, to: string): Promise<ResumeLanguage[]> {
+    const rows = await this.database.db
+      .select({ language: tailoredResumes.language })
+      .from(tailoredResumes)
+      .where(and(gte(tailoredResumes.generatedAt, from), lt(tailoredResumes.generatedAt, to)));
+    return rows.map((row) => ResumeLanguageSchema.parse(row.language));
   }
 }

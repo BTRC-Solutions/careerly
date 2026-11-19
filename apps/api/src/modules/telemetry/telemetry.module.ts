@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { SettingsModule } from '../settings/index.js';
+import { TailoringModule } from '../tailoring/index.js';
 import {
   TELEMETRY_COLLECTORS,
   TelemetryActivityRepository,
@@ -24,10 +25,10 @@ import { TelemetryScheduler } from './infrastructure/telemetry-scheduler.js';
 /**
  * Usage telemetry with per-metric consent (ARCHITECTURE §19.2). Never the CV, the profile or personal
  * data. Step 1.5: consent, anonymous id, "active usage" and local reports; step 4.9: AI tokens in
- * "uso de funciones"; sending comes in step 8.8.
+ * "uso de funciones", completed in step 6.9 with CVs, languages and gaps; sending comes in step 8.8.
  */
 @Module({
-  imports: [SettingsModule],
+  imports: [SettingsModule, TailoringModule],
   controllers: [TelemetryController],
   providers: [
     TelemetryService,

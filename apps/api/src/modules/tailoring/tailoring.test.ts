@@ -8,6 +8,7 @@ import {
   type Tool,
   type TailoringSessionView,
   TailoringSessionViewSchema,
+  TelemetryPreviewResponseSchema,
 } from '@careerly/contracts';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -1065,4 +1066,70 @@ describe('tailoring session match (integration)', () => {
     expect(sent).toMatch(/<untrusted source="job-description">[\s\S]*Designing REST APIs/);
     expect(logs.output()).not.toContain('Payments SDK');
   });
+
+  // Generating fits the CV to its pages by rendering it with Typst (CI always has it).
+  it.runIf(HAS_TYPST)(
+    'reports a whole session in "uso de funciones" with counts only, no text (RF-TEL-03h)',
+    async () => {
+      await start([
+        ok(JD_ANALYSIS),
+        ok(EVIDENCE_ANSWER),
+        ok(NO_SCORES),
+        ok(writing('es')),
+        ok(writing('en')),
+      ]);
+      await api('PATCH', '/telemetry/settings', { decision: 'ACCEPT' });
+      const profile = await createProfile();
+      await api('PATCH', '/profile/personal-info', { firstNames: 'Ana', lastNames: 'García' });
+      const posting = await analyzedPosting();
+      const { session } = TailoringSessionViewSchema.parse(
+        await json('POST', '/tailoring-sessions', {
+          jobPostingId: posting.id,
+          languages: ['es', 'en'],
+        }),
+      );
+      await waitFor(settled(session.id));
+
+      // Three gaps: a yes, a no and a skipped one; the skipped one is not an answer.
+      const route = `/tailoring-sessions/${session.id}`;
+      const [postgres, docker, foobar] = GapQuestionsSchema.parse(
+        await json('POST', `${route}/ask-gaps`),
+      ).questions;
+      await api('PUT', `${route}/gaps/${postgres!.requirementId}`, {
+        answer: 'USED_AT_WORK',
+        positionIds: [profile.position.id],
+        detail: 'Tuned the queries of the billing service.',
+      });
+      await api('PUT', `${route}/gaps/${docker!.requirementId}`, { answer: 'NOT_USED' });
+      await api('PUT', `${route}/gaps/${foobar!.requirementId}`, { answer: 'SKIPPED' });
+      await api('POST', `${route}/generate`);
+      expect((await waitFor(generated(session.id))).session.status).toBe('REVIEW');
+
+      const { report } = TelemetryPreviewResponseSchema.parse(
+        await json('GET', '/telemetry/preview'),
+      );
+      expect(report!.metrics.features).toEqual({
+        resumesGenerated: 2,
+        outputLanguages: { es: 1, en: 1 },
+        gapsAnswered: 2,
+        // Five AI calls (analysis, match, relevance and one CV per language) of 1000 tokens each.
+        aiTokens: 5000,
+      });
+      // Nothing of what was written, answered or analyzed.
+      const sent = JSON.stringify(report);
+      for (const text of [
+        'Diseñé la API REST',
+        'Designed the public REST API',
+        'Backend engineer of public APIs',
+        'Tuned the queries',
+        'Senior Backend Engineer',
+        'Acme',
+        'García',
+        'Postgres',
+        'FooBarDB',
+      ]) {
+        expect(sent).not.toContain(text);
+      }
+    },
+  );
 });
