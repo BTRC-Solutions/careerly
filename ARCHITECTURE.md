@@ -1,6 +1,6 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-16
+> Estado: borrador v0.4 · Última actualización: 2026-11-18
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
@@ -301,7 +301,14 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   solo a `GENERATING`. "Volver a gaps" desde `REVIEW` exige que haya gaps. Saltear preguntas pasa dentro de
   `AWAITING_ANSWERS` (RF-GAP-01).
 - `FAILED` recuerda el paso que falló (`failedStep`) y el reintento vuelve a ese paso.
-- `FINALIZED` es terminal. Cancelar o abandonar una sesión queda para el paso 6.8.
+- `FINALIZED` es terminal. `ABANDONED` también (paso 6.8): el usuario deja la sesión desde cualquier estado salvo
+  `FINALIZED`; se conserva, pero ya no figura entre las sesiones en curso. Si había un match o una generación
+  corriendo, terminan en segundo plano y su resultado se descarta (solo escriben si la sesión sigue en su paso). Lo
+  que la sesión agregó al perfil se mantiene; se puede deshacer antes.
+- **Retomar (paso 6.8, RF-TAIL-15):** la sesión, sus respuestas y sus CVs viven en la base, y las tareas que la app
+  cerró a medias vuelven a `PENDING` al arrancar (§10). Como la API key llega de Electron recién después de que
+  arranca la API, `LlmClient` trata la falta de key antes de ese primer envío como un error reintentable
+  (`AiUnavailableError`) y no como "sin configurar": la tarea retomada espera la key en lugar de fallar.
 
 **Match (paso 5.2, `tailoring/domain/match.ts`):** crear la sesión exige una JD analizada y encola la tarea
 `tailoring-match` (3 intentos; al rendirse, la sesión pasa a `FAILED` y se reintenta con
@@ -316,6 +323,60 @@ Implementado en el paso 5.1 (`tailoring/domain/tailoring-session.ts`, puro). Reg
   evidencia que no existe en el perfil, y un requisito sin evidencia queda como faltante: toda la evidencia apunta a
   ids reales.
 - El resultado (`MatchResult`) guarda solo ids y las etiquetas de los requisitos, no texto del perfil.
+
+**Preguntas de gaps (paso 5.4, `tailoring/domain/gap.ts`):** una por requisito parcial o faltante del último match,
+sean herramientas o no (RF-GAP-04), con los obligatorios primero. Se arman sin IA: la API devuelve de qué trata
+cada pregunta (requisito, tipo, herramienta del catálogo y, si es parcial, la evidencia relacionada, RF-GAP-03) y la
+interfaz la redacta con plantillas en su idioma (`tailoring.gaps.templates.<tipo>.<gap>`).
+Al empezar a responder (paso 5.5) las preguntas se guardan en `gap_questions` con su respuesta: así la lista no
+cambia mientras el usuario responde en cualquier orden, y volver desde la revisión conserva lo ya respondido. Un
+"No" o una pregunta salteada viven solo ahí, nunca en el perfil (RN-11, RN-12).
+
+**Respuestas al perfil (paso 5.6):** una respuesta afirmativa se agrega enseguida al perfil por el puerto
+`ProfileWriter`, que usa `ProfileChangesService` (origen `GAP_ANSWER` y la sesión, con registro para deshacer).
+"En un trabajo" crea un logro con lo que contó en cada experiencia elegida; "en un proyecto o curso" lo crea en ese
+proyecto, o primero el proyecto si es nuevo. Si el requisito es una herramienta del catálogo, el logro la lleva.
+`gap_questions.created` guarda lo que agregó cada respuesta: cambiarla deshace eso antes de aplicar la nueva. El
+match se recalcula sin IA (`matchWithAnswers`, RF-GAP-05): un requisito cuya respuesta agregó logros queda cubierto
+con ellos como evidencia, y vuelve a como estaba si la respuesta pasa a "no".
+
+**Redacción (paso 6.3, `tailoring/domain/resume-writing.ts`):** `POST /tailoring-sessions/:id/generate` aplica
+`GENERATE` y encola la tarea `tailoring-generate` (3 intentos; al rendirse, `FAILED` con `failedStep =
+GENERATING`). Se genera desde `MATCHED` sin gaps, desde
+`AWAITING_ANSWERS` (con las respuestas ya aplicadas al perfil y al match) o de nuevo desde la revisión.
+
+- Una llamada al LLM por idioma (`resume-writing.v1`, modelo grande), con el perfil primero y las mismas
+  referencias cortas del match. La JD analizada (requisitos con su estado en el match, palabras clave) va como
+  dato no confiable. El modelo devuelve el resumen y, por experiencia (`[W1]`, `[P1]`), los bullets con las
+  referencias de los logros que usa.
+- `tailoredResumeData` se queda solo con lo trazable (RN-01): experiencias que existen y bullets cuyas fuentes son
+  logros de esa misma experiencia (o el propio proyecto); un bullet sin fuentes se descarta sin reintento. Máximo
+  6 bullets por experiencia. El `score` queda en `null` hasta el 6.2.
+- `TailoredResume` (tabla `tailored_resumes`, uno por sesión e idioma) guarda solo lo redactado e ids: resumen,
+  bullets con `sourceIds` y las herramientas de la sección de habilidades (`selectSkills`: primero las que pide
+  la JD, después las más usadas). Regenerar los reemplaza.
+- `buildResumeDocument` arma el `ResumeDocument` copiando del perfil empresas, títulos, fechas, educación,
+  certificaciones e idiomas (RN-03), con todos los puestos en orden cronológico inverso (RN-06, RN-07) y solo los
+  proyectos con bullets (o, si ya hay ajuste, solo los bullets y proyectos que eligió, en su orden).
+  `GET /tailoring-sessions/:id/resumes/:lang/preview` lo renderiza con la plantilla de la sesión.
+
+**Guardia de veracidad (paso 6.4, `tailoring/domain/truth-guard.ts`):** determinística, compara lo redactado
+con el perfil, nunca con la JD. Corre sobre cada CV antes de guardarlo; los bullets editados por el usuario no se
+revisan (RN-05).
+
+- **Herramientas (RN-02):** busca en el texto los nombres y alias del catálogo (`ToolVocabulary`, de hasta 4
+  palabras, con la misma normalización que el catálogo). Un bullet solo puede nombrar herramientas que muestren sus
+  fuentes: etiquetadas en la experiencia o en los logros que cita, o nombradas en el texto de esas fuentes. El
+  resumen, cualquiera del perfil. Los términos que también son palabras comunes o de 1–2 letras ("Go", "REST", "R")
+  cuentan solo escritos tal cual.
+- **Números:** toda cifra del texto tiene que estar en las fuentes (`50k`, `50.000` y `50,000` son lo mismo; también
+  "tres" o "three" hasta diez) o ser años que las fechas permiten ("5+ años" en un puesto que empezó hace 5).
+- **RN-03** no se revisa en el texto: empresas, títulos y fechas se copian del perfil al armar el CV.
+- Lo que falla vuelve **una vez** a la IA (`resume-rewriting.v1`, modelo grande), con sus problemas y como dato
+  no confiable. Si la reescritura falta, viene vacía, no cita fuentes propias o sigue fallando, el texto se
+  descarta. `TailoredResumeData.guard` guarda cuántos se reescribieron y qué se descartó, con el texto y los
+  motivos (`NO_SOURCE`, `UNKNOWN_EXPERIENCE`, `TOOL_NOT_IN_SOURCES`, `NUMBER_NOT_IN_SOURCES`), para la
+  revisión (paso 6.6).
 
 ### 7.2 Pasos
 
@@ -416,6 +477,36 @@ entrada: candidatos (bullets con score), presupuesto de páginas, reglas de secc
 - **Relleno sin medir el espacio libre:** como `measure` solo devuelve páginas, el paso 4 agrega a los
   candidatos descartados de mayor score mientras el CV siga entrando, en vez de usar el umbral del 85 %.
   Medir cuánto se llena la última página se puede sumar más adelante si los CVs quedan demasiado cargados.
+
+**En el pipeline (paso 6.5):** después de la guardia de veracidad, cada CV se ajusta al `pageBudget` de la sesión.
+`measure` arma el `ResumeDocument` con la selección y lo renderiza con la plantilla de la sesión (Typst, `pdf-lib`
+cuenta las páginas). `fitCandidates` (`tailoring/domain/resume-fit.ts`) pasa todos los puestos del perfil y los
+proyectos con bullets (los relevantes: el prompt de redacción ya saltea los demás). Mientras no haya puntaje de
+relevancia (paso 6.2), el `score` de cada bullet sale del orden en que la IA los escribió dentro de su experiencia
+(1 el primero, casi 0 el último). El resultado (`selection`, `pageCount`, `fits`, `pageBudget` y el `fitLog`) queda
+en `TailoredResumeData.fit`, y la vista previa renderiza esa selección. Un perfil sin nombre, Typst ausente o una
+plantilla rota hacen fallar la generación sin reintentos; un render que tarda demasiado se reintenta.
+
+**Revisión (paso 6.6, RF-TAIL-12):** `PATCH /tailoring-sessions/:id/resumes/:lang` aplica un cambio por pedido
+(`resume-edits.ts`, solo en `REVIEW`): editar un bullet (queda `editedByUser` y la guardia ya no lo revisa,
+RN-05; conserva sus fuentes), editar o quitar el resumen, moverlo dentro de su experiencia o cambiar su
+`inclusion` (`AUTO`: decide el ajuste; `INCLUDED`: fijado, el fitter nunca lo recorta aunque el CV deje de
+entrar; `EXCLUDED`: no es candidato). Después se vuelve a ajustar: si cambió solo un texto y el CV entraba, se
+mide primero la misma selección con un render (~100 ms) y solo si ya no entra se ajusta de nuevo entero. El CV
+muestra los bullets de cada experiencia en su orden (el de la IA o el que eligió el usuario), aunque el recorte
+siga el `score`. La pantalla de la sesión (`features/tailoring`) muestra, en `REVIEW`, cada bullet con su estado
+y sus fuentes al lado de la vista previa del PDF, que se recarga después de cada cambio.
+
+**Regeneración (paso 6.7, RF-TAIL-13, `tailoring/domain/regeneration.ts`):** `POST /tailoring-sessions/:id/regenerate`
+pide, desde `REVIEW`, escribir de nuevo todo el CV, solo el resumen o los bullets de una experiencia, con
+indicaciones opcionales del usuario y en algunos de los idiomas de la sesión. El pedido queda en la sesión
+(`regeneration`, columna JSON) hasta `RESUMES_READY`: así un `FAILED` y su reintento repiten la misma regeneración
+y no una completa. La IA recibe el alcance y las indicaciones (`resume-writing.v2`: sirven para foco, tono y largo,
+nunca agregan hechos); de su respuesta solo se usa lo del alcance (`restrictToScope`), pasa por la guardia de
+veracidad y se combina con el CV actual (`mergeRegenerated`): lo que está fuera del alcance no cambia, ediciones
+incluidas, y dentro del alcance se conservan primero los bullets que el usuario editó o fijó. Toda generación sobre
+un CV ya escrito (también "volver a gaps" y generar) usa esa combinación con alcance completo, así que ningún
+bullet editado o fijado se pierde. Después se vuelve a ajustar a las páginas.
 
 ## 9. Render con Typst (módulo `documents`)
 
@@ -525,14 +616,20 @@ POST   /tailoring-sessions                         # { jobPostingId, languages[]
 GET    /tailoring-sessions/:id                     # sesión (con el match) + tarea del paso en curso
 PATCH  /tailoring-sessions/:id/options             # idiomas, páginas y plantilla; no mientras genera ni finalizada
 POST   /tailoring-sessions/:id/retry               # reintenta el paso que falló
+GET    /tailoring-sessions?open=true&jobPostingId=   # sesiones para retomar (las no finalizadas ni abandonadas)
+POST   /tailoring-sessions/:id/abandon             # deja la sesión (ABANDONED)
 GET    /tailoring-sessions/:id/events              # SSE
-GET    /tailoring-sessions/:id/gaps
-PUT    /tailoring-sessions/:id/gaps                # respuestas
-POST   /tailoring-sessions/:id/generate
-PATCH  /tailoring-sessions/:id/resumes/:lang       # ediciones
-GET    /tailoring-sessions/:id/resumes/:lang/preview
+GET    /tailoring-sessions/:id/gaps                # preguntas de gaps, desde el último match y sin IA (409 sin match)
+POST   /tailoring-sessions/:id/ask-gaps            # pasa a AWAITING_ANSWERS y guarda las preguntas (conserva respuestas previas)
+PUT    /tailoring-sessions/:id/gaps/:requirementId # respuesta a una pregunta (trabajo / proyecto o curso / no / salteada)
+POST   /tailoring-sessions/:id/generate            # encola la redacción de un CV por idioma
+POST   /tailoring-sessions/:id/regenerate          # { scope, instructions?, languages? }: todo, resumen o una experiencia
+GET    /tailoring-sessions/:id/resumes             # CVs redactados, en el orden de los idiomas
+PATCH  /tailoring-sessions/:id/resumes/:lang       # un cambio (texto, orden, inclusión); vuelve a ajustar
+GET    /tailoring-sessions/:id/resumes/:lang/preview  # PDF
 POST   /tailoring-sessions/:id/finalize
-POST   /tailoring-sessions/:id/revert-profile-changes
+GET    /tailoring-sessions/:id/profile-changes        # lo que la sesión agregó o cambió en el perfil
+POST   /tailoring-sessions/:id/revert-profile-changes # { changeIds? }: deshace esos cambios o todos los pendientes
 
 GET    /resume-versions/:id
 GET    /resume-versions/:id/pdf
@@ -682,6 +779,15 @@ real (se copia con el *backup* de SQLite y sin las preferencias `ai.*`; la origi
 sea razonable se juzga leyéndolo; lo que se verifica solo es que **toda la evidencia apunte a elementos que
 existen** en el perfil: si alguna no, o si un match falla, el script termina con 1. Deja el reporte en
 `.data/evals/match-*.json`.
+
+`npm run evals:resume` (6.3) sigue con esas sesiones: saltea los gaps, redacta el CV en español y en inglés desde
+el mismo perfil y guarda los dos PDF. Imprime cada bullet con los logros que cita, para juzgar si la redacción es
+fiel; verifica solo que **todo bullet tenga fuentes y que existan** en el perfil (si no, o si una redacción falla,
+termina con 1). `--model` elige el modelo grande. Deja el reporte en `.data/evals/resume-*.json` y los PDF en
+`.data/evals/resume-*/`. Lo común con `evals:match` vive en `apps/api/scripts/eval-support.mjs`. Desde el 6.4 también
+muestra qué hizo la guardia (textos reescritos y descartados, con motivo): los CVs no conservan nada inventado,
+así que esos números miden cuánto inventa el prompt. Desde el 6.5 verifica que cada PDF respete el límite de
+páginas (`--pages 1|2`, por defecto 1) y coincida con lo que midió el ajuste; si no, termina con 1.
 
 ## 16. Distribución y actualizaciones
 

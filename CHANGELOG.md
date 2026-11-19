@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/BTRC-Solutions/careerly/compare/v0.4.0...v0.5.0) (2026-11-18)
+
+
+### Features
+
+* **api:** add TailoringSession aggregate and state machine ([9f1733f](https://github.com/BTRC-Solutions/careerly/commit/9f1733f82c0eaab7d389fab1bbd6869a95a3dcd1))
+* **api:** match job requirements against the master profile ([3fa2966](https://github.com/BTRC-Solutions/careerly/commit/3fa2966b538c890d23c34d286f37443bc90226df))
+* **tailoring:** add affirmative gap answers to the profile and the match (F5.6) ([b142f01](https://github.com/BTRC-Solutions/careerly/commit/b142f016c3cdcc70e478af2285067b8ccc24eef0))
+* **tailoring:** answer the gap questions in any order, or skip them (F5.5) ([e0bb22c](https://github.com/BTRC-Solutions/careerly/commit/e0bb22ceec9132e7ab24b6e4e21ff90aaa5e4d0c))
+* **tailoring:** build the gap questions of a session from its match (F5.4) ([5b38766](https://github.com/BTRC-Solutions/careerly/commit/5b38766f480b87801f46d5b1ff4c66887167cb2f))
+* **tailoring:** undo a session's changes to the master profile (F5.7) ([481fce5](https://github.com/BTRC-Solutions/careerly/commit/481fce58da03af65abb9226571d35fec5c9af283))
+* **web:** show the match summary of a tailoring session ([88257d8](https://github.com/BTRC-Solutions/careerly/commit/88257d842bb86c2ead9cdb13a2eefa450e9e25f5))
+
+
+### Miscellaneous Chores
+
+* close phase 5 ([c5ffa93](https://github.com/BTRC-Solutions/careerly/commit/c5ffa9360a85c669cf24b93299f39843bd46beb9))
+
 ## [0.4.0](https://github.com/BTRC-Solutions/careerly/compare/v0.3.0...v0.4.0) (2026-11-17)
 
 

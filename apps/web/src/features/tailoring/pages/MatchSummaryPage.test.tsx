@@ -84,6 +84,7 @@ const MATCHED: TailoringSessionView = {
     templateId: 'classic',
     status: 'MATCHED',
     failedStep: null,
+    regeneration: null,
     createdAt: '2026-11-17T12:00:00.000Z',
     updatedAt: '2026-11-17T12:00:00.000Z',
     match: {
@@ -155,6 +156,9 @@ beforeEach(() => {
       return HttpResponse.json(view);
     }),
     http.get(api('/profile'), () => HttpResponse.json(PROFILE)),
+    http.get(api(`/tailoring-sessions/${ID}/profile-changes`), () =>
+      HttpResponse.json({ changes: [] }),
+    ),
     http.get(api('/templates'), () =>
       HttpResponse.json([{ id: 'classic', name: 'Clásica', version: 1, builtIn: true }]),
     ),

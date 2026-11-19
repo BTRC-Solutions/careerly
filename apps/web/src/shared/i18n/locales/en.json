@@ -709,7 +709,9 @@
         "add": "Add requirement",
         "keywordsHint": "Separated by commas."
       },
-      "tailor": "Tailor my CV"
+      "tailor": "Tailor my CV",
+      "continueTailoring": "Continue my CV",
+      "tailorAgain": "Start over"
     }
   },
   "templates": {
@@ -843,6 +845,204 @@
         "LANGUAGE": "Language"
       },
       "deleted": "no longer in your profile"
+    },
+    "generate": {
+      "title": "Generate the CV",
+      "action": "Generate CV",
+      "noGaps": "Your profile covers everything the job description asks for.",
+      "withGaps_one": "{{count}} requirement is still not fully covered. The CV is written with what your profile has, including what you answered.",
+      "withGaps_other": "{{count}} requirements are still not fully covered. The CV is written with what your profile has, including what you answered.",
+      "options_one": "In {{languages}} · up to {{count}} page",
+      "options_other": "In {{languages}} · up to {{count}} pages",
+      "retrying": "The generation failed and will be retried in a few seconds…",
+      "steps": {
+        "reading": "Getting ready…",
+        "writing": "Writing the CV with AI…",
+        "checking": "Checking that everything comes from your profile…",
+        "fitting": "Fitting the CV to its pages…"
+      },
+      "errors": {
+        "NOT_CONFIGURED": "There is no API key. Add one in Settings and retry.",
+        "KEY_REJECTED": "The AI provider rejected your API key. Check it in Settings and retry.",
+        "BLOCKED": "The AI provider declined to write this CV.",
+        "RATE_LIMITED": "The AI provider is rate limiting requests. Retry in a while.",
+        "JOB_POSTING_DELETED": "The job description of this session no longer exists.",
+        "PROFILE_WITHOUT_NAME": "Your profile has no name. Add it in the profile and retry.",
+        "RENDERER_UNAVAILABLE": "Typst was not found to build the PDF. Reinstall the app and retry.",
+        "COMPILE_ERROR": "The template of this session has errors. Check it in Templates and retry.",
+        "FAILED": "The CV could not be generated. Retry."
+      }
+    },
+    "review": {
+      "title": "CV review",
+      "loadError": "The CVs of this session could not be loaded.",
+      "language": "CV language",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "preview": "Preview",
+      "previewTitle": "Preview of the CV in {{language}}",
+      "previewError": "The preview could not be built.",
+      "updating": "Updating…",
+      "editError": "The change could not be applied: {{message}}",
+      "fit": {
+        "fits_one": "It takes {{count}} page, within the limit of {{budget}}.",
+        "fits_other": "It takes {{count}} pages, within the limit of {{budget}}.",
+        "over_one": "It does not fit in {{count}} page: it takes {{pages}}. Set a bullet back to “Automatic” or exclude it.",
+        "over_other": "It does not fit in {{count}} pages: it takes {{pages}}. Set a bullet back to “Automatic” or exclude it.",
+        "leftOut_one": "{{count}} bullet was left out so the CV fits.",
+        "leftOut_other": "{{count}} bullets were left out so the CV fits.",
+        "allIn": "Every bullet fits."
+      },
+      "summary": "Summary",
+      "noSummary": "No summary.",
+      "edit": "Edit",
+      "edited": "Edited by you",
+      "bulletText": "Bullet text",
+      "headerOnly": "Shown with company, title and dates only.",
+      "source": "From:",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "inclusion": {
+        "label": "Inclusion in the CV",
+        "AUTO": "Automatic",
+        "INCLUDED": "Always include",
+        "EXCLUDED": "Exclude"
+      },
+      "states": {
+        "IN": "In the CV",
+        "EXCLUDED": "Excluded by you",
+        "LEFT_OUT": {
+          "OVER_BUDGET": "Out: does not fit in the pages",
+          "SECTION_LIMIT": "Out: bullet limit of the position",
+          "OLD_POSITION": "Out: position older than 10 years",
+          "NOT_RELEVANT": "Out: project not relevant",
+          "SPACE_LEFT": "In the CV"
+        }
+      },
+      "guard": {
+        "summary_one": "The truthfulness guard fixed {{rewritten}} and left out {{count}} text",
+        "summary_other": "The truthfulness guard fixed {{rewritten}} and left out {{count}} texts",
+        "description": "These are texts the AI wrote with something your profile does not say. They are not in the CV.",
+        "reasons": {
+          "NO_SOURCE": "cites no achievement of its experience",
+          "UNKNOWN_EXPERIENCE": "was for an experience that is not in your profile",
+          "TOOL_NOT_IN_SOURCES": "names a tool its sources do not show",
+          "NUMBER_NOT_IN_SOURCES": "has a number its sources do not have"
+        }
+      },
+      "showMatch": "Show the match with the job description"
+    },
+    "regenerate": {
+      "action": "Regenerate",
+      "all": "Regenerate all",
+      "experience": "Regenerate {{name}}",
+      "names": {
+        "ALL": "the whole CV",
+        "SUMMARY": "the summary"
+      },
+      "title": "Regenerate {{name}}",
+      "description": "The AI writes it again in {{language}}. What you edited and the rest of the CV stay as they are.",
+      "instructions": "Indications (optional)",
+      "instructionsHint": "What you want different in this version. The AI never adds anything your profile does not say.",
+      "placeholder": "For example: more focus on leadership, shorter.",
+      "submit": "Regenerate"
+    },
+    "open": {
+      "title": "Sessions in progress",
+      "updated": "Last change: {{date}}"
+    },
+    "statuses": {
+      "ANALYZING": "Matching",
+      "MATCHED": "Match ready",
+      "AWAITING_ANSWERS": "Questions",
+      "GENERATING": "Generating",
+      "REVIEW": "Under review",
+      "FINALIZED": "Finalized",
+      "ABANDONED": "Abandoned",
+      "FAILED": "Failed"
+    },
+    "abandon": {
+      "action": "Abandon",
+      "title": "Abandon this session?",
+      "description": "It no longer shows among the sessions in progress and cannot be resumed. What you added to your profile stays; undo it first if you do not want it.",
+      "done": "You abandoned this session. You can start a new one for this job posting."
+    },
+    "profileChanges": {
+      "title": "Changes to your profile",
+      "description": "What this session added to or changed in your master profile while answering the gaps. You can undo them one by one or all at once.",
+      "kinds": {
+        "CREATE": "Added",
+        "UPDATE": "Changed"
+      },
+      "gone": "No longer in your profile.",
+      "undo": "Undo",
+      "undoOne": "Undo the change to “{{name}}”",
+      "undoAll": "Undo all",
+      "undone": "Undone",
+      "confirmTitle": "Undo this session's changes?",
+      "confirmDescription_one": "{{count}} change to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "confirmDescription_other": "{{count}} changes to your master profile will be undone: what was added is deleted and what was changed goes back to how it was.",
+      "kept_one": "You edited {{count}} field after this session: your version was kept.",
+      "kept_other": "You edited {{count}} fields after this session: your version was kept."
+    },
+    "gaps": {
+      "templates": {
+        "TOOL": {
+          "MISSING": "Have you used {{name}}?",
+          "PARTIAL": "What did you do with {{name}}?"
+        },
+        "SKILL": {
+          "MISSING": "Do you have experience in “{{name}}”?",
+          "PARTIAL": "Do you have more experience in “{{name}}”?"
+        },
+        "LANGUAGE": {
+          "MISSING": "Do you have this language level: “{{name}}”?",
+          "PARTIAL": "Do you reach the level they ask for: “{{name}}”?"
+        },
+        "OTHER": {
+          "MISSING": "Do you meet “{{name}}”?",
+          "PARTIAL": "Do you fully meet “{{name}}”?"
+        }
+      },
+      "partialHint": {
+        "TOOL": "{{name}} is in your profile, but no achievement shows how you used it. This is what is there:",
+        "SKILL": "Your profile has something related, but less than they ask for:",
+        "LANGUAGE": "Your profile has this language, but not at the level they ask for:",
+        "OTHER": "Your profile has something related, but less than they ask for:"
+      },
+      "title": "Questions about what is missing",
+      "intro_one": "There is {{count}} requirement your profile does not show, or shows only in part. Tell us if you have it: what you add stays in your profile.",
+      "intro_other": "There are {{count}} requirements your profile does not show, or shows only in part. Tell us if you have them: what you add stays in your profile.",
+      "start": "Answer",
+      "description": "Answer in any order. What you skip counts as \"no\" for this CV, and a \"no\" is never saved to your profile.",
+      "progress": "{{answered}} of {{total}} answered",
+      "answerLegend": "Your answer",
+      "answers": {
+        "USED_AT_WORK": "Yes, at a job",
+        "USED_ELSEWHERE": "Yes, in a project or course",
+        "NOT_USED": "No",
+        "SKIPPED": "Skipped"
+      },
+      "positions": "In which experience?",
+      "noPositions": "You have not added any experience to your profile yet.",
+      "project": "Project or course",
+      "newProject": "A new one…",
+      "projectName": "Name",
+      "projectKind": "Kind",
+      "detail": "What did you do?",
+      "detailHint": "In 1 or 2 lines. It is added to your profile as an achievement.",
+      "includeInResume": "Include it in this CV",
+      "notInThisResume": "Not included in this CV.",
+      "skip": "Skip",
+      "change": "Change",
+      "errors": {
+        "detail": "Tell in 1 or 2 lines what you did.",
+        "positions": "Pick at least one experience.",
+        "projectName": "Give the project or course a name."
+      },
+      "addedToProfile": "Added to your master profile. You can undo it from \"Changes to your profile\"."
     },
     "options": {
       "title": "CV options",

@@ -422,6 +422,8 @@ export const tailoringSessions = sqliteTable(
     failedStep: text('failed_step'),
     /** JSON `MatchResult`: ids and requirement labels, no profile text. */
     match: text('match'),
+    /** JSON `Regeneration` while one is in course (RF-TAIL-13); it holds the user's indications. */
+    regeneration: text('regeneration'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -429,4 +431,47 @@ export const tailoringSessions = sqliteTable(
     index('tailoring_sessions_posting_idx').on(table.jobPostingId),
     index('tailoring_sessions_updated_at_idx').on(table.updatedAt),
   ],
+);
+
+/**
+ * The gap questions of a session (RF-TAIL-04) and their answers (RF-GAP-01). Stored when the user starts
+ * answering, so the list does not change while they answer. A "No" lives only here (RN-11, RN-12).
+ */
+export const gapQuestions = sqliteTable(
+  'gap_questions',
+  {
+    sessionId: text('session_id').notNull(),
+    requirementId: text('requirement_id').notNull(),
+    /** Display order. */
+    position: integer('position').notNull(),
+    /** JSON: the question without its answer (requirement, kinds, tool, related evidence ids). */
+    question: text('question').notNull(),
+    /** JSON `GapAnswer`; `null` until answered. */
+    answer: text('answer'),
+    answeredAt: text('answered_at'),
+    /** JSON array of `Evidence`: what the answer added to the profile (ids only). */
+    created: text('created').notNull().default('[]'),
+  },
+  (table) => [primaryKey({ columns: [table.sessionId, table.requirementId] })],
+);
+
+/**
+ * The tailored CV of one session and language (RF-TAIL-10, RF-TAIL-11). `data` holds only the worded parts and
+ * profile ids (`TailoredResumeData`); the rest is copied from the profile when the CV is built (RN-03).
+ */
+export const tailoredResumes = sqliteTable(
+  'tailored_resumes',
+  {
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => tailoringSessions.id, { onDelete: 'cascade' }),
+    /** `ResumeLanguage`. */
+    language: text('language').notNull(),
+    /** JSON `TailoredResumeData`. */
+    data: text('data').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    model: text('model').notNull(),
+    generatedAt: text('generated_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.sessionId, table.language] })],
 );

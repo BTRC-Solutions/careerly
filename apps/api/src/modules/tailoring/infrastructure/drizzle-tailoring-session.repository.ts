@@ -1,6 +1,10 @@
-import { type TailoringSession, TailoringSessionSchema } from '@careerly/contracts';
+import {
+  CLOSED_SESSION_STATUSES,
+  type TailoringSession,
+  TailoringSessionSchema,
+} from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, notInArray, type SQL } from 'drizzle-orm';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { tailoringSessions } from '../../../platform/database/schema.js';
 import { TailoringSessionRepository } from '../application/tailoring.ports.js';
@@ -29,6 +33,21 @@ export class DrizzleTailoringSessionRepository extends TailoringSessionRepositor
       .where(eq(tailoringSessions.id, id));
     return row ? toSession(row) : null;
   }
+
+  async list(filter: { jobPostingId?: string; open?: boolean }): Promise<TailoringSession[]> {
+    const conditions: SQL[] = [];
+    if (filter.jobPostingId)
+      conditions.push(eq(tailoringSessions.jobPostingId, filter.jobPostingId));
+    if (filter.open) {
+      conditions.push(notInArray(tailoringSessions.status, [...CLOSED_SESSION_STATUSES]));
+    }
+    const rows = await this.database.db
+      .select()
+      .from(tailoringSessions)
+      .where(and(...conditions))
+      .orderBy(desc(tailoringSessions.updatedAt));
+    return rows.map(toSession);
+  }
 }
 
 function toRow(session: TailoringSession): Row {
@@ -41,6 +60,7 @@ function toRow(session: TailoringSession): Row {
     status: session.status,
     failedStep: session.failedStep,
     match: session.match === null ? null : JSON.stringify(session.match),
+    regeneration: session.regeneration === null ? null : JSON.stringify(session.regeneration),
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
   };
@@ -52,5 +72,6 @@ function toSession(row: Row): TailoringSession {
     ...row,
     languages: JSON.parse(row.languages) as unknown,
     match: row.match === null ? null : (JSON.parse(row.match) as unknown),
+    regeneration: row.regeneration === null ? null : (JSON.parse(row.regeneration) as unknown),
   });
 }
