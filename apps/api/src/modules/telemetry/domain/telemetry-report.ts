@@ -46,6 +46,15 @@ export function localDay(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/** The instants (ISO) where the local `day` starts and the next one starts: `[from, to)`. */
+export function dayRange(day: string): { from: string; to: string } {
+  const start = (value: string) => {
+    const [year, month, date] = value.split('-').map(Number) as [number, number, number];
+    return new Date(year, month - 1, date).toISOString();
+  };
+  return { from: start(day), to: start(addDays(day, 1)) };
+}
+
 /** `day` plus `delta` days (`YYYY-MM-DD` in, `YYYY-MM-DD` out). */
 export function addDays(day: string, delta: number): string {
   const [year, month, date] = day.split('-').map(Number) as [number, number, number];

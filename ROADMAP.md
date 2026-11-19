@@ -118,7 +118,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 | 6.6 | Pantalla de revisión: vista previa del PDF, fuente de cada bullet, edición, incluir/excluir, reordenar y re-ajuste automático. `[RF-TAIL-12, RN-05]` | Editar un bullet actualiza la vista previa en < 2 s. `[RNF-08]` | 🟨 (adelantado, en PR draft sobre el de 6.5: pantalla y API probadas; editar + vista previa tarda ~200 ms en el navegador y el test de integración exige < 2 s) |
 | 6.7 | Regenerar el CV completo o una sección con indicaciones. `[RF-TAIL-13]` | Funciona sin perder las ediciones del usuario en otras secciones. | 🟨 (adelantado, en PR draft sobre el de 6.6: probado con tests y en el navegador, incluido un reintento tras un fallo; falta probarlo con una key real) |
 | 6.8 | Retomar sesiones en curso. `[RF-TAIL-15]` | Cerrar la app a mitad del flujo y volver deja todo donde estaba. | 🟨 (en PR draft sobre el de 6.7: sesiones en curso en el inicio, continuar desde la oferta y abandonar; test de integración que cierra la API con el match a medias y al volver termina solo) |
-| 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | ⬜ |
+| 6.9 | Telemetría: completar "uso de funciones" (CVs generados, idiomas de salida, gaps respondidos). `[RF-TEL-03h]` | Test: el reporte refleja una sesión completa sin incluir texto del CV. | 🟨 (en PR draft sobre el de 6.2: CVs por idioma y gaps respondidos desde el módulo `tailoring`; test de integración con una sesión completa, sin textos en el reporte) |
 
 ## Fase 7 — Snapshots y postulaciones · `v0.7.0`
 
