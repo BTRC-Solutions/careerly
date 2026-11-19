@@ -148,6 +148,13 @@
       "when": 1795105169664,
       "tag": "0020_application_events",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1795105795892,
+      "tag": "0021_application_contacts",
+      "breakpoints": true
     }
   ]
 }

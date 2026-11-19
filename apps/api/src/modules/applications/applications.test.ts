@@ -4,6 +4,8 @@ import {
   ApplicationEventSchema,
   ApplicationListSchema,
   ApplicationSchema,
+  ContactListSchema,
+  ContactSchema,
   JobAnalysisStateSchema,
   type JobPosting,
   JobPostingSchema,
@@ -28,7 +30,8 @@ import {
 /*
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08), end to end: one per job description, created
  * saved or already sent with the finalized CVs of that job description, whose PDF is exactly the finalized one,
- * and its append-only timeline (roadmap 7.5, RF-APP-04, RN-09).
+ * its append-only timeline (roadmap 7.5, RF-APP-04, RN-09), and its contacts and extra data (roadmap 7.6,
+ * RF-APP-05, RF-APP-07).
  */
 
 const CONTROL_TOKEN = 'control-token-only-main-knows';
@@ -402,6 +405,112 @@ describe('job applications (integration)', () => {
       });
     } finally {
       check.close();
+    }
+  });
+
+  it('keeps its extra data and contacts (RF-APP-05, RF-APP-07)', async () => {
+    await start();
+    const jd = await posting('Staff Engineer');
+    const { id } = await create({ jobPostingId: jd.id });
+    expect(await json('GET', `/applications/${id}`)).toMatchObject({
+      channel: null,
+      priority: null,
+      salaryExpected: null,
+      salaryOffered: null,
+    });
+
+    // Extra data: a missing field stays, `null` clears it.
+    const patch = (body: unknown) => api('PATCH', `/applications/${id}`, body);
+    expect(
+      await (
+        await patch({ channel: 'REFERRAL', priority: 'HIGH', salaryExpected: ' USD 5.000/mes ' })
+      ).json(),
+    ).toMatchObject({
+      channel: 'REFERRAL',
+      priority: 'HIGH',
+      salaryExpected: 'USD 5.000/mes',
+      salaryOffered: null,
+    });
+    expect(
+      await (await patch({ salaryOffered: 'USD 4.500/mes', priority: null })).json(),
+    ).toMatchObject({
+      channel: 'REFERRAL',
+      priority: null,
+      salaryExpected: 'USD 5.000/mes',
+      salaryOffered: 'USD 4.500/mes',
+    });
+    expect(
+      ApplicationListSchema.parse(await json('GET', '/applications')).applications[0],
+    ).toMatchObject({ priority: null });
+    for (const body of [
+      { channel: 'CARRIER_PIGEON' },
+      { salaryExpected: '' },
+      { status: 'OFFER' },
+    ]) {
+      expect((await patch(body)).status).toBe(400);
+    }
+    expect((await api('PATCH', '/applications/nope', { priority: 'LOW' })).status).toBe(404);
+
+    // Contacts: add, list in order, replace, delete.
+    const contacts = `/applications/${id}/contacts`;
+    const added = async (body: unknown) => {
+      const response = await api('POST', contacts, body);
+      expect(response.status).toBe(201);
+      return ContactSchema.parse(await response.json());
+    };
+    const recruiter = await added({
+      name: 'Laura Gómez',
+      role: 'RECRUITER',
+      email: 'laura@acme.test',
+    });
+    expect(recruiter).toMatchObject({ email: 'laura@acme.test', linkedinUrl: null });
+    const manager = await added({
+      name: 'Diego Paz',
+      role: 'HIRING_MANAGER',
+      linkedinUrl: 'https://www.linkedin.com/in/diego-paz',
+    });
+    const list = async () => ContactListSchema.parse(await json('GET', contacts)).contacts;
+    expect((await list()).map((contact) => contact.name)).toEqual(['Laura Gómez', 'Diego Paz']);
+
+    const replaced = ContactSchema.parse(
+      await json('PUT', `${contacts}/${recruiter.id}`, { name: 'Laura Gómez', role: 'REFERRAL' }),
+    );
+    expect(replaced).toMatchObject({
+      id: recruiter.id,
+      role: 'REFERRAL',
+      email: null,
+      createdAt: recruiter.createdAt,
+    });
+    for (const body of [
+      { name: ' ', role: 'RECRUITER' },
+      { name: 'X', role: 'CEO' },
+      { name: 'X', role: 'OTHER', email: 'not-an-email' },
+      { name: 'X', role: 'OTHER', linkedinUrl: 'javascript:alert(1)' },
+    ]) {
+      expect((await api('POST', contacts, body)).status).toBe(400);
+    }
+    expect((await api('PUT', `${contacts}/nope`, { name: 'X', role: 'OTHER' })).status).toBe(404);
+
+    expect((await api('DELETE', `${contacts}/${manager.id}`)).status).toBe(204);
+    expect((await api('DELETE', `${contacts}/${manager.id}`)).status).toBe(404);
+    expect((await list()).map((contact) => contact.id)).toEqual([recruiter.id]);
+
+    // A contact belongs to its application only.
+    const other = await create({ jobPostingId: (await posting('Other job')).id });
+    expect((await api('DELETE', `/applications/${other.id}/contacts/${recruiter.id}`)).status).toBe(
+      404,
+    );
+
+    // Deleting the application takes its contacts along.
+    expect((await api('DELETE', `/applications/${id}`)).status).toBe(204);
+    expect((await api('GET', contacts)).status).toBe(404);
+    const db = new DatabaseSync(path.join(temp!.dir, 'careerly.db'));
+    try {
+      expect(db.prepare('SELECT COUNT(*) AS count FROM application_contacts').get()).toEqual({
+        count: 0,
+      });
+    } finally {
+      db.close();
     }
   });
 

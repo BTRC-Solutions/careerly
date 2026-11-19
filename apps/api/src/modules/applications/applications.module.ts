@@ -3,6 +3,7 @@ import { JobPostingsModule } from '../job-postings/index.js';
 import { TailoringModule } from '../tailoring/index.js';
 import {
   ApplicationRepository,
+  ContactRepository,
   FinalizedResumesReader,
   JobPostingReader,
 } from './application/applications.ports.js';
@@ -14,11 +15,12 @@ import {
   TailoringModuleFinalizedResumes,
 } from './infrastructure/module-adapters.js';
 import { SqliteApplicationRepository } from './infrastructure/sqlite-application.repository.js';
+import { SqliteContactRepository } from './infrastructure/sqlite-contact.repository.js';
 
 /**
  * Job applications (ARCHITECTURE §4–5, hexagonal): one per job description, its state machine (roadmap 7.2)
- * the finalized CVs sent with it (roadmap 7.3) and its timeline (roadmap 7.5). Contacts and extra data come in
- * 7.6.
+ * the finalized CVs sent with it (roadmap 7.3), its timeline (roadmap 7.5), and its contacts and extra data
+ * (roadmap 7.6).
  */
 @Module({
   imports: [JobPostingsModule, TailoringModule],
@@ -27,6 +29,7 @@ import { SqliteApplicationRepository } from './infrastructure/sqlite-application
     ApplicationsService,
     ApplicationDeletionCheck,
     { provide: ApplicationRepository, useClass: SqliteApplicationRepository },
+    { provide: ContactRepository, useClass: SqliteContactRepository },
     { provide: JobPostingReader, useClass: JobPostingsModuleReader },
     { provide: FinalizedResumesReader, useClass: TailoringModuleFinalizedResumes },
   ],

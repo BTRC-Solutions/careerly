@@ -31,6 +31,7 @@ const summary = (
   status,
   ghostedFrom,
   appliedAt,
+  priority: null,
   createdAt: NOW,
   updatedAt: NOW,
 });
@@ -57,6 +58,9 @@ beforeEach(() => {
         ...moved,
         sentWithoutCareerlyCv: false,
         sentResumes: [],
+        channel: null,
+        salaryExpected: null,
+        salaryOffered: null,
       };
       return HttpResponse.json(application);
     }),

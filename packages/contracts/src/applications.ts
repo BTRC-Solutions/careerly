@@ -87,6 +87,63 @@ export const SentResumeSchema = z.object({
 });
 export type SentResume = z.infer<typeof SentResumeSchema>;
 
+// ---------------------------------------------------------------------------
+// Extra data and contacts (roadmap 7.6, RF-APP-05, RF-APP-07). Never part of telemetry (RN-18).
+// ---------------------------------------------------------------------------
+
+/** How the user applied (RF-APP-07). */
+export const ApplicationChannelSchema = z.enum(['PORTAL', 'REFERRAL', 'DIRECT_CONTACT', 'OTHER']);
+export type ApplicationChannel = z.infer<typeof ApplicationChannelSchema>;
+
+export const ApplicationPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH']);
+export type ApplicationPriority = z.infer<typeof ApplicationPrioritySchema>;
+
+/** A salary as the user writes it (amount, currency and period vary too much to model): e.g. "USD 4.000/mes". */
+const SalaryText = z.string().trim().min(1).max(100);
+
+/** `PATCH /applications/:id`: the extra data; `null` clears a field, a missing one stays as it is. */
+export const UpdateApplicationRequestSchema = z
+  .object({
+    channel: ApplicationChannelSchema.nullable(),
+    priority: ApplicationPrioritySchema.nullable(),
+    salaryExpected: SalaryText.nullable(),
+    salaryOffered: SalaryText.nullable(),
+  })
+  .partial()
+  .strict();
+export type UpdateApplicationRequest = z.infer<typeof UpdateApplicationRequestSchema>;
+
+/** The part a contact plays in the process (RF-APP-05). */
+export const ContactRoleSchema = z.enum(['RECRUITER', 'HIRING_MANAGER', 'REFERRAL', 'OTHER']);
+export type ContactRole = z.infer<typeof ContactRoleSchema>;
+
+/** `POST /applications/:id/contacts` and `PUT /applications/:id/contacts/:contactId`. */
+export const ContactInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200),
+    role: ContactRoleSchema,
+    email: z.email().max(320).nullable().default(null),
+    linkedinUrl: z
+      .url({ protocol: /^https?$/ })
+      .max(500)
+      .nullable()
+      .default(null),
+  })
+  .strict();
+export type ContactInput = z.input<typeof ContactInputSchema>;
+
+/** A person of the company in an application (RF-APP-05). */
+export const ContactSchema = ContactInputSchema.extend({
+  id: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+}).strip();
+export type Contact = z.infer<typeof ContactSchema>;
+
+/** `GET /applications/:id/contacts`: in the order they were added. */
+export const ContactListSchema = z.object({ contacts: z.array(ContactSchema) });
+export type ContactList = z.infer<typeof ContactListSchema>;
+
 /** One application per job description (RF-APP-01). */
 export const ApplicationSchema = z.object({
   id: z.string(),
@@ -100,6 +157,10 @@ export const ApplicationSchema = z.object({
   sentWithoutCareerlyCv: z.boolean(),
   /** Oldest first. */
   sentResumes: z.array(SentResumeSchema),
+  channel: ApplicationChannelSchema.nullable(),
+  priority: ApplicationPrioritySchema.nullable(),
+  salaryExpected: z.string().nullable(),
+  salaryOffered: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -112,6 +173,7 @@ export const ApplicationSummarySchema = ApplicationSchema.pick({
   status: true,
   ghostedFrom: true,
   appliedAt: true,
+  priority: true,
   createdAt: true,
   updatedAt: true,
 }).extend({ title: z.string().nullable(), company: z.string().nullable() });

@@ -6,13 +6,18 @@ import type {
   ApplicationEventList,
   Application as ApplicationView,
   ApplicationList,
+  Contact,
+  ContactInput,
+  ContactList,
   CreateApplicationRequest,
   ListApplicationsQuery,
   MoveApplicationRequest,
   ResumeVersion,
   ResumeVersionList,
   SendApplicationRequest,
+  UpdateApplicationRequest,
 } from '@careerly/contracts';
+import { ContactInputSchema } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
 import {
   applyApplicationEvent,
@@ -24,6 +29,8 @@ import {
   ApplicationAlreadyExistsError,
   ApplicationNotFoundError,
   ApplicationRepository,
+  ContactNotFoundError,
+  ContactRepository,
   FinalizedResumesReader,
   JobPostingReader,
   type StoredApplication,
@@ -35,7 +42,8 @@ import {
  * the finalized CVs of that job description that were sent (RF-APP-02). Their PDFs are the finalized ones
  * (RF-APP-08). The status changes go through the aggregate (roadmap 7.2) and are recorded in the timeline
  * (roadmap 7.5, RN-09), where the user also adds notes, interviews and messages (RF-APP-04). Nothing in the
- * timeline is edited or deleted.
+ * timeline is edited or deleted. Its extra data and contacts (roadmap 7.6, RF-APP-05, RF-APP-07) are edited
+ * freely and never leave the computer.
  */
 @Injectable()
 export class ApplicationsService {
@@ -43,6 +51,7 @@ export class ApplicationsService {
     private readonly applications: ApplicationRepository,
     private readonly postings: JobPostingReader,
     private readonly finalized: FinalizedResumesReader,
+    private readonly contactsRepository: ContactRepository,
   ) {}
 
   /** Throws `ApplicationJobPostingNotFoundError` and `ApplicationAlreadyExistsError`. */
@@ -55,6 +64,10 @@ export class ApplicationsService {
     const saved: StoredApplication = {
       ...newApplication({ id: randomUUID(), jobPostingId: request.jobPostingId }),
       sentResumes: [],
+      channel: null,
+      priority: null,
+      salaryExpected: null,
+      salaryOffered: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -91,6 +104,54 @@ export class ApplicationsService {
     const { application, change } = move(stored, request, versions, now);
     await this.applications.save(application, statusEvents(change, now));
     return toView(application, versions);
+  }
+
+  /** Changes the extra data (RF-APP-07): `null` clears a field, a missing one stays as it is. */
+  async update(id: string, request: UpdateApplicationRequest): Promise<ApplicationView> {
+    const stored = await this.load(id);
+    const application = { ...stored, ...request, updatedAt: new Date().toISOString() };
+    await this.applications.save(application);
+    return toView(application, await this.finalized.forJobPosting(application.jobPostingId));
+  }
+
+  /** The contacts (RF-APP-05), in the order they were added. */
+  async contacts(id: string): Promise<ContactList> {
+    await this.load(id);
+    return { contacts: await this.contactsRepository.list(id) };
+  }
+
+  async addContact(id: string, input: ContactInput): Promise<Contact> {
+    await this.load(id);
+    const now = new Date().toISOString();
+    const contact = {
+      ...ContactInputSchema.parse(input),
+      id: randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.contactsRepository.save(id, contact);
+    return contact;
+  }
+
+  /** Replaces what is known of a contact. Throws `ContactNotFoundError`. */
+  async updateContact(id: string, contactId: string, input: ContactInput): Promise<Contact> {
+    await this.load(id);
+    const existing = await this.contactsRepository.find(id, contactId);
+    if (!existing) throw new ContactNotFoundError(contactId);
+    const contact = {
+      ...existing,
+      ...ContactInputSchema.parse(input),
+      updatedAt: new Date().toISOString(),
+    };
+    await this.contactsRepository.save(id, contact);
+    return contact;
+  }
+
+  async deleteContact(id: string, contactId: string): Promise<void> {
+    await this.load(id);
+    if (!(await this.contactsRepository.delete(id, contactId))) {
+      throw new ContactNotFoundError(contactId);
+    }
   }
 
   /** The timeline (RF-APP-04): oldest first. */
@@ -138,6 +199,7 @@ export class ApplicationsService {
           status: application.status,
           ghostedFrom: application.ghostedFrom,
           appliedAt: application.appliedAt,
+          priority: application.priority,
           createdAt: application.createdAt,
           updatedAt: application.updatedAt,
           title: posting?.title ?? null,
@@ -306,6 +368,10 @@ function toView(application: StoredApplication, versions: ResumeVersion[]): Appl
           ]
         : [];
     }),
+    channel: application.channel,
+    priority: application.priority,
+    salaryExpected: application.salaryExpected,
+    salaryOffered: application.salaryOffered,
     createdAt: application.createdAt,
     updatedAt: application.updatedAt,
   };

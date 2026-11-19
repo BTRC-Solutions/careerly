@@ -1,4 +1,10 @@
-import type { ApplicationEvent, ResumeVersion } from '@careerly/contracts';
+import type {
+  ApplicationChannel,
+  ApplicationEvent,
+  ApplicationPriority,
+  Contact,
+  ResumeVersion,
+} from '@careerly/contracts';
 import type { Application } from '../domain/application.js';
 
 /** A finalized CV sent with an application, as stored. */
@@ -8,9 +14,13 @@ export interface StoredSentResume {
   sentAt: string;
 }
 
-/** An application as stored: the aggregate, its sent CVs and its timestamps. */
+/** An application as stored: the aggregate, its sent CVs, its extra data (roadmap 7.6) and its timestamps. */
 export interface StoredApplication extends Application {
   sentResumes: StoredSentResume[];
+  channel: ApplicationChannel | null;
+  priority: ApplicationPriority | null;
+  salaryExpected: string | null;
+  salaryOffered: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,6 +72,25 @@ export abstract class ApplicationRepository {
   abstract list(): Promise<StoredApplication[]>;
   /** Returns whether it existed; its sent CVs go with it (the finalized CVs themselves stay). */
   abstract delete(id: string): Promise<boolean>;
+}
+
+/** The contact does not exist in that application (maps to 404). */
+export class ContactNotFoundError extends Error {
+  constructor(readonly contactId: string) {
+    super('Contact not found.');
+    this.name = 'ContactNotFoundError';
+  }
+}
+
+/** Port: the contacts of applications (roadmap 7.6, RF-APP-05). */
+export abstract class ContactRepository {
+  /** In the order they were added. */
+  abstract list(applicationId: string): Promise<Contact[]>;
+  abstract find(applicationId: string, contactId: string): Promise<Contact | null>;
+  /** Inserts or updates it. */
+  abstract save(applicationId: string, contact: Contact): Promise<void>;
+  /** Returns whether it existed. */
+  abstract delete(applicationId: string, contactId: string): Promise<boolean>;
 }
 
 /** Port: job descriptions, through the job-postings module. */

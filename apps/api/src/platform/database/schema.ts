@@ -537,6 +537,13 @@ export const applications = sqliteTable(
     sentWithoutCareerlyCv: integer('sent_without_careerly_cv', { mode: 'boolean' })
       .notNull()
       .default(false),
+    /** `ApplicationChannel` (roadmap 7.6, RF-APP-07). */
+    channel: text('channel'),
+    /** `ApplicationPriority`. */
+    priority: text('priority'),
+    /** As the user writes them. Never part of telemetry. */
+    salaryExpected: text('salary_expected'),
+    salaryOffered: text('salary_offered'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -585,4 +592,23 @@ export const applicationEvents = sqliteTable(
     createdAt: text('created_at').notNull(),
   },
   (table) => [index('application_events_order_idx').on(table.applicationId, table.occurredAt)],
+);
+
+/** The people of the company in an application (roadmap 7.6, RF-APP-05). Never part of telemetry. */
+export const applicationContacts = sqliteTable(
+  'application_contacts',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** `ContactRole`. */
+    role: text('role').notNull(),
+    email: text('email'),
+    linkedinUrl: text('linkedin_url'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [index('application_contacts_application_idx').on(table.applicationId)],
 );

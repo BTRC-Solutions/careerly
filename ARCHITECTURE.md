@@ -256,6 +256,7 @@ Tablas de soporte sin relaciones de dominio: `AiGeneration`, `Job` (cola), `Sett
 | `Application` | jobPostingId, status, ghostedFrom?, appliedAt?, sentWithoutCareerlyCv, channel, priority, salaryExpected?, salaryOffered? | Agregado principal del módulo `applications`, con su máquina de estados (ver abajo). |
 | `SentResume` | applicationId, resumeVersionId, sentAt (día, YYYY-MM-DD) | Permite varios CVs enviados (p. ej. ES y EN). Solo CVs finalizados de la JD de la postulación; se agregan, nunca se cambian. |
 | `ApplicationEvent` | type (`STATUS_CHANGE`, `NOTE`, `INTERVIEW`, `MESSAGE`), payload (JSON), occurredAt | Línea de tiempo, *append-only*. |
+| `Contact` | applicationId, name, role (`RECRUITER`, `HIRING_MANAGER`, `REFERRAL`, `OTHER`), email?, linkedinUrl? | Personas de la empresa en una postulación (RF-APP-05). Se editan y borran libremente. |
 | `AiGeneration` | task, model, promptVersion, inputTokens, outputTokens, costUsd, latencyMs, status | Base del consumo y presupuesto (RF-CONF-06, RF-CONF-07). |
 | `Setting` | key, value (JSON) | Preferencias no secretas. La API key **no** se guarda acá. Incluye las preferencias de telemetría: `installId`, métricas activadas y `consentVersion`. |
 | `TelemetryReport` | day, payload (JSON), status (`PENDING`, `SENT`, `FAILED`), attempts, sentAt? | Historial local de lo enviado, tal cual salió (RF-TEL-06). |
@@ -311,6 +312,14 @@ usuario agrega notas (fechadas ahora), entrevistas (tipo, entrevistadores, resul
 y mensajes recibidos (medio, de quién y texto). Como nada se edita, el resultado de una entrevista se registra
 con una entrada nueva. El orden es por `occurredAt` y después por `createdAt`; la pantalla muestra lo más nuevo
 primero.
+
+**Contactos y datos adicionales (paso 7.6, RF-APP-05, RF-APP-07):**
+- **Contactos:** viven en `application_contacts`, con CRUD en `/applications/:id/contacts`. El LinkedIn se acepta
+  solo con `http(s)`. El email se muestra como texto: Electron solo abre enlaces `http(s)`.
+- **Datos adicionales:** canal, prioridad y salarios son columnas de `applications` y se cambian con
+  `PATCH /applications/:id` (`null` borra un campo). Los salarios son texto libre (monto, moneda y período varían
+  demasiado para modelarlos) y la prioridad aparece en el listado.
+- **Telemetría:** ninguno de estos datos llega nunca a la telemetría (RN-18).
 
 **Columnas JSON:** en SQLite se guardan como `TEXT`, se validan con Zod al leer y escribir, y se consultan con
 las funciones JSON1 cuando hace falta.

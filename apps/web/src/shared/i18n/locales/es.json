@@ -903,6 +903,51 @@
         "message": "Mensaje",
         "save": "Guardar"
       }
+    },
+    "details": {
+      "title": "Datos adicionales",
+      "channel": "Canal de postulación",
+      "priority": "Prioridad",
+      "salaryExpected": "Salario pretendido",
+      "salaryOffered": "Salario ofrecido",
+      "salaryHint": "Como quieras escribirlo, p. ej. «USD 4.000 brutos/mes».",
+      "unknown": "Sin indicar",
+      "save": "Guardar datos",
+      "saved": "Guardado.",
+      "channels": {
+        "PORTAL": "Portal de empleo",
+        "REFERRAL": "Referido",
+        "DIRECT_CONTACT": "Contacto directo",
+        "OTHER": "Otro"
+      },
+      "priorities": {
+        "LOW": "Baja",
+        "MEDIUM": "Media",
+        "HIGH": "Alta"
+      }
+    },
+    "contacts": {
+      "title": "Contactos",
+      "add": "Agregar contacto",
+      "editTitle": "Editar contacto",
+      "none": "Todavía no agregaste contactos de esta postulación.",
+      "loadError": "No se pudieron cargar los contactos.",
+      "name": "Nombre",
+      "role": "Rol",
+      "email": "Email (opcional)",
+      "linkedinUrl": "LinkedIn (opcional)",
+      "linkedin": "Ver perfil de LinkedIn",
+      "save": "Guardar",
+      "edit": "Editar a {{name}}",
+      "delete": "Borrar a {{name}}",
+      "deleteTitle": "¿Borrar a {{name}}?",
+      "deleteDescription": "Se borra el contacto de esta postulación. La línea de tiempo no cambia.",
+      "roles": {
+        "RECRUITER": "Recruiter",
+        "HIRING_MANAGER": "Hiring manager",
+        "REFERRAL": "Referido",
+        "OTHER": "Otro"
+      }
     }
   },
   "templates": {
