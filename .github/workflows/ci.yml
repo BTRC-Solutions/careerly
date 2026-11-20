@@ -41,3 +41,48 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run build:telemetry
+
+  # The telemetry services deploy on their own (ARCHITECTURE §19.6): each image is built with only the contracts
+  # and its service, and runs without the rest of the repository.
+  images:
+    name: Telemetry images
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+      SECRET: ci-internal-secret-shared-by-both-services
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: docker build -f apps/telemetry-api/Dockerfile -t telemetry-api:ci .
+      - run: docker build -f apps/stats-web/Dockerfile -t stats-web:ci .
+
+      - name: Migrate and start telemetry-api
+        run: |
+          docker run --rm --network host -e DATABASE_URL telemetry-api:ci node dist/migrate.js
+          docker run -d --name telemetry-api --network host -e DATABASE_URL \
+            -e TELEMETRY_INTERNAL_SECRET="$SECRET" -e TELEMETRY_PORT=3000 telemetry-api:ci
+      - name: Start stats-web against it
+        run: |
+          docker run -d --name stats-web --network host -e TELEMETRY_API_URL=http://127.0.0.1:3000 \
+            -e TELEMETRY_INTERNAL_SECRET="$SECRET" -e STATS_PORT=3001 stats-web:ci
+      - name: Smoke test
+        run: |
+          for i in $(seq 30); do curl -fsS http://127.0.0.1:3000/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:3000/health
+          curl -fsS http://127.0.0.1:3001/health
+          curl -fsS 'http://127.0.0.1:3001/api/stats?range=30'
+          curl -fsS http://127.0.0.1:3001/ | grep -q '<div id="root">'
+          # Without the secret, telemetry-api does not answer its read API.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/internal/stats)" = 401
+      - name: Logs
+        if: always()
+        run: docker logs telemetry-api; docker logs stats-web

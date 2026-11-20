@@ -30,3 +30,13 @@ npm run build -w @careerly/stats-web   # la página (dist/client) y el servidor 
 npm start -w @careerly/stats-web       # sirve la página construida
 npm run dev -w @careerly/stats-web     # Vite en http://localhost:5174, con /api hacia un servidor en :3001
 ```
+
+## Imagen
+
+Se construye y despliega sola, sin nada de la app de escritorio (solo `packages/contracts` y este servicio). No
+necesita a `telemetry-api` para arrancar: mientras no esté, `/api/stats` da `502` y `/health`, `503`.
+
+```bash
+docker build -f apps/stats-web/Dockerfile -t stats-web .   # desde la raíz del repo
+docker run -e TELEMETRY_API_URL=… -e TELEMETRY_INTERNAL_SECRET=… -p 3001:3001 stats-web
+```

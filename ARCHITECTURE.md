@@ -1300,6 +1300,13 @@ volumen. Un único Caddy compartido enruta por subdominio y obtiene los certific
 La app estable y las betas envían a prod. Los builds de desarrollo envían a staging o tienen el envío
 desactivado. La URL se fija en tiempo de build.
 
+**Cada servicio se despliega por separado.** `telemetry-api` y `stats-web` tienen su propia imagen
+(`apps/<servicio>/Dockerfile`, construida desde la raíz del repo), que lleva solo `packages/contracts` y ese
+servicio: nada de la app de escritorio, de la API local ni de Electron. Se publican, versionan y despliegan cada
+una por su lado, y ninguna necesita a la otra para arrancar (`stats-web` responde `502` y `/health` da `503`
+mientras `telemetry-api` no está). El build de la app (`npm run build`) no los incluye; tienen el suyo
+(`npm run build:telemetry`), y la CI construye las dos imágenes y las levanta contra un Postgres.
+
 **Reparto entre GitHub Actions y Jenkins (ADR-20).** Actions ya corre la CI y tiene los runners: hace los
 tests y construye las imágenes. Jenkins solo despliega.
 

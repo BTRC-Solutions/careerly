@@ -30,11 +30,21 @@ registran (RNF-23).
 ## Comandos
 
 ```bash
-npm run build -w @careerly/telemetry-api
+npm run build:telemetry                         # contratos + telemetry-api + stats-web
 npm run migrate -w @careerly/telemetry-api      # aplica las migraciones (el deploy lo corre antes de cada versión)
 npm start -w @careerly/telemetry-api
 npm run db:generate -w @careerly/telemetry-api  # migración nueva tras cambiar src/database/schema.ts
 ```
 
+## Imagen
+
+Se construye y despliega sola, sin nada de la app de escritorio (solo `packages/contracts` y este servicio):
+
+```bash
+docker build -f apps/telemetry-api/Dockerfile -t telemetry-api .     # desde la raíz del repo
+docker run --rm -e DATABASE_URL=… telemetry-api node dist/migrate.js  # migraciones, antes de cada versión
+docker run -e DATABASE_URL=… -e TELEMETRY_INTERNAL_SECRET=… -p 3000:3000 telemetry-api
+```
+
 Los tests (`npm test` desde la raíz) usan PGlite, un Postgres en memoria, con las mismas migraciones: corren en
-Windows y Ubuntu sin Docker. La imagen de Docker y el deploy son del paso 8.8.
+Windows y Ubuntu sin Docker. La publicación de la imagen y el deploy son del paso 8.8.
