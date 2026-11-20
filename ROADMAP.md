@@ -136,7 +136,7 @@ Estados: ⬜ pendiente · 🟨 en curso · ✅ hecho
 
 | # | Paso | Criterio de terminado | Estado |
 |---|---|---|---|
-| 8.1 | Dashboard: postulaciones por estado, tasa de respuesta, tiempo medio a la primera respuesta. `[RF-DASH-01, RF-DASH-02]` | Los números coinciden con los datos de prueba. | ⬜ |
+| 8.1 | Dashboard: postulaciones por estado, tasa de respuesta, tiempo medio a la primera respuesta. `[RF-DASH-01, RF-DASH-02]` | Los números coinciden con los datos de prueba. | ✅ (PR #94; test de integración con postulaciones cargadas por la API) |
 | 8.2 | Revisión de accesibilidad y de la ventana en distintos tamaños. `[RNF-11]` | axe sin errores críticos; la app es usable desde 1024 px de ancho. | ⬜ |
 | 8.3 | E2E con Playwright para Electron del flujo completo (LLM *fake*). | Corre en CI. | ⬜ |
 | 8.4 | Pantalla de "Privacidad" (qué datos salen hacia el proveedor de IA y hacia la telemetría, retención sin límite) y revisión de logs sin contenido sensible. `[RNF-01, RNF-02, RF-TEL-02]` | Un flujo completo no deja datos del perfil en los logs. | ⬜ |
