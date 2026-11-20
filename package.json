@@ -12,7 +12,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "npm run build -w @careerly/contracts && npm run build -w @careerly/api -w @careerly/web -w @careerly/desktop",
+    "build": "npm run build -w @careerly/contracts && npm run build -w @careerly/api -w @careerly/web -w @careerly/desktop -w @careerly/telemetry-api",
     "typecheck": "npm run build -w @careerly/contracts && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",

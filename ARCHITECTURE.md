@@ -1202,8 +1202,10 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
      (Caddy y Nest). Si no, `415` o `413`.
   2. **Rate limit general por IP** (p. ej. 20 solicitudes por hora), en memoria y con la IP hasheada con una
      sal que rota cada día. Nunca se persiste (RNF-23). Si se excede, `429` con `Retry-After`.
-  3. **Firma:** se verifica sobre el cuerpo crudo, antes de parsear el JSON. Un `installId` conocido debe
-     firmar con su clave registrada; si no, `401`.
+  3. **Firma:** se verifica sobre los bytes exactos del cuerpo, antes de validar los reportes: del JSON solo se
+     leen `schemaVersion`, `installId` y `publicKey`. Un `installId` conocido debe firmar con su clave
+     registrada; una instalación nueva, con la `publicKey` que trae. Si no, `401`. Un `schemaVersion` que ya no
+     se acepta da `410`.
   4. **Instalación nueva:** se registra solo si:
      - trae `publicKey`, la firma corresponde a esa clave y la **prueba de trabajo** es válida (*hashcash*
        sobre `installId:publicKey:díaUTC:nonce`, con una dificultad que tarda ~1–2 s; se puede subir sin
