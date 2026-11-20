@@ -70,6 +70,7 @@ export default tseslint.config(
     files: [
       'apps/api/**/*.ts',
       'apps/telemetry-api/**/*.ts',
+      'apps/stats-web/server/**/*.ts',
       'apps/desktop/**/*.{ts,cts}',
       'apps/*/scripts/**/*.mjs',
       'scripts/**/*.mjs',
@@ -178,9 +179,9 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': ['error', { patterns: DOMAIN_FORBIDDEN_IMPORTS }] },
   },
 
-  // UI (Electron renderer): browser only, React rules.
+  // UI (Electron renderer) and the public statistics page: browser only, React rules.
   {
-    files: ['apps/web/src/**/*.{ts,tsx}'],
+    files: ['apps/web/src/**/*.{ts,tsx}', 'apps/stats-web/src/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
     rules: {

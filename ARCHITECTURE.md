@@ -1275,6 +1275,13 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
   instalación). El intermediario cachea las respuestas unos minutos para no cargar la base.
 - Solo muestra lo que la API interna ya filtró por el umbral (incluidos los títulos, §19.4): el intermediario
   no agrega ni recalcula nada que pueda saltearlo.
+- El servidor (Node `http`, sin framework) expone solo `GET /api/stats?range=30|90|365`, `GET /health` y los
+  archivos de la página. Los períodos son una lista cerrada, así que el navegador no puede pedirle a
+  `telemetry-api` otra cosa. Cada respuesta se guarda 5 minutos. La página se sirve con una CSP que solo permite
+  recursos propios.
+- La página: cifras clave (instalaciones activas, postulaciones, CVs), columnas por semana y barras por valor,
+  en un solo tono de seafoam (STYLES.md) y con cada número también como texto. Un valor por debajo del umbral se
+  muestra como «menos de 5». En español o inglés según el navegador.
 
 ### 19.6 Despliegue
 
