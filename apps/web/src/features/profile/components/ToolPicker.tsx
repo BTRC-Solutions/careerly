@@ -1,7 +1,7 @@
 import type { ToolRef } from '@careerly/contracts';
 import * as Popover from '@radix-ui/react-popover';
 import { Command } from 'cmdk';
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InlineError } from '../../../shared/ui/InlineError';
 import { Tag } from '../../../shared/ui/Tag';
@@ -35,6 +35,14 @@ export function ToolPicker({ value, onChange, ...aria }: ToolPickerProps) {
     [tool.name, ...tool.aliases].some((name) => name.toLowerCase() === trimmed.toLowerCase()),
   );
   const showList = open && trimmed.length > 0;
+
+  // cmdk always marks its input as expanded, controlling its list (`aria-expanded` and `aria-controls` win over
+  // our props). The list stays mounted, hidden while closed, so `aria-controls` points at it, and this keeps
+  // `aria-expanded` true to what is on screen (roadmap 8.2).
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    inputRef.current?.setAttribute('aria-expanded', String(showList));
+  });
 
   function add(tool: ToolRef) {
     if (!selectedIds.has(tool.id)) onChange([...value, { id: tool.id, name: tool.name }]);
@@ -71,6 +79,7 @@ export function ToolPicker({ value, onChange, ...aria }: ToolPickerProps) {
         <Popover.Root open={showList} onOpenChange={setOpen}>
           <Popover.Anchor asChild>
             <Command.Input
+              ref={inputRef}
               value={query}
               onValueChange={(next) => {
                 setQuery(next);
@@ -82,6 +91,13 @@ export function ToolPicker({ value, onChange, ...aria }: ToolPickerProps) {
                 if (event.key === 'Backspace' && query === '' && value.length > 0) {
                   remove(value[value.length - 1]!.id);
                 }
+                // While closed, an arrow only opens the list, on its first option.
+                if (!showList && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+                  event.preventDefault();
+                  setOpen(true);
+                }
+                // The hidden list keeps its items: Enter must not pick one the user cannot see.
+                if (!showList && event.key === 'Enter') event.preventDefault();
                 if (event.key === 'Escape' && showList) {
                   // Close the list without closing a surrounding dialog.
                   event.stopPropagation();
@@ -93,8 +109,10 @@ export function ToolPicker({ value, onChange, ...aria }: ToolPickerProps) {
               {...aria}
             />
           </Popover.Anchor>
-          <Popover.Portal>
+          <Popover.Portal forceMount>
             <Popover.Content
+              forceMount
+              hidden={!showList}
               align="start"
               sideOffset={4}
               onOpenAutoFocus={(event) => event.preventDefault()}

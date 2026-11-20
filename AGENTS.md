@@ -117,7 +117,9 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 - Tests: dominio y casos de uso con fakes en memoria; integración con SQLite temporal
   (`apps/api/src/test-support/temp-dir.ts`). En la web, la lógica pura corre en Node; las pantallas, con
   `// @vitest-environment jsdom` al principio del archivo, `renderScreen` y la API simulada con MSW
-  (`apps/web/src/test-support/`; ejemplo: `TemplatesPage.test.tsx`).
+  (`apps/web/src/test-support/`; ejemplo: `TemplatesPage.test.tsx`). Cada test de pantalla corre además axe
+  sobre el estado en que termina y falla con violaciones `critical` o `serious` (`test-support/accessibility.ts`;
+  el contraste no se mide en jsdom).
 
 ## Flujo de trabajo
 
