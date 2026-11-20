@@ -1,0 +1,30 @@
+{
+  "name": "@careerly/stats-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public page with the anonymous usage statistics of Careerly, and its small Node server (ARCHITECTURE §19.5).",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.server.json",
+    "dev": "vite",
+    "start": "node dist/server/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit"
+  },
+  "dependencies": {
+    "@careerly/contracts": "*",
+    "@fontsource-variable/inter": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "jsdom": "^31.0.1",
+    "tailwindcss": "^4.3.5",
+    "vite": "^8.3.7"
+  }
+}
