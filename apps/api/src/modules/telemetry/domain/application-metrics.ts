@@ -1,5 +1,7 @@
 import {
   type ApplicationStatus,
+  ISO_COUNTRY_CODES,
+  type IsoCountryCode,
   type JobSourceSchema,
   KNOWN_JOB_PORTALS,
   type RoleCategory,
@@ -62,6 +64,8 @@ export function reportedTitle(title: string | null): string | null {
   return [...clean].slice(0, TELEMETRY_TITLE_MAX_LENGTH).join('').trim();
 }
 
+const COUNTRIES: ReadonlySet<string> = new Set(ISO_COUNTRY_CODES);
+
 /** At most this many titles per day, as the schema allows. */
 const MAX_TITLES = 50;
 
@@ -109,7 +113,7 @@ export function funnelMetric({ transitions }: ApplicationsDay): TelemetryMetrics
 
 /**
  * Work mode and country of the positions (RF-TEL-03g). Without an analysis the work mode is `unknown`; a country
- * that is not an ISO 3166-1 alpha-2 code is left out.
+ * that is not an ISO 3166-1 alpha-2 code in use is left out.
  */
 export function workModeAndCountryMetric({ created }: ApplicationsDay): TelemetryMetricsV1 {
   if (created.length === 0) return {};
@@ -117,7 +121,7 @@ export function workModeAndCountryMetric({ created }: ApplicationsDay): Telemetr
   const countries = tally(
     created.flatMap(({ analysis }) => {
       const code = analysis?.country?.trim().toUpperCase();
-      return code && /^[A-Z]{2}$/.test(code) ? [code] : [];
+      return code && COUNTRIES.has(code) ? [code as IsoCountryCode] : [];
     }),
   );
   return Object.keys(countries).length > 0 ? { workMode, countries } : { workMode };

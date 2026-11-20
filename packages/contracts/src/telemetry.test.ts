@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   TELEMETRY_METRIC_SINCE,
+  TelemetryBatchV1Schema,
   TelemetryMetricIdSchema,
   TelemetryReportV1Schema,
   UpdateTelemetrySettingsRequestSchema,
@@ -96,5 +97,72 @@ describe('UpdateTelemetrySettingsRequestSchema', () => {
     expect(UpdateTelemetrySettingsRequestSchema.safeParse({ metrics: { cv: true } }).success).toBe(
       false,
     );
+  });
+});
+
+describe('plausibility ranges (ARCHITECTURE §19.4)', () => {
+  const withMetrics = (metrics: object) =>
+    TelemetryReportV1Schema.safeParse({ ...fullReport, metrics }).success;
+
+  it('accepts the edges and rejects what no person does in a day', () => {
+    expect(withMetrics({ applications: { created: 100 } })).toBe(true);
+    expect(withMetrics({ applications: { created: 101 } })).toBe(false);
+    expect(withMetrics({ sources: { other: 101 } })).toBe(false);
+    expect(
+      withMetrics({
+        features: {
+          resumesGenerated: 1,
+          outputLanguages: {},
+          gapsAnswered: 0,
+          aiTokens: 5_000_000,
+        },
+      }),
+    ).toBe(true);
+    expect(
+      withMetrics({
+        features: {
+          resumesGenerated: 1,
+          outputLanguages: {},
+          gapsAnswered: 0,
+          aiTokens: 5_000_001,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('takes countries only from the ISO codes in use', () => {
+    expect(withMetrics({ countries: { AR: 1, GB: 1 } })).toBe(true);
+    expect(withMetrics({ countries: { XX: 1 } })).toBe(false);
+    expect(withMetrics({ countries: { UK: 1 } })).toBe(false);
+  });
+});
+
+describe('TelemetryBatchV1Schema', () => {
+  const batch = {
+    schemaVersion: 1,
+    installId: fullReport.installId,
+    sentAt: '2026-11-17T09:00:00.000Z',
+    publicKey: 'A'.repeat(43),
+    reports: [fullReport, { ...fullReport, day: '2026-11-15' }],
+  };
+
+  it('carries the reports of its own installation, each day once', () => {
+    expect(TelemetryBatchV1Schema.safeParse(batch).success).toBe(true);
+    expect(TelemetryBatchV1Schema.safeParse({ ...batch, publicKey: undefined }).success).toBe(true);
+    expect(
+      TelemetryBatchV1Schema.safeParse({
+        ...batch,
+        reports: [{ ...fullReport, installId: '1f1c2e4a-2b3c-4d5e-8f90-123456789abc' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      TelemetryBatchV1Schema.safeParse({ ...batch, reports: [fullReport, fullReport] }).success,
+    ).toBe(false);
+  });
+
+  it('rejects an empty batch, a malformed key and unknown fields', () => {
+    expect(TelemetryBatchV1Schema.safeParse({ ...batch, reports: [] }).success).toBe(false);
+    expect(TelemetryBatchV1Schema.safeParse({ ...batch, publicKey: 'short' }).success).toBe(false);
+    expect(TelemetryBatchV1Schema.safeParse({ ...batch, ip: '1.2.3.4' }).success).toBe(false);
   });
 });
