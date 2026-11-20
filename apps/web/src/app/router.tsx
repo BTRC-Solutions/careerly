@@ -16,6 +16,7 @@ import { EducationPage } from '../features/profile/pages/EducationPage';
 import { LanguagesPage } from '../features/profile/pages/LanguagesPage';
 import { CvImportPage } from '../features/profile/pages/CvImportPage';
 import { PersonalInfoPage } from '../features/profile/pages/PersonalInfoPage';
+import { PrivacyPage } from '../features/settings/pages/PrivacyPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { MatchSummaryPage } from '../features/tailoring/pages/MatchSummaryPage';
 import { TemplatesPage } from '../features/templates/pages/TemplatesPage';
@@ -54,6 +55,7 @@ export const router = createHashRouter([
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/ai-usage', element: <AiUsagePage /> },
       { path: 'settings/templates', element: <TemplatesPage /> },
+      { path: 'settings/privacy', element: <PrivacyPage /> },
     ],
   },
 ]);

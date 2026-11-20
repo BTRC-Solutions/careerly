@@ -110,7 +110,7 @@
       "version": "Version"
     },
     "privacy": {
-      "title": "Privacy and usage statistics",
+      "title": "Anonymous usage statistics",
       "description": "What is shared, what never leaves your computer and what has been prepared for sending.",
       "loadError": "Could not load the privacy settings: {{message}}",
       "pending": "You have not chosen whether to share usage statistics yet: nothing is recorded or sent.",
@@ -1347,6 +1347,51 @@
       "pageCount_other": "{{count}} pages",
       "pagesHint": "By default, 1 page with less than 8 years of experience and 2 from 8 years on.",
       "template": "Template"
+    }
+  },
+  "privacy": {
+    "back": "Settings",
+    "title": "Privacy",
+    "description": "What data leaves your computer, where it goes, and what never leaves.",
+    "card": {
+      "title": "Privacy",
+      "description": "What stays on your computer, what is sent to the AI and what the usage statistics include.",
+      "open": "View"
+    },
+    "local": {
+      "title": "What stays on your computer",
+      "description": "Careerly has no accounts and no cloud: everything is stored in this folder.",
+      "data": "Your master profile, job descriptions, sessions, CVs with their PDFs, applications with their contacts, notes and salaries, and backups.",
+      "key": "Your API key is stored encrypted by the operating system. It never goes to the database, the logs or the backups.",
+      "logs": "The logs (the logs folder) only keep ids, timings and error codes: never the content of your profile, the job descriptions or what is asked of the AI."
+    },
+    "ai": {
+      "title": "What is sent to the AI provider",
+      "description": "Only when you use an AI feature: it goes to the provider you chose (Gemini or Claude) with your own API key, or through Claude Code if you turned it on. Each provider handles that data under its own terms.",
+      "functions": {
+        "jdAnalysis": {
+          "name": "Analyzing a job description",
+          "sends": "The text of the job description."
+        },
+        "cvImport": {
+          "name": "Importing a CV",
+          "sends": "The CV file, with any personal data it has (a DOCX is turned into text before it is sent)."
+        },
+        "suggestion": {
+          "name": "Suggesting the wording of an achievement",
+          "sends": "That achievement and its metrics."
+        },
+        "tailoring": {
+          "name": "Matching your profile to a job and generating the CV",
+          "sends": "Your master profile (headline, summary, experience with companies and dates, achievements, projects, education, certifications, languages and tools) and the analysis of the job description."
+        }
+      },
+      "never": {
+        "title": "Never sent to the AI",
+        "contact": "Your name, email, phone or links: they are added to the PDF on your computer.",
+        "applications": "Your applications, contacts, notes or salaries.",
+        "telemetry": "Your usage statistics."
+      }
     }
   }
 }

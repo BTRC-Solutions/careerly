@@ -27,34 +27,48 @@ export function createLogger(config: Pick<AppConfig, 'logsDir' | 'logLevel' | 'l
   return pino({ level: config.logLevel, base: { service: 'api' } }, pino.multistream(streams));
 }
 
+/**
+ * Drizzle writes the parameters of a failed query into its error message and stack (`Failed query: …` and a
+ * `params: …` line), and those parameters are the user's data (RNF-02). They are cut from everything logged;
+ * the query itself (tables and columns) stays, to diagnose the failure.
+ */
+export function withoutQueryParams(text: string): string {
+  return text.replace(/\nparams: [\s\S]*?(?=\n\s+at |$)/, '\nparams: [not logged]');
+}
+
+const safe = (message: unknown) => withoutQueryParams(String(message));
+
 /** Adapts pino to Nest's logger interface. */
 export class NestPinoLogger implements LoggerService {
   constructor(private readonly logger: Logger) {}
 
   log(message: unknown, context?: string) {
-    this.logger.info({ context }, String(message));
+    this.logger.info({ context }, safe(message));
   }
 
   error(message: unknown, stackOrContext?: string, context?: string) {
     this.logger.error(
-      { context: context ?? stackOrContext, stack: context ? stackOrContext : undefined },
-      String(message),
+      {
+        context: context ?? stackOrContext,
+        stack: context && stackOrContext ? withoutQueryParams(stackOrContext) : undefined,
+      },
+      safe(message),
     );
   }
 
   warn(message: unknown, context?: string) {
-    this.logger.warn({ context }, String(message));
+    this.logger.warn({ context }, safe(message));
   }
 
   debug(message: unknown, context?: string) {
-    this.logger.debug({ context }, String(message));
+    this.logger.debug({ context }, safe(message));
   }
 
   verbose(message: unknown, context?: string) {
-    this.logger.trace({ context }, String(message));
+    this.logger.trace({ context }, safe(message));
   }
 
   fatal(message: unknown, context?: string) {
-    this.logger.fatal({ context }, String(message));
+    this.logger.fatal({ context }, safe(message));
   }
 }

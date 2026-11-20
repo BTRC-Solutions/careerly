@@ -802,7 +802,11 @@ careerly/
   la descifra y se la pasa al backend en memoria; el renderer puede guardarla o quitarla pero nunca leerla; nunca
   se escribe en la base, en logs ni en backups.
 - **Contenido generado:** las salidas de la IA nunca se renderizan como HTML sin sanitizar.
-- **Logs:** locales, rotativos, sin contenido del perfil, JDs ni prompts (RNF-02).
+- **Logs:** locales, rotativos, sin contenido del perfil, JDs ni prompts (RNF-02). Solo ids, tamaños, tiempos
+  y códigos de error. Drizzle incluye los parámetros de una query fallida en el mensaje y el stack del error
+  (son datos del usuario): el adaptador de pino de Nest los corta de todo lo que se registra y deja la query
+  (8.4). Un test de integración recorre el flujo completo (perfil → JD → CV → postulación con contactos, notas
+  y salarios) y comprueba que nada de eso llega al log.
 - **Backups:** el archivo exportado contiene datos personales; la app lo advierte al exportar. (Cifrado opcional
   con contraseña: post-MVP.)
 - **Proveedor de IA:** documentar qué datos se envían y la política de retención de cada proveedor en una
