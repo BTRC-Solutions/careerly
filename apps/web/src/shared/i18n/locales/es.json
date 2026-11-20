@@ -7,6 +7,29 @@
     "jobPostings": "Ofertas",
     "applications": "Postulaciones"
   },
+  "dashboard": {
+    "title": "Tus postulaciones",
+    "loading": "Cargando métricas…",
+    "loadError": "No se pudieron cargar las métricas de postulaciones.",
+    "empty": "Todavía no tenés postulaciones.",
+    "emptyAction": "Empezá por cargar una oferta",
+    "period": {
+      "label": "Período de las enviadas",
+      "30d": "30 días",
+      "90d": "90 días",
+      "all": "Todo"
+    },
+    "responseRate": "Tasa de respuesta",
+    "noneSent": "Ninguna enviada en el período",
+    "respondedOfSent": "{{responded}} de {{sent}} enviadas avanzaron o fueron rechazadas",
+    "firstResponse": "Primera respuesta",
+    "days_one": "{{value}} día",
+    "days_other": "{{value}} días",
+    "firstResponseDetail": "Mediana desde el envío",
+    "byStatus_one": "{{count}} postulación por estado actual",
+    "byStatus_other": "{{count}} postulaciones por estado actual",
+    "seeAll": "Ver postulaciones"
+  },
   "home": {
     "title": "Bienvenido a Careerly",
     "subtitle": "Adaptá tu CV a cada búsqueda y seguí cada postulación.",

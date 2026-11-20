@@ -16,6 +16,7 @@ import { inTransaction } from '../../../platform/database/sqlite.js';
 import {
   ApplicationRepository,
   type StoredApplication,
+  type StoredStatusChange,
 } from '../application/applications.ports.js';
 
 type Row = typeof applications.$inferSelect;
@@ -164,6 +165,23 @@ export class SqliteApplicationRepository extends ApplicationRepository {
       const change = ReachedSchema.parse(JSON.parse(row.payload));
       return change.from === null ? [] : [change.to];
     });
+  }
+
+  async statusChanges(): Promise<StoredStatusChange[]> {
+    const rows = await this.database.db
+      .select({
+        applicationId: applicationEvents.applicationId,
+        payload: applicationEvents.payload,
+        occurredAt: applicationEvents.occurredAt,
+      })
+      .from(applicationEvents)
+      .where(eq(applicationEvents.type, 'STATUS_CHANGE'))
+      .orderBy(asc(applicationEvents.occurredAt), asc(applicationEvents.createdAt));
+    return rows.map(({ applicationId, payload, occurredAt }) => ({
+      applicationId,
+      to: ReachedSchema.parse(JSON.parse(payload)).to,
+      occurredAt,
+    }));
   }
 
   private async withSent(rows: Row[]): Promise<StoredApplication[]> {

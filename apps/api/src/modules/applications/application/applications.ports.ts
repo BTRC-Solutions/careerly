@@ -77,6 +77,16 @@ export abstract class ApplicationRepository {
   abstract createdBetween(from: string, to: string): Promise<string[]>;
   /** The state reached by each change of state in `[from, to)`; creating an application is not one. */
   abstract statusesReachedBetween(from: string, to: string): Promise<ApplicationStatus[]>;
+  /** Every change of state of every application, creation included, by when it happened. */
+  abstract statusChanges(): Promise<StoredStatusChange[]>;
+}
+
+/** A change of state, without what the user wrote. */
+export interface StoredStatusChange {
+  applicationId: string;
+  to: ApplicationStatus;
+  /** ISO instant. */
+  occurredAt: string;
 }
 
 /** The contact does not exist in that application (maps to 404). */
