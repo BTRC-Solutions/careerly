@@ -1,0 +1,32 @@
+{
+  "name": "@careerly/telemetry-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telemetry receiver: signed daily reports in, anonymous aggregates out (ARCHITECTURE §19.4).",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js",
+    "migrate": "node dist/migrate.js",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@careerly/contracts": "*",
+    "@nestjs/common": "^12.4.2",
+    "@nestjs/core": "^12.4.2",
+    "@nestjs/platform-express": "^12.4.2",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11"
+  }
+}
