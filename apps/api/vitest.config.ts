@@ -15,7 +15,9 @@ export default defineProject({
     name: 'api',
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    // Integration tests start servers and touch the filesystem.
+    // Integration tests start servers and touch the filesystem, often in `beforeEach`: hooks get the same time
+    // (the 10 s default ran out on busy Windows runners).
     testTimeout: 20_000,
+    hookTimeout: 20_000,
   },
 });
