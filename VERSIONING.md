@@ -1,6 +1,6 @@
 # Careerly — Versionado y releases
 
-> Estado: v0.2 · Última actualización: 2026-11-16
+> Estado: v0.2 · Última actualización: 2026-11-19
 > Documentos relacionados: [ARCHITECTURE.md §16.1](ARCHITECTURE.md) (decisión técnica, ADR-19) ·
 > [ARCHITECTURE.md §19.6](ARCHITECTURE.md) (despliegue de la telemetría) · [ROADMAP.md](ROADMAP.md)
 
@@ -75,6 +75,11 @@ Otras reglas:
 - El componente lo deciden **las rutas tocadas**, no el *scope* del commit. Evitá commits que mezclen la app y
   los servicios de telemetría: aparecerían en los dos CHANGELOGs.
 - El mensaje del commit **es** la entrada del CHANGELOG: escribilo para alguien que usa la app, no para vos.
+- Los PRs se mergean **solo con squash** (configurado en el repo): cada PR queda como un commit con el
+  **título del PR**, que es la entrada del CHANGELOG, así que el título tiene que seguir Conventional Commits.
+  El cuerpo junta los mensajes de los commits del PR, así que un pie `Release-As:` sigue funcionando. Con
+  merge commits cada cambio aparecía dos veces (el commit y el merge, que repetía el título del PR). Con PRs
+  encadenados, después de mergear uno hay que rebasar el siguiente sobre `main`.
 - `telemetry-api` y `stats-web` **no** siguen las fases: usan SemVer normal (`fix` → patch, `feat` → minor).
 
 ### 2.2 Qué es un cambio "que rompe" en una app de escritorio
