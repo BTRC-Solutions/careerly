@@ -7,6 +7,29 @@
     "jobPostings": "Job postings",
     "applications": "Applications"
   },
+  "dashboard": {
+    "title": "Your applications",
+    "loading": "Loading metrics…",
+    "loadError": "Could not load the application metrics.",
+    "empty": "You have no applications yet.",
+    "emptyAction": "Start by adding a job description",
+    "period": {
+      "label": "Period of the sent ones",
+      "30d": "30 days",
+      "90d": "90 days",
+      "all": "All"
+    },
+    "responseRate": "Response rate",
+    "noneSent": "None sent in the period",
+    "respondedOfSent": "{{responded}} of {{sent}} sent advanced or were rejected",
+    "firstResponse": "First response",
+    "days_one": "{{value}} day",
+    "days_other": "{{value}} days",
+    "firstResponseDetail": "Median since sending",
+    "byStatus_one": "{{count}} application by current state",
+    "byStatus_other": "{{count}} applications by current state",
+    "seeAll": "See applications"
+  },
   "home": {
     "title": "Welcome to Careerly",
     "subtitle": "Tailor your CV to every job description and keep track of every application.",

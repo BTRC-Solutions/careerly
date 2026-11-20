@@ -2,6 +2,7 @@ import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { ApplicationsModule } from './modules/applications/index.js';
 import { AiModule } from './modules/ai/index.js';
+import { DashboardModule } from './modules/dashboard/index.js';
 import { DocumentsModule } from './modules/documents/index.js';
 import { JobPostingsModule } from './modules/job-postings/index.js';
 import { JobsModule } from './modules/jobs/index.js';
@@ -43,6 +44,7 @@ export class AppModule {
         DocumentsModule,
         TailoringModule,
         ApplicationsModule,
+        DashboardModule,
         TelemetryModule,
       ],
       controllers: [HealthController],
