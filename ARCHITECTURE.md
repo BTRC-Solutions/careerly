@@ -1,6 +1,6 @@
 # Careerly — Arquitectura
 
-> Estado: borrador v0.4 · Última actualización: 2026-11-18
+> Estado: borrador v0.4 · Última actualización: 2026-11-20
 > Documentos relacionados: [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 1. Drivers de la arquitectura
@@ -876,7 +876,7 @@ páginas (`--pages 1|2`, por defecto 1) y coincida con lo que midió el ajuste; 
 - **Releases:** el workflow de release-please, cuando crea la release `vX.Y.Z`, construye el instalador y lo
   adjunta a la GitHub Release (job `windows-installer`; también se puede correr a mano para un tag existente).
   Va en el mismo workflow porque los tags creados con `GITHUB_TOKEN` no disparan otros workflows. Hoy solo
-  Windows; macOS y Linux, y la descarga del binario de `typst` por plataforma, se suman en el 8.9.
+  Windows; macOS y Linux, y la descarga del binario de `typst` por plataforma, se suman en el 8.10.
 - **Actualizaciones:** electron-updater contra GitHub Releases (RF-CONF-10). Antes de migrar la base en una
   versión nueva se crea un backup automático (RNF-20).
 - **Firma de código:** opcional para un proyecto personal. Sin firma, Windows muestra un aviso de SmartScreen y
@@ -1212,15 +1212,23 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
        hora (con alerta). Si no, `429`.
   5. **Una solicitud exitosa por instalación por día (UTC):** si ya hubo una, `409` sin escribir nada.
   6. **Esquema y plausibilidad:** el lote y cada reporte validan contra el esquema estricto, y **cada campo
-     numérico tiene un rango** definido en `packages/contracts` junto a la métrica. Por ejemplo:
-     - postulaciones creadas por día: 0–100;
-     - CVs generados por día: 0–100;
+     numérico tiene un rango** definido en `packages/contracts` junto a la métrica (`TelemetryMetricsV1Schema`).
+     Es el mismo esquema que usa el cliente antes de firmar, así que la app nunca arma un reporte que el
+     receptor rechace por rango:
+     - postulaciones creadas, CVs generados y respuestas a gaps por día: 0–100;
+     - cada contador de un mapa (portales, categorías, embudo, modalidad, países, idiomas): 0–100;
      - tokens de IA por día: 0–5.000.000;
-     - claves de mapas (países, portales, categorías): de catálogos cerrados.
+     - claves de mapas: de catálogos cerrados. Los portales, las categorías, los estados, las modalidades y los
+       idiomas ya son enums; los países salen de la lista de códigos ISO 3166-1 alfa-2 vigentes (un código con
+       forma válida pero inexistente, como `XX`, no pasa, y el cliente lo omite como a cualquier país inválido).
 
-     `day` no puede ser futuro ni de más de 30 días atrás, ni anterior a la fecha en que se registró la
-     instalación. **Un valor fuera de rango rechaza el lote entero** (`400`, con el motivo en el log y sin el
-     contenido). Los rangos no recortan: un dato imposible no se corrige, se descarta.
+     `day` va de 30 días antes del día UTC actual hasta **el día UTC siguiente**: el día del reporte es el
+     local de la instalación, que en husos por delante de UTC ya puede ser "mañana" en UTC. No se acota por la
+     fecha de registro de la instalación: el primer envío trae los reportes guardados desde que se aceptó la
+     telemetría (hasta 30 días), todos anteriores al registro, que ocurre en ese mismo envío. A una instalación
+     nueva la acotan el costo de crearla (prueba de trabajo, una por IP por día) y los rangos. **Un valor fuera
+     de rango rechaza el lote entero** (`400`, con el motivo en el log y sin el contenido). Los rangos no
+     recortan: un dato imposible no se corrige, se descarta.
   7. **Inserción:** en una transacción, cada `(installId, day)` nuevo y la marca del envío del día. Responde
      `202` con los días aceptados y los ignorados por estar repetidos.
 
@@ -1232,6 +1240,12 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
 - **API de lectura interna:** `GET /internal/stats/*` devuelve agregados ya filtrados por el umbral de
   anonimato (RN-20, k ≥ 5 instalaciones). Solo escucha en la red interna de Docker y además exige un secreto
   compartido con `stats-web`.
+  - El umbral se aplica **a cada valor por separado**, no al total: un portal, un país o una categoría aparece
+    solo si lo reportaron al menos 5 instalaciones distintas en el período.
+  - Los **títulos** son el único texto libre: se agrupan sin distinguir mayúsculas ni espacios, y cada título
+    se muestra solo si lo reportaron al menos 5 instalaciones distintas. Un título que usó una sola persona
+    nunca sale de la base.
+  - Las instalaciones con `excluded` no cuentan, ni para los valores ni para el umbral.
 - **Datos:**
   - `reports` (installId, day, schemaVersion, appVersion, metrics JSONB, receivedAt), con clave única
     `(installId, day)`.
@@ -1241,6 +1255,9 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
 
   Retención sin límite (D-11). Sin IPs (RNF-23). La cuenta de Postgres de la ingesta solo puede insertar en
   esas tablas y leer `installs`.
+- **Tests:** de integración contra Postgres en memoria con **PGlite** (Postgres compilado a WASM), con las
+  mismas migraciones de Drizzle. Así corren igual en los runners de Windows y Ubuntu de la CI, sin Docker. Un
+  smoke test contra Postgres real corre en el pipeline de deploy (§19.6).
 - **Lo que esto no garantiza:** alguien que modifique su propia copia de la app puede mandar números inventados
   pero plausibles para su instalación. Sin cuentas ni atestación del equipo no se puede evitar. El impacto queda
   acotado por los rangos, por el costo de crear instalaciones (prueba de trabajo y una por IP por día), por el
@@ -1254,6 +1271,8 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
   `telemetry-api` por la red interna con el secreto. El navegador nunca habla con `telemetry-api`.
 - Lo que la página muestra es público por definición; lo que se protege es la API real (ingesta y datos por
   instalación). El intermediario cachea las respuestas unos minutos para no cargar la base.
+- Solo muestra lo que la API interna ya filtró por el umbral (incluidos los títulos, §19.4): el intermediario
+  no agrega ni recalcula nada que pueda saltearlo.
 
 ### 19.6 Despliegue
 
