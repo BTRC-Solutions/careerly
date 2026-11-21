@@ -5,6 +5,7 @@ export * from './backups.js';
 export * from './tools.js';
 export * from './profile.js';
 export * from './ai.js';
+export * from './countries.js';
 export * from './telemetry.js';
 export * from './cv-import.js';
 export * from './resume.js';

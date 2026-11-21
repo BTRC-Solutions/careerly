@@ -62,6 +62,8 @@ describe('the metrics of a day', () => {
         analysis: analyzed('remote', 'ar'),
       },
       { url: null, title: null, analysis: null },
+      // Well formed, but not a country in use.
+      { url: null, title: null, analysis: analyzed('remote', 'XX') },
       {
         url: 'https://acme.com/1',
         title: 'Platform Engineer',
@@ -81,12 +83,12 @@ describe('the metrics of a day', () => {
       ...workModeAndCountryMetric(day),
     };
     expect(metrics).toEqual({
-      applications: { created: 3 },
-      sources: { 'linkedin.com': 1, unknown: 1, other: 1 },
-      positionCategories: { 'backend:senior': 2 },
+      applications: { created: 4 },
+      sources: { 'linkedin.com': 1, unknown: 2, other: 1 },
+      positionCategories: { 'backend:senior': 3 },
       positionTitles: ['Backend Engineer', 'Platform Engineer'],
       funnel: { APPLIED: 2, REJECTED: 1 },
-      workMode: { remote: 1, unknown: 1, onsite: 1 },
+      workMode: { remote: 2, unknown: 1, onsite: 1 },
       countries: { AR: 1 },
     });
     expect(TelemetryMetricsV1Schema.parse(metrics)).toEqual(metrics);
