@@ -65,10 +65,11 @@ export default tseslint.config(
     },
   },
 
-  // Node code: API, Electron shell, config files.
+  // Node code: API, telemetry receiver, Electron shell, config files.
   {
     files: [
       'apps/api/**/*.ts',
+      'apps/telemetry-api/**/*.ts',
       'apps/desktop/**/*.{ts,cts}',
       'apps/*/scripts/**/*.mjs',
       'scripts/**/*.mjs',
@@ -76,6 +77,14 @@ export default tseslint.config(
       '**/*.config.ts',
     ],
     languageOptions: { globals: globals.node },
+  },
+
+  // Telemetry receiver: Nest DI needs runtime imports for constructor types, as in the API.
+  {
+    files: ['apps/telemetry-api/src/**/*.ts'],
+    languageOptions: {
+      parserOptions: { emitDecoratorMetadata: true, experimentalDecorators: true },
+    },
   },
 
   // API: architecture boundaries.
