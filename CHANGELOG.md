@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.1](https://github.com/BTRC-Solutions/careerly/compare/v0.7.0...v0.7.1) (2026-11-21)
+
+
+### Features
+
+* add a privacy screen and keep user data out of the logs (F8.4) ([#98](https://github.com/BTRC-Solutions/careerly/issues/98)) ([140e416](https://github.com/BTRC-Solutions/careerly/commit/140e4168bce356f788396b411727ab4baae069c3))
+* add applications dashboard to the home screen ([#94](https://github.com/BTRC-Solutions/careerly/issues/94)) ([ce08925](https://github.com/BTRC-Solutions/careerly/commit/ce089252d7d7ab8d8bdc2c1c51a4326e1bc7d310))
+* add the privacy screen and keep query parameters out of the logs ([140e416](https://github.com/BTRC-Solutions/careerly/commit/140e4168bce356f788396b411727ab4baae069c3))
+* check accessibility with axe and fix the tool picker combobox ([#96](https://github.com/BTRC-Solutions/careerly/issues/96)) ([231805f](https://github.com/BTRC-Solutions/careerly/commit/231805ff1be57b0016921d6cb7bf80b5c959dc43))
+* **stats-web:** add the public statistics page ([abbec03](https://github.com/BTRC-Solutions/careerly/commit/abbec03f62e2da99fec5fc450fef41d694fac3e5))
+* **stats-web:** add the public statistics page (F8.6) ([#104](https://github.com/BTRC-Solutions/careerly/issues/104)) ([abbec03](https://github.com/BTRC-Solutions/careerly/commit/abbec03f62e2da99fec5fc450fef41d694fac3e5))
+* **telemetry-api:** add the telemetry receiver ([48ebfa3](https://github.com/BTRC-Solutions/careerly/commit/48ebfa3349a3b23e123cf7ecf7370f6f063d5f1f))
+* **telemetry-api:** add the telemetry receiver (F8.5) ([#103](https://github.com/BTRC-Solutions/careerly/issues/103)) ([48ebfa3](https://github.com/BTRC-Solutions/careerly/commit/48ebfa3349a3b23e123cf7ecf7370f6f063d5f1f))
+* **telemetry:** drop impossible values and unknown countries from reports ([#99](https://github.com/BTRC-Solutions/careerly/issues/99)) ([b483352](https://github.com/BTRC-Solutions/careerly/commit/b483352f0f0bea8a544564a94be3a8b4ce1621f5))
+
 ## [0.7.0](https://github.com/BTRC-Solutions/careerly/compare/v0.6.0...v0.7.0) (2026-11-19)
 
 

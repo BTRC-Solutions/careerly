@@ -1,6 +1,6 @@
 {
   "name": "careerly",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "description": "Desktop app to tailor CVs with AI and track job applications.",
   "type": "module",
