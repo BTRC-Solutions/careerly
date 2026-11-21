@@ -1309,13 +1309,15 @@ desactivado. La URL se fija en tiempo de build.
 servicio: nada de la app de escritorio, de la API local ni de Electron. Se publican, versionan y despliegan cada
 una por su lado, y ninguna necesita a la otra para arrancar (`stats-web` responde `502` y `/health` da `503`
 mientras `telemetry-api` no está). El build de la app (`npm run build`) no los incluye; tienen el suyo
-(`npm run build:telemetry`), y la CI construye las dos imágenes y las levanta contra un Postgres.
+(`npm run build:telemetry`). La CI de cada PR compila los dos servicios; las imágenes se construyen y se
+levantan contra un Postgres en el workflow `telemetry-images.yml`, que corre solo con cada push a la rama
+`deployment`.
 
 **Reparto entre GitHub Actions y Jenkins (ADR-20).** Actions ya corre la CI y tiene los runners: hace los
 tests y construye las imágenes. Jenkins solo despliega.
 
 ```
-merge a main ──► Actions: CI + build de imágenes ──► GHCR :sha-<commit> ──► Jenkins: deploy staging (automático)
+push a deployment ──► Actions: build de imágenes ──► GHCR :sha-<commit> ──► Jenkins: deploy staging (automático)
 tag telemetry-api-vX.Y.Z / stats-web-vX.Y.Z
              ──► Actions: build ──► GHCR :X.Y.Z ──► Jenkins: deploy prod (con aprobación manual)
 ```
