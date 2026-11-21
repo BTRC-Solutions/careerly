@@ -57,8 +57,9 @@ packages/
   contracts/  Esquemas Zod + tipos compartidos entre web y api
 ```
 
-Planificado (Fase 8, ver ARCHITECTURE.md §19): `apps/telemetry-api` (receptor en el VPS), `apps/stats-web`
-(página pública) e `infra/telemetry/` (docker-compose).
+Telemetría (ARCHITECTURE.md §19), fuera de la app y con imagen propia cada uno: `apps/telemetry-api` (receptor
+en el VPS, NestJS + Postgres) y `apps/stats-web` (página pública). Se compilan con `npm run build:telemetry`.
+Planificado: `infra/telemetry/` (docker-compose).
 
 - Node **24+** (`.nvmrc`), npm workspaces, todo ESM, TypeScript 5.9, Vitest (API con SWC).
 - API: `apps/api/src/platform/*` (config, database, http, logging, health). Los módulos de negocio irán en
