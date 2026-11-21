@@ -21,6 +21,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTempDir, HAS_TYPST } from '../../test-support/temp-dir.js';
 import {
+  capturingLogger,
   type RunningServer,
   startTestServer,
   TEST_TOKEN,
@@ -31,7 +32,7 @@ import {
  * Job applications (roadmap 7.3, RF-APP-01, RF-APP-02, RF-APP-08), end to end: one per job description, created
  * saved or already sent with the finalized CVs of that job description, whose PDF is exactly the finalized one,
  * its append-only timeline (roadmap 7.5, RF-APP-04, RN-09), and its contacts and extra data (roadmap 7.6,
- * RF-APP-05, RF-APP-07).
+ * RF-APP-05, RF-APP-07). Also the privacy of the logs along that whole flow (roadmap 8.4, RNF-02).
  */
 
 const CONTROL_TOKEN = 'control-token-only-main-knows';
@@ -117,6 +118,7 @@ describe('job applications (integration)', () => {
   let temp: ReturnType<typeof createTempDir> | undefined;
   let gemini: Awaited<ReturnType<typeof startFakeGemini>> | undefined;
   let server: RunningServer | undefined;
+  let logs: ReturnType<typeof capturingLogger>;
 
   afterEach(async () => {
     await server?.close();
@@ -128,12 +130,14 @@ describe('job applications (integration)', () => {
   async function start(replies: Reply[] = []) {
     temp = createTempDir();
     gemini = await startFakeGemini(replies);
+    logs = capturingLogger();
     server = await startTestServer(
       testConfig(temp.dir, {
         CAREERLY_CONTROL_TOKEN: CONTROL_TOKEN,
         CAREERLY_GEMINI_BASE_URL: gemini.url,
         CAREERLY_JOB_RETRY_BASE_MS: '20',
       }),
+      logs.logger,
     );
     await fetch(`http://127.0.0.1:${server.port}/internal/ai-credentials`, {
       method: 'PUT',
@@ -583,6 +587,71 @@ describe('job applications (integration)', () => {
           })
         ).status,
       ).toBe(400);
+    },
+  );
+
+  it.runIf(HAS_TYPST)(
+    'leaves nothing of the profile, the job description or what the user wrote in the logs (RNF-02)',
+    async () => {
+      await start([ok(JD_ANALYSIS), ok(NO_SCORES), ok(writing('es')), ok(writing('en'))]);
+      // Profile, job description, analysis, match, generation and finalization, with the AI.
+      const { jd, versions } = await finalizedPosting();
+      // The application, sent with the finalized CVs, and everything the user adds to it.
+      const application = await create({
+        jobPostingId: jd.id,
+        sent: { resumeVersionIds: versions.map((v) => v.id) },
+      });
+      const id = application.id;
+      await api('PATCH', `/applications/${id}`, {
+        salaryExpected: 'USD 7.777 per month',
+        salaryOffered: 'USD 6.543 per month',
+      });
+      await api('POST', `/applications/${id}/contacts`, {
+        name: 'Laura Recruiter',
+        role: 'RECRUITER',
+        email: 'laura@initech.test',
+        linkedinUrl: 'https://www.linkedin.com/in/laura-recruiter',
+      });
+      await api('POST', `/applications/${id}/events`, {
+        type: 'NOTE',
+        text: 'Call them on Monday',
+      });
+      await api('POST', `/applications/${id}/events`, {
+        type: 'INTERVIEW',
+        kind: 'TECHNICAL',
+        interviewers: ['Grace Interviewer'],
+        outcome: 'PASSED',
+        notes: 'Asked about the payments refactor',
+      });
+      await api('POST', `/applications/${id}/status`, { to: 'INTERVIEWING' });
+      // Requests the API refuses are logged without their content either.
+      await api('POST', `/applications/${id}/contacts`, { name: 'Refused Person', email: 'nope' });
+
+      const output = logs.output();
+      expect(output.length).toBeGreaterThan(0);
+      for (const content of [
+        // The profile and the CVs written from it.
+        'Initech',
+        'Designed the public REST API',
+        'Diseñé',
+        'García',
+        // The job description.
+        'Acme',
+        'Senior Backend Engineer',
+        // The application.
+        '7.777',
+        '6.543',
+        'Laura',
+        'laura@initech.test',
+        'Call them on Monday',
+        'Grace',
+        'payments refactor',
+        'Refused Person',
+        // The API key.
+        KEY,
+      ]) {
+        expect(output, content).not.toContain(content);
+      }
     },
   );
 });

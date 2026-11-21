@@ -110,7 +110,7 @@
       "version": "Versión"
     },
     "privacy": {
-      "title": "Privacidad y estadísticas de uso",
+      "title": "Estadísticas de uso anónimas",
       "description": "Qué se comparte, qué nunca sale de tu computadora y lo que ya se armó para enviar.",
       "loadError": "No se pudo cargar la configuración de privacidad: {{message}}",
       "pending": "Todavía no elegiste si compartir estadísticas de uso: no se registra ni se envía nada.",
@@ -1347,6 +1347,51 @@
       "pageCount_other": "{{count}} páginas",
       "pagesHint": "Por defecto, 1 página con menos de 8 años de experiencia y 2 desde 8 años.",
       "template": "Plantilla"
+    }
+  },
+  "privacy": {
+    "back": "Configuración",
+    "title": "Privacidad",
+    "description": "Qué datos salen de tu computadora, hacia dónde, y cuáles no salen nunca.",
+    "card": {
+      "title": "Privacidad",
+      "description": "Qué queda en tu computadora, qué se envía a la IA y qué incluyen las estadísticas de uso.",
+      "open": "Ver"
+    },
+    "local": {
+      "title": "Lo que queda en tu computadora",
+      "description": "Careerly no tiene cuentas ni nube: todo se guarda en esta carpeta.",
+      "data": "Tu perfil maestro, las ofertas, las sesiones, los CVs con sus PDFs, las postulaciones con sus contactos, notas y salarios, y los backups.",
+      "key": "Tu API key se guarda cifrada por el sistema operativo. Nunca va a la base de datos, a los registros ni a los backups.",
+      "logs": "Los registros (la carpeta logs) guardan solo identificadores, tiempos y códigos de error: nunca el contenido de tu perfil, de las ofertas ni de lo que se le pide a la IA."
+    },
+    "ai": {
+      "title": "Lo que se envía al proveedor de IA",
+      "description": "Solo cuando usás una función con IA: va al proveedor que elegiste (Gemini o Claude) con tu propia API key, o por Claude Code si lo activaste. Cada proveedor trata esos datos según sus condiciones.",
+      "functions": {
+        "jdAnalysis": {
+          "name": "Analizar una oferta",
+          "sends": "El texto de la oferta."
+        },
+        "cvImport": {
+          "name": "Importar un CV",
+          "sends": "El archivo del CV, con los datos personales que tenga (un DOCX se convierte a texto antes de enviarlo)."
+        },
+        "suggestion": {
+          "name": "Sugerir la redacción de un logro",
+          "sends": "Ese logro y sus métricas."
+        },
+        "tailoring": {
+          "name": "Comparar tu perfil con una oferta y generar el CV",
+          "sends": "Tu perfil maestro (titular, resumen, experiencia con empresas y fechas, logros, proyectos, educación, certificaciones, idiomas y herramientas) y el análisis de la oferta."
+        }
+      },
+      "never": {
+        "title": "Nunca se envía a la IA",
+        "contact": "Tu nombre, email, teléfono ni links: se agregan al PDF en tu computadora.",
+        "applications": "Tus postulaciones, contactos, notas ni salarios.",
+        "telemetry": "Tus estadísticas de uso."
+      }
     }
   }
 }

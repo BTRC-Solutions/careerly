@@ -5,7 +5,6 @@ import { InlineError } from '../../../shared/ui/InlineError';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { AiUsageCard } from '../../ai/components/AiUsageCard';
 import { TemplatesCard } from '../../templates/components/TemplatesCard';
-import { PrivacyCard } from '../../telemetry/components/PrivacyCard';
 import { useClaudeCode } from '../api/useClaudeCode';
 import { useSettings } from '../api/useSettings';
 import { AboutCard } from '../components/AboutCard';
@@ -15,6 +14,7 @@ import { ClaudeCodeCard } from '../components/ClaudeCodeCard';
 import { BackupsCard } from '../components/BackupsCard';
 import { DataFolderCard } from '../components/DataFolderCard';
 import { LanguageSettingsCard } from '../components/LanguageSettingsCard';
+import { PrivacyLinkCard } from '../components/PrivacySections';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export function SettingsPage() {
           <TemplatesCard />
           <DataFolderCard dataDir={settings.data.dataDir} />
           <BackupsCard />
-          <PrivacyCard />
+          <PrivacyLinkCard />
           <AboutCard appVersion={settings.data.appVersion} />
         </>
       )}
