@@ -163,7 +163,7 @@ function StatusCounts({ summary }: { summary: DashboardSummary }) {
           const count = summary.byStatus[status];
           return (
             <li key={status} className="grid grid-cols-[8rem_1fr_2rem] items-center gap-3 text-sm">
-              <span className={count === 0 ? 'text-fog' : 'text-slate-ink'}>
+              <span className={count === 0 ? 'text-steel-text' : 'text-slate-ink'}>
                 {t(`applications.statuses.${status}`)}
               </span>
               <span aria-hidden="true" className="h-2 rounded-full bg-cloud-canvas">
@@ -177,7 +177,7 @@ function StatusCounts({ summary }: { summary: DashboardSummary }) {
               <span
                 className={cn(
                   'text-right tabular-nums',
-                  count === 0 ? 'text-fog' : 'text-slate-ink',
+                  count === 0 ? 'text-steel-text' : 'text-slate-ink',
                 )}
               >
                 {count}
