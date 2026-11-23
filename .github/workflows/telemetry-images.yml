@@ -1,7 +1,9 @@
 name: Telemetry images
 
-# Builds both telemetry images and runs them against a real Postgres. It runs on the deployment branch only, not
-# on every PR: the CI already compiles both services (`npm run build:telemetry`).
+# Builds both telemetry images, runs them with the production compose (infra/telemetry) behind a Caddy with the
+# production site, and, on the deployment branch, publishes them to GHCR (ARCHITECTURE §19.6). It runs on the
+# deployment branch only, not on every PR: the CI already compiles both services and validates the compose. A
+# workflow_dispatch on another branch runs the same checks without publishing.
 on:
   push:
     branches: [deployment]
@@ -11,47 +13,81 @@ concurrency:
   group: telemetry-images-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io/btrc-solutions
+
 jobs:
-  # The telemetry services deploy on their own (ARCHITECTURE §19.6): each image is built with only the contracts
-  # and its service, and runs without the rest of the repository.
   images:
     name: Telemetry images
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
-      SECRET: ci-internal-secret-shared-by-both-services
+      TELEMETRY_API_IMAGE: careerly-telemetry-api
+      STATS_WEB_IMAGE: careerly-stats-web
+      IMAGE_TAG: ci
     steps:
       - uses: actions/checkout@v5
 
-      - run: docker build -f apps/telemetry-api/Dockerfile -t telemetry-api:ci .
-      - run: docker build -f apps/stats-web/Dockerfile -t stats-web:ci .
+      # The label links each package to this repository in GHCR.
+      - name: Build
+        run: |
+          for service in telemetry-api stats-web; do
+            docker build -f apps/$service/Dockerfile -t careerly-$service:ci \
+              --label org.opencontainers.image.source=https://github.com/${{ github.repository }} .
+          done
 
-      - name: Migrate and start telemetry-api
+      - name: Start with the production compose
         run: |
-          docker run --rm --network host -e DATABASE_URL telemetry-api:ci node dist/migrate.js
-          docker run -d --name telemetry-api --network host -e DATABASE_URL \
-            -e TELEMETRY_INTERNAL_SECRET="$SECRET" -e TELEMETRY_PORT=3000 telemetry-api:ci
-      - name: Start stats-web against it
+          docker network create edge
+          printf '%s\n' CAREERLY_DOMAIN=localhost POSTGRES_PASSWORD=ci-owner-password \
+            TELEMETRY_DB_PASSWORD=ci-app-password TELEMETRY_INTERNAL_SECRET=ci-internal-secret-shared-by-both-services \
+            TELEMETRY_POW_DIFFICULTY=8 > /tmp/ci.env
+          compose() { docker compose --env-file /tmp/ci.env -f infra/telemetry/compose.yaml "$@"; }
+          compose --profile migrate run --rm migrate
+          compose up -d --wait --wait-timeout 120 telemetry-api stats-web
+
+      # The production site on plain HTTP, so the routes are tested as they are published.
+      - name: Start Caddy with the site
         run: |
-          docker run -d --name stats-web --network host -e TELEMETRY_API_URL=http://127.0.0.1:3000 \
-            -e TELEMETRY_INTERNAL_SECRET="$SECRET" -e STATS_PORT=3001 stats-web:ci
+          mkdir /tmp/caddy
+          sed 's/__CAREERLY_DOMAIN__/http:\/\/localhost:8080/' infra/telemetry/careerly.caddy > /tmp/caddy/careerly.caddy
+          printf 'import /etc/caddy/careerly.caddy\n' > /tmp/caddy/Caddyfile
+          docker run -d --name caddy --network edge -p 8080:8080 -v /tmp/caddy:/etc/caddy:ro caddy:2.10-alpine
+          for i in $(seq 30); do curl -fsS -o /dev/null http://localhost:8080/health && break; sleep 1; done
+
       - name: Smoke test
         run: |
-          for i in $(seq 30); do curl -fsS http://127.0.0.1:3000/health && break; sleep 1; done
-          curl -fsS http://127.0.0.1:3000/health
-          curl -fsS http://127.0.0.1:3001/health
-          curl -fsS 'http://127.0.0.1:3001/api/stats?range=30'
-          curl -fsS http://127.0.0.1:3001/ | grep -q '<div id="root">'
-          # Without the secret, telemetry-api does not answer its read API.
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/internal/stats)" = 401
+          status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+          curl -fsS http://localhost:8080/health
+          curl -fsS 'http://localhost:8080/api/stats?range=30' > /dev/null
+          curl -fsS http://localhost:8080/ | grep -q '<div id="root">'
+          # A report reaches the receiver, which rejects this one (unsigned).
+          code=$(status -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:8080/v1/reports)
+          echo "POST /v1/reports -> $code"; test "$code" = 400 -o "$code" = 401
+          # Nothing else of the receiver is published.
+          test "$(status http://localhost:8080/internal/stats)" = 404
+          test "$(status http://localhost:8080/v1/reports)" = 404
+          # The receiver only got the read-and-insert user.
+          docker exec careerly-telemetry-postgres-1 psql -U telemetry_owner -d telemetry -tAc \
+            "select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
+             where grantee = 'telemetry_app' and table_name = 'reports'" | grep -qx 'INSERT,SELECT'
+
       - name: Logs
         if: always()
-        run: docker logs telemetry-api; docker logs stats-web
+        run: |
+          docker compose -p careerly-telemetry logs --no-color
+          docker logs caddy
+
+      - name: Publish to GHCR
+        if: github.ref == 'refs/heads/deployment'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for service in telemetry-api stats-web; do
+            for tag in sha-${GITHUB_SHA::7} latest; do
+              docker tag careerly-$service:ci $REGISTRY/careerly-$service:$tag
+              docker push --quiet $REGISTRY/careerly-$service:$tag
+            done
+          done

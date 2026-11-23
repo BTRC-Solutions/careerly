@@ -761,7 +761,7 @@ careerly/
   packages/
     contracts/           # esquemas Zod + tipos compartidos (DTOs, enums de estado, reporte de telemetría)
   infra/
-    telemetry/           # docker-compose (staging y prod), Caddyfile y backups del receptor
+    telemetry/           # docker-compose de prod, sitio de Caddy y usuarios de Postgres del receptor
     jenkins/             # Jenkins como código: plugins.txt, JCasC y Jenkinsfile de deploy
     eslint-config/
     tsconfig/
@@ -950,8 +950,8 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-18 | Página pública como React SPA servida por un servidor Node intermediario; la API de lectura del receptor solo es accesible por la red interna | Aceptada |
 | ADR-19 | Versionado con release-please (`0.<fase>.<fix>` hasta la 1.0): una versión para la app de escritorio, versiones propias para `telemetry-api` y `stats-web`, `schemaVersion` aparte; canales stable y beta | Aceptada |
 | ADR-20 | GitHub Actions para CI, instaladores e imágenes (GHCR); Jenkins solo para desplegar la telemetría | Aceptada |
-| ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, desplegando por SSH; staging automático y prod con aprobación | Aceptada |
-| ADR-22 | Observabilidad del servidor liviana: uptime check externo, `/health`, logs JSON con rotación y alertas por un canal; sin Prometheus/Grafana en el MVP | Aceptada |
+| ADR-21 | Jenkins en Docker en el mismo VPS, configurado como código, accesible solo por túnel SSH, desplegando por SSH; un solo entorno (prod), que se despliega con cada push a la rama `deployment` | Aceptada (revisada en el 8.7: sin staging) |
+| ADR-22 | Observabilidad del servidor liviana: `/health`, healthchecks de Docker con reinicio y logs JSON con rotación; sin canal de alertas, uptime check externo ni Prometheus/Grafana en el MVP | Aceptada (revisada en el 8.7: sin alertas) |
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 | ADR-24 | Plantillas propias: el usuario sube un `.typ` con el mismo contrato que las incluidas (un JSON `TemplateData` con los textos fijos traducidos por la app). Se ejecuta con el mismo aislamiento de Typst (sin red, lectura solo dentro de `--root`, fuentes del sistema ignoradas, timeout) y se valida renderizando los ejemplos | Aceptada (Fase 3) |
 | ADR-25 | Proveedor opcional "Claude Code local": el `claude` instalado y logueado, invocado como proceso aislado (carpeta temporal, solo lectura de los archivos de entrada, sin MCP ni configuración del usuario), con el plan del usuario en lugar de una API key; experimental y solo para uso personal | Aceptada (Fase 4) |
@@ -1076,11 +1076,9 @@ flowchart LR
     subgraph OPS[Operación]
         GHA[GitHub Actions<br/>CI + imágenes en GHCR]
         JENKINS[Jenkins<br/>en el mismo VPS]
-        UPTIME[Uptime check externo]
     end
-    GHA -->|buildWithParameters| JENKINS
+    JENKINS -->|consulta la rama deployment| GHA
     JENKINS -->|SSH, usuario deploy| VPS
-    UPTIME -->|GET /health| CADDY
 ```
 
 La arquitectura tiene tres partes independientes:
@@ -1097,12 +1095,11 @@ tabla está bloqueado.
 | Origen | Destino | Cómo | Autenticación |
 |---|---|---|---|
 | App de escritorio | `telemetry-api` | `POST /v1/reports` vía Caddy (HTTPS) | Firma Ed25519 por instalación, más un envío por día, prueba de trabajo para instalaciones nuevas, esquema con rangos y rate limit (ADR-26) |
-| Navegador del visitante | `stats-web` | `GET /` y `GET /api/*` vía Caddy | Ninguna (datos públicos con k ≥ 5) |
+| Navegador del visitante | `stats-web` | `GET /`, `GET /api/*` y `GET /health` vía Caddy | Ninguna (datos públicos con k ≥ 5) |
 | `stats-web` | `telemetry-api` | `GET /internal/stats/*` por la red interna de Docker | Secreto compartido |
 | `telemetry-api` | Postgres | Red interna de Docker | Usuario y contraseña por entorno |
-| GitHub Actions | Jenkins | API remota vía Caddy | Token en los secrets del repo |
+| Jenkins | GitHub y GHCR | Consulta la rama `deployment` y baja las imágenes (solo tráfico saliente) | Ninguna (repo e imágenes públicos) |
 | Jenkins | Host del VPS | SSH | Clave del usuario `deploy` |
-| Uptime check | `telemetry-api`, `stats-web` | `GET /health` vía Caddy | Ninguna (respuesta sin datos) |
 
 **Telemetría de producto, no observabilidad de la app.** Los reportes miden **uso** (postulaciones, fuentes,
 posiciones, funciones). La app **no** envía errores, trazas ni métricas de rendimiento (D-15): los problemas
@@ -1289,91 +1286,108 @@ Un reporte por instalación por día. Solo aparecen las métricas que el usuario
 
 ### 19.6 Despliegue
 
-**Entornos.** `staging` y `prod` corren en el mismo VPS como dos proyectos de docker-compose separados
-(`careerly-telemetry-staging` y `careerly-telemetry-prod`), cada uno con su propio contenedor de Postgres y su
-volumen. Un único Caddy compartido enruta por subdominio y obtiene los certificados TLS automáticamente, lo que
-**requiere un dominio** (pendiente, D-10):
+**Un solo entorno.** Es un proyecto chico: hay solo prod, sin staging. Corre en el VPS como un proyecto de
+docker-compose (`infra/telemetry/compose.yaml`, proyecto `careerly-telemetry`) con `telemetry-api`, `stats-web`
+y su propio Postgres con su volumen. La app estable y las betas envían a prod; los builds de desarrollo tienen el
+envío desactivado. La URL se fija en tiempo de build.
 
-| Host | Destino |
+**Un solo dominio público.** El VPS ya tiene un Caddy (el del proyecto kleinkauf, en 80/443) que saca los
+certificados TLS solo, y Careerly se publica a través de él en un único host. Mientras no haya un dominio pago
+(D-10) se usa sslip.io, que resuelve cualquier nombre con la IP adentro sin registrarse:
+**`careerly-201-32-129-72.sslip.io`**. Va con guion y no como subdominio de `201-32-129-72.sslip.io`, porque ese
+espacio es el de las tiendas de kleinkauf. El dominio es una variable: cambiarlo es configuración, salvo en la app,
+que lo fija al compilar.
+
+| Ruta | Destino |
 |---|---|
-| `telemetry.<dominio>/v1/reports` | `telemetry-api` de prod (solo esa ruta) |
-| `stats.<dominio>` | `stats-web` de prod |
-| `telemetry-staging.<dominio>`, `stats-staging.<dominio>` | ídem en staging |
-| `jenkins.<dominio>` | Jenkins (login obligatorio) |
+| `POST /v1/reports` | `telemetry-api` (la app de escritorio llega desde internet) |
+| Todo lo demás | `stats-web` (la página y `GET /api/stats`) |
 
-La app estable y las betas envían a prod. Los builds de desarrollo envían a staging o tienen el envío
-desactivado. La URL se fija en tiempo de build.
+Nada más se publica. `/internal/*` y el `/health` de `telemetry-api` no tienen ruta en Caddy: los usa `stats-web`
+por la red interna. Postgres no tiene puertos y Jenkins escucha solo en `127.0.0.1` del VPS. Para ver Jenkins o
+cualquier otra cosa de adentro se entra por un túnel SSH (`ssh -p 5141 -L 8080:127.0.0.1:8080 <usuario>@<vps>` y
+después `http://localhost:8080`).
+
+**Cómo se engancha al Caddy compartido**, sin tocar kleinkauf en cada cambio (su `docs/deployment.md`, "Other
+projects behind Caddy"):
+
+- Caddy importa todos los `*.caddy` de `~/caddy-sites` del VPS. Careerly deja ahí `careerly.caddy`, generado a
+  partir de `infra/telemetry/careerly.caddy` con el dominio, y recarga Caddy. Si el archivo tiene un error, Caddy
+  sigue con la configuración anterior.
+- Caddy está también en la red `edge`. De Careerly solo `telemetry-api` y `stats-web` se suman a `edge`, con los
+  alias `careerly-telemetry-api` y `careerly-stats-web`. Postgres queda solo en la red interna del proyecto, que
+  no tiene salida a internet. Careerly no ve la red de kleinkauf ni kleinkauf la de Careerly.
+
+**Base de datos.** Dos usuarios: el dueño (`POSTGRES_USER`), que corre las migraciones, y `telemetry_app`, el que
+usa el receptor, que solo puede leer e insertar (`SELECT`, `INSERT`) en las tablas. Lo crea
+`infra/telemetry/postgres/init-roles.sh` la primera vez que arranca el volumen.
+
+**Sin backups.** Se decidió no tenerlos: si se pierde el VPS o el volumen de Postgres, se pierden los reportes.
+Por eso las migraciones tienen que ser compatibles con la versión anterior de la imagen (primero se agrega, y lo
+viejo se borra en una versión posterior): el rollback vuelve a la imagen anterior sin restaurar nada.
 
 **Cada servicio se despliega por separado.** `telemetry-api` y `stats-web` tienen su propia imagen
 (`apps/<servicio>/Dockerfile`, construida desde la raíz del repo), que lleva solo `packages/contracts` y ese
 servicio: nada de la app de escritorio, de la API local ni de Electron. Se publican, versionan y despliegan cada
 una por su lado, y ninguna necesita a la otra para arrancar (`stats-web` responde `502` y `/health` da `503`
 mientras `telemetry-api` no está). El build de la app (`npm run build`) no los incluye; tienen el suyo
-(`npm run build:telemetry`). La CI de cada PR compila los dos servicios; las imágenes se construyen y se
-levantan contra un Postgres en el workflow `telemetry-images.yml`, que corre solo con cada push a la rama
-`deployment`.
+(`npm run build:telemetry`). La CI de cada PR compila los dos servicios y valida el compose y el sitio de Caddy.
+El workflow `telemetry-images.yml`, con cada push a la rama `deployment`, construye las imágenes, las levanta con
+el compose de `infra/telemetry` contra un Postgres y, si pasan, las publica en GHCR
+(`ghcr.io/btrc-solutions/careerly-<servicio>`, públicas como el repo, con los tags `sha-<commit>` y `latest`).
 
-**Reparto entre GitHub Actions y Jenkins (ADR-20).** Actions ya corre la CI y tiene los runners: hace los
-tests y construye las imágenes. Jenkins solo despliega.
+**Reparto entre GitHub Actions y Jenkins (ADR-20).** Actions corre la CI y construye, prueba y publica las
+imágenes. Jenkins solo despliega. Como Jenkins no es accesible desde afuera, Actions no lo puede llamar: Jenkins
+consulta cada pocos minutos la rama `deployment` (solo tráfico saliente) y despliega cuando ve un commit nuevo
+cuyas imágenes ya están en GHCR. Pushear a `deployment` es la decisión de desplegar; no hay otra aprobación.
 
 ```
-push a deployment ──► Actions: build de imágenes ──► GHCR :sha-<commit> ──► Jenkins: deploy staging (automático)
-tag telemetry-api-vX.Y.Z / stats-web-vX.Y.Z
-             ──► Actions: build ──► GHCR :X.Y.Z ──► Jenkins: deploy prod (con aprobación manual)
+push a deployment ──► Actions: build, prueba y publica ──► GHCR :sha-<commit>
+                      Jenkins (consulta la rama) ──────────► deploy en prod
 ```
-
-Actions dispara a Jenkins **después** de publicar la imagen, con su API remota (`buildWithParameters`:
-componente, tag de imagen, entorno), usando un token guardado en los secrets del repo. Así Jenkins nunca intenta
-desplegar una imagen que todavía no existe.
 
 **Jenkins (ADR-21).**
 
-- Corre en el mismo VPS como contenedor (`jenkins/jenkins:lts`) con heap limitado. Requiere un VPS de al menos
-  4 GB de RAM. Si el VPS se cae, se cae también Jenkins: para recuperarlo hay un procedimiento manual
-  documentado (`docker compose up` con la última versión desplegada).
+- Corre en el mismo VPS como contenedor (`jenkins/jenkins:lts`) con heap limitado y el puerto publicado solo en
+  `127.0.0.1`. El VPS tiene 8 GB, compartidos con kleinkauf. Si el VPS se cae, se cae también Jenkins: para
+  recuperarlo hay un procedimiento manual documentado (`docker compose up` con la última versión desplegada).
 - Configuración como código: `infra/jenkins/` con `plugins.txt`, JCasC (`jenkins.yaml`) y el `Jenkinsfile`
   del pipeline de deploy. Recrear Jenkins desde cero no requiere tocar la interfaz.
-- Jenkins **no monta el socket de Docker**. Despliega por SSH con un usuario `deploy` del host (que sí está en
-  el grupo `docker`), con la clave guardada en las credenciales de Jenkins.
-- Credenciales en Jenkins: token de lectura de GHCR, clave SSH, contraseñas de Postgres y secreto compartido
-  `stats-web` ↔ `telemetry-api`. Se escriben en el host como archivos `.env` con permisos `600` en cada deploy.
+- Jenkins **no monta el socket de Docker**. Despliega por SSH con el usuario del host que está en el grupo
+  `docker`, con la clave guardada en las credenciales de Jenkins.
+- Credenciales en Jenkins: clave SSH, contraseñas de Postgres y secreto compartido `stats-web` ↔ `telemetry-api`.
+  Se escriben en el host como un `.env` con permisos `600` en cada deploy. Las imágenes son públicas: no hace falta
+  token de GHCR.
 
-**Pipeline de deploy** (`infra/jenkins/Jenkinsfile`, parámetros: componente, tag de imagen, entorno):
+**Pipeline de deploy** (`infra/jenkins/Jenkinsfile`):
 
 ```
-1. Validar parámetros (tag existente en GHCR, entorno válido)
-2. Aprobación manual                      (solo prod: step `input`)
-3. Backup: pg_dump del entorno            (antes de migrar)
-4. Pull de la imagen
-5. Migraciones: contenedor efímero `telemetry-api migrate` (Drizzle)
-6. docker compose up -d del componente
-7. Smoke test: /health interno; en staging, además, un POST de un reporte de prueba
-8. Registrar la versión desplegada en el host (deployed-versions.json)
-   Si falla 5–7 → rollback: volver al tag anterior registrado (y restaurar el backup si la migración llegó a correr)
+1. Esperar a que las imágenes :sha-<commit> estén en GHCR
+2. Pull de las imágenes
+3. Migraciones: contenedor efímero (`node dist/migrate.js`) con el usuario dueño
+4. docker compose up -d --wait
+5. Sitio de Caddy: generar careerly.caddy en ~/caddy-sites y recargar Caddy (solo si cambió)
+6. Smoke test: /health de los dos servicios y la página por el dominio público
+7. Registrar la versión desplegada en el host
+   Si falla 4–6 → rollback: volver a las imágenes anteriores registradas
 ```
-
-**Backups.** `pg_dump` diario de prod (además del previo a cada deploy), con rotación, guardado en un volumen
-y, de ser posible, copiado fuera del VPS.
 
 ### 19.7 Observabilidad del servidor (ADR-22)
 
-Objetivo: enterarse de que el receptor o la página están caídos, de que falló un backup o un deploy, o de que
-el VPS se está quedando sin recursos, **sin sumar servicios pesados** a un VPS de 4 GB que ya corre Jenkins y
-dos entornos. Nivel **liviano** para el MVP:
+Objetivo: poder ver si el receptor o la página están caídos y por qué, **sin sumar servicios pesados** a un VPS
+compartido con kleinkauf. No hay canal de alertas ni uptime check externo: se decidió no tenerlos por ahora. Lo
+que hay:
 
-| Señal | Cómo | Alerta |
-|---|---|---|
-| **Disponibilidad** | Uptime check externo (p. ej. UptimeRobot, plan gratuito) cada 5 min contra `https://telemetry.<dominio>/health` y `https://stats.<dominio>/health` | Mail o Telegram si falla 2 veces seguidas |
-| **Salud interna** | `/health` de cada servicio: proceso vivo + conexión a Postgres (`telemetry-api`) o a `telemetry-api` (`stats-web`). Healthchecks de Docker con `restart: unless-stopped` | Lo detecta el uptime check |
-| **Logs** | pino en JSON a stdout, driver `json-file` de Docker con rotación (`max-size`, `max-file`). Sin IPs ni contenido de los reportes (RNF-23): solo `installId` truncado, `schemaVersion`, resultado y motivo de rechazo | — |
-| **Ingesta** | Contadores en el log (aceptados, rechazados por esquema, por topes, por rate limit, `410` por versión vieja). Resumen diario: reportes recibidos por entorno | Si prod recibe 0 reportes en un día con instalaciones activas el día anterior |
-| **Backups** | El script de `pg_dump` diario verifica que el archivo exista y no esté vacío | Si falla o el archivo está vacío |
-| **Deploys** | Resultado del pipeline de Jenkins (incluido el rollback) | Si falla o hace rollback |
-| **Recursos del VPS** | Script diario con `df`, memoria y `docker stats` | Disco > 80 % o memoria sostenida > 90 % |
+| Señal | Cómo |
+|---|---|
+| **Disponibilidad** | `https://<dominio>/health` (el de `stats-web`) da `503` si `telemetry-api` no responde |
+| **Salud interna** | `/health` de cada servicio: proceso vivo + conexión a Postgres (`telemetry-api`) o a `telemetry-api` (`stats-web`). Healthchecks de Docker con `restart: unless-stopped`: un servicio caído vuelve a levantarse solo |
+| **Logs** | pino en JSON a stdout, driver `json-file` de Docker con rotación (`max-size`, `max-file`). Sin IPs ni contenido de los reportes (RNF-23): solo `installId` truncado, `schemaVersion`, resultado y motivo de rechazo |
+| **Ingesta** | Contadores en el log (aceptados y rechazados por motivo) |
+| **Deploys** | Resultado del pipeline en Jenkins, incluido el rollback (por el túnel SSH) |
+| **Recursos** | Límites de memoria por contenedor en el compose |
 
-- Las alertas salen por un único canal (bot de Telegram o mail), configurado con un secreto guardado en Jenkins
-  y en el `.env` del host. Staging no alerta, solo registra.
 - `/health` no expone versiones, datos ni detalles de la base: devuelve `200 { "status": "ok" }` o `503`.
-- **Siguiente nivel (post-MVP, si hace falta):** Prometheus + Grafana + Loki en el mismo docker-compose para
-  métricas de latencia y errores, dashboards y logs centralizados. Se descarta para el MVP por memoria: en un VPS
-  de 4 GB con Jenkins queda muy justo.
+- **Siguiente nivel (post-MVP, si hace falta):** un uptime check externo con un canal de alertas, y después
+  Prometheus + Grafana + Loki para métricas de latencia y errores, dashboards y logs centralizados. Se descartan
+  para el MVP: el VPS se comparte con kleinkauf y Jenkins.

@@ -110,8 +110,9 @@ incluyen contenido del perfil, JDs ni prompts (RNF-01, RNF-02, RNF-03).
 - Commits estilo Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`…). **Definen las versiones**:
   release-please calcula el bump y el CHANGELOG a partir de ellos ([VERSIONING.md](VERSIONING.md)). No editar versiones
   ni CHANGELOGs a mano.
-- Despliegue de la telemetría: Actions construye las imágenes en GHCR y Jenkins despliega en el VPS (staging
-  automático, prod con aprobación). Ver ARCHITECTURE.md §19.6.
+- Despliegue de la telemetría: un solo entorno (prod) en el VPS, detrás de un solo dominio. Con cada push a la
+  rama `deployment`, Actions publica las imágenes en GHCR y Jenkins (solo accesible por túnel SSH) las despliega.
+  Ver ARCHITECTURE.md §19.6.
 - Ramas `feat/<fase-o-paso>-<descripcion>` → PR a `main`. CI (Windows + Ubuntu) debe quedar en verde. Se
   mergea solo con squash: el título del PR, en Conventional Commits, es la entrada del CHANGELOG.
 - Textos de UI siempre por i18n (`apps/web/src/shared/i18n/locales/{es,en}.json`), nunca hardcodeados.
