@@ -370,10 +370,10 @@ SAVED ──→ APPLIED ──→ SCREENING ──→ INTERVIEWING ──→ OFF
 | D-07 | ¿Las recomendaciones de capacitación incluyen cursos de plataformas? | No: solo documentación oficial, certificaciones y proyectos sugeridos, con enlaces verificados. |
 | D-08 | ¿Aplicación web o de escritorio? | **Escritorio** (Electron), con datos locales en SQLite. Ver ARCHITECTURE.md. |
 | D-09 | ¿Telemetría? | Sí, con consentimiento: casillas activadas por defecto, pero nada se envía sin "Aceptar". Reportes diarios agregados con ID anónimo regenerable. Sin observabilidad técnica (errores, rendimiento). |
-| D-10 | ¿Dónde vive el receptor? | VPS propio con Docker (ver ARCHITECTURE.md §19). Falta conseguir un dominio. |
+| D-10 | ¿Dónde vive el receptor? | VPS propio con Docker (ver ARCHITECTURE.md §19). Sin dominio pago por ahora: `careerly-201-32-129-72.sslip.io`, detrás del Caddy que ya tiene el VPS. |
 | D-11 | ¿Retención de los reportes? | Sin límite de tiempo. Se informa en la pantalla de Privacidad. |
 | D-12 | ¿Cómo se exponen los datos? | Una página pública con agregados. La API de lectura es privada: solo el servidor de la página habla con ella. |
 | D-13 | ¿Cómo se versiona? | SemVer con release-please: una versión para la app de escritorio y otras propias para cada servicio de telemetría; canales stable y beta. Ver ARCHITECTURE.md §16.1. |
-| D-14 | ¿Cómo se despliega la telemetría? | Jenkins en el mismo VPS, solo para desplegar: staging automático en cada merge a `main` y prod con aprobación al crear un tag. GitHub Actions sigue con la CI, los instaladores y las imágenes. Ver ARCHITECTURE.md §19.6. |
-| D-15 | ¿La app envía errores o métricas de rendimiento? | No: la telemetría es solo de uso. La observabilidad técnica se limita al servidor propio (uptime, logs, alertas). Ver ARCHITECTURE.md §19.7. |
+| D-14 | ¿Cómo se despliega la telemetría? | Jenkins en el mismo VPS, solo para desplegar y accesible solo por túnel SSH: un solo entorno (prod), que se despliega con cada push a la rama `deployment`. GitHub Actions sigue con la CI, los instaladores y las imágenes. Ver ARCHITECTURE.md §19.6. |
+| D-15 | ¿La app envía errores o métricas de rendimiento? | No: la telemetría es solo de uso. La observabilidad técnica se limita al servidor propio (`/health`, healthchecks y logs; sin alertas por ahora). Ver ARCHITECTURE.md §19.7. |
 | D-16 | ¿Qué proveedores de IA se soportan? | Varios, uno activo a la vez: **Gemini** primero, **Claude** después, OpenAI abierto (ADR-23). |

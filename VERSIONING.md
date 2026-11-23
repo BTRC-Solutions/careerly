@@ -171,15 +171,14 @@ Las betas **no cambian** el PR de release ni el CHANGELOG: son fotos de `main` a
 ## 5. Criterios para largar `telemetry-api` y `stats-web`
 
 - [ ] La CI está en verde y la imagen se construyó y publicó en GHCR.
-- [ ] La misma versión está desplegada en **staging** (sale sola en cada merge a `main`) y su smoke test pasó.
 - [ ] El receptor sigue aceptando `schemaVersion` **N y N-1**.
 - [ ] Las migraciones de Postgres son **compatibles con la versión anterior de la imagen**: primero se agregan
       columnas o tablas, y se borran recién en una versión posterior. Así el rollback automático de Jenkins
       funciona sin restaurar backups.
-- [ ] La página pública respeta el umbral de anonimato (k ≥ 5) con los datos de staging.
+- [ ] La página pública respeta el umbral de anonimato (k ≥ 5) (tests de integración del receptor).
 
-Después de mergear el PR de release, Jenkins pide aprobación para prod. Antes de aprobar, revisá que el
-backup previo al deploy se haya creado.
+Se despliega pusheando a la rama `deployment` (ARCHITECTURE.md §19.6). No hay backups: si el deploy falla,
+Jenkins vuelve a las imágenes anteriores.
 
 ## 6. Cambios en el formato del reporte (`schemaVersion`)
 

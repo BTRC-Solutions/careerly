@@ -1,0 +1,36 @@
+# Careerly's site on the VPS's shared Caddy (ARCHITECTURE §19.6). deploy.sh writes it to ~/caddy-sites with the
+# domain in place of __CAREERLY_DOMAIN__, and kleinkauf's Caddyfile imports it. One public host:
+#   POST /v1/reports -> telemetry-api (the desktop app sends from the internet)
+#   everything else  -> stats-web (the page, /api/stats and /health)
+# No `log` directive: Caddy keeps no access log, so no IPs (RNF-23).
+__CAREERLY_DOMAIN__ {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# The only route of the receiver that is published, with the receiver's own body cap.
+	@report {
+		method POST
+		path /v1/reports
+	}
+	handle @report {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy careerly-telemetry-api:3000
+	}
+
+	# The receiver's other routes (its read API, its /health) only exist on the internal network.
+	@internal path /v1/* /internal/*
+	handle @internal {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy careerly-stats-web:3001
+	}
+}

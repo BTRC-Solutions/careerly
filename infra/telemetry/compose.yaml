@@ -1,0 +1,97 @@
+# Careerly's telemetry on the VPS (ARCHITECTURE §19.6): one environment, prod. The receiver, the public page and
+# their own Postgres. The VPS's Caddy (kleinkauf's) reaches telemetry-api and stats-web through the shared `edge`
+# network and publishes them on one domain (careerly.caddy). Nothing here publishes a port on the host.
+# Deployed with deploy.sh, which runs the migrations first:
+#   docker compose --env-file ~/careerly/.env -f infra/telemetry/compose.yaml --profile migrate run --rm migrate
+#   docker compose --env-file ~/careerly/.env -f infra/telemetry/compose.yaml up -d --wait
+name: careerly-telemetry
+
+# Each container's logs: up to 3 files of 10 MB, so they never fill the disk.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+x-telemetry-api-image: &telemetry-api-image ${TELEMETRY_API_IMAGE:-ghcr.io/btrc-solutions/careerly-telemetry-api}:${IMAGE_TAG:-latest}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: telemetry
+      # The owner runs the migrations; the receiver connects as telemetry_app (postgres/init-roles.sh).
+      POSTGRES_USER: telemetry_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is missing from the .env}
+      TELEMETRY_DB_PASSWORD: ${TELEMETRY_DB_PASSWORD:?TELEMETRY_DB_PASSWORD is missing from the .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/init-roles.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U telemetry_owner -d telemetry']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    networks: [internal]
+
+  # One-off: applies the pending migrations as the owner. Only runs when named (deploy.sh).
+  migrate:
+    image: *telemetry-api-image
+    profiles: [migrate]
+    command: ['node', 'dist/migrate.js']
+    logging: *logging
+    environment:
+      DATABASE_URL: postgres://telemetry_owner:${POSTGRES_PASSWORD}@postgres:5432/telemetry
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+
+  telemetry-api:
+    image: *telemetry-api-image
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      DATABASE_URL: postgres://telemetry_app:${TELEMETRY_DB_PASSWORD}@postgres:5432/telemetry
+      TELEMETRY_INTERNAL_SECRET: ${TELEMETRY_INTERNAL_SECRET:?TELEMETRY_INTERNAL_SECRET is missing from the .env}
+      TELEMETRY_POW_DIFFICULTY: ${TELEMETRY_POW_DIFFICULTY:-20}
+      # Caddy is the only proxy in front.
+      TELEMETRY_TRUST_PROXY_HOPS: '1'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 256m
+    networks:
+      internal:
+      edge:
+        aliases: [careerly-telemetry-api]
+
+  # No depends_on: the page starts without the receiver and answers 502 (and /health 503) until it is up.
+  stats-web:
+    image: ${STATS_WEB_IMAGE:-ghcr.io/btrc-solutions/careerly-stats-web}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      TELEMETRY_API_URL: http://telemetry-api:3000
+      TELEMETRY_INTERNAL_SECRET: ${TELEMETRY_INTERNAL_SECRET}
+    mem_limit: 128m
+    networks:
+      internal:
+      edge:
+        aliases: [careerly-stats-web]
+
+networks:
+  # The project's own network, without a way out to the internet: Postgres lives only here.
+  internal:
+    internal: true
+  # Shared with the VPS's Caddy (created by kleinkauf's compose). Only the two services join it.
+  edge:
+    external: true
+    name: edge
+
+volumes:
+  # No backups (ARCHITECTURE §19.6): `docker compose down -v` deletes every report.
+  postgres-data:

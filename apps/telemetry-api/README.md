@@ -10,7 +10,7 @@ de cada instalación en `POST /v1/reports` y entrega los agregados, ya filtrados
 |---|---|---|
 | `POST /v1/reports` | La app (vía Caddy, única ruta pública) | Ingesta: forma, rate limit, firma Ed25519, prueba de trabajo de una instalación nueva, un envío por día, esquema con rangos e inserción (`202`) |
 | `GET /internal/stats?from=&to=` | `stats-web`, por la red interna | Agregados del período (por defecto, los últimos 30 días). Exige el header `x-internal-secret` |
-| `GET /health` | Uptime check y Docker | `200 { "status": "ok" }` o `503`, sin más datos |
+| `GET /health` | Docker y `stats-web` | `200 { "status": "ok" }` o `503`, sin más datos |
 
 ## Configuración (variables de entorno)
 

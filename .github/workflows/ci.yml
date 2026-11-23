@@ -42,3 +42,29 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run build:telemetry
+
+  # The VPS's configuration (infra/telemetry, ARCHITECTURE §19.6), checked without deploying anything.
+  infra:
+    name: Telemetry infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compose file
+        run: |
+          docker network create edge
+          printf '%s\n' CAREERLY_DOMAIN=example.test POSTGRES_PASSWORD=x TELEMETRY_DB_PASSWORD=x \
+            TELEMETRY_INTERNAL_SECRET=ci-internal-secret-shared-by-both-services > /tmp/ci.env
+          docker compose --env-file /tmp/ci.env -f infra/telemetry/compose.yaml --profile migrate config --quiet
+
+      - name: Caddy site
+        run: |
+          # Wrapped as kleinkauf's Caddyfile imports it, with the domain deploy.sh puts in.
+          mkdir /tmp/caddy
+          sed 's/__CAREERLY_DOMAIN__/careerly-127-0-0-1.sslip.io/' infra/telemetry/careerly.caddy > /tmp/caddy/careerly.caddy
+          printf 'import /etc/caddy/careerly.caddy\n' > /tmp/caddy/Caddyfile
+          docker run --rm -v /tmp/caddy:/etc/caddy:ro caddy:2.10-alpine \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Scripts
+        run: shellcheck infra/telemetry/deploy.sh infra/telemetry/postgres/init-roles.sh
