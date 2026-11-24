@@ -1,0 +1,56 @@
+# Jenkins configuration as code (JCasC). ${...} come from the container's environment (~/careerly/jenkins/.env)
+# and ${readFile:...} from the compose secrets; none of them is in the repository.
+jenkins:
+  systemMessage: 'Careerly: telemetry deploys (ARCHITECTURE §19.6). Only reachable through an SSH tunnel.'
+  numExecutors: 1
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: ${JENKINS_ADMIN_ID}
+          password: ${JENKINS_ADMIN_PASSWORD}
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: http://localhost:8080/
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # Jenkins deploys on its own host over SSH (it never mounts the Docker socket).
+          - basicSSHUserPrivateKey:
+              scope: GLOBAL
+              id: vps-ssh
+              description: SSH key of the VPS user that deploys
+              username: ${VPS_SSH_USER}
+              privateKeySource:
+                directEntry:
+                  privateKey: ${readFile:/run/secrets/vps_ssh_key}
+
+jobs:
+  - script: >
+      pipelineJob('careerly-telemetry-deploy') {
+        description('Deploys each new commit of the deployment branch once its images are in GHCR.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/BTRC-Solutions/careerly.git') }
+                branch('*/deployment')
+              }
+            }
+            scriptPath('infra/jenkins/Jenkinsfile')
+          }
+        }
+        properties {
+          pipelineTriggers {
+            triggers {
+              pollSCM { scmpoll_spec('H/5 * * * *') }
+            }
+          }
+        }
+      }

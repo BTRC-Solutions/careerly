@@ -52,4 +52,6 @@ for attempt in $(seq 30); do
   [ "$attempt" = 30 ] && { echo "https://$CAREERLY_DOMAIN/health does not answer" >&2; exit 1; }
   sleep 2
 done
+# What Jenkins rolls back to if the next deploy fails: "<commit> <image tag>".
+echo "$(git rev-parse HEAD) ${IMAGE_TAG:-latest}" > "${CAREERLY_DEPLOYED:-$HOME/careerly/deployed}"
 echo "Deployed on https://$CAREERLY_DOMAIN"

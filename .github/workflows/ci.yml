@@ -50,12 +50,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Compose file
+      - name: Compose files
         run: |
           docker network create edge
           printf '%s\n' CAREERLY_DOMAIN=example.test POSTGRES_PASSWORD=x TELEMETRY_DB_PASSWORD=x \
             TELEMETRY_INTERNAL_SECRET=ci-internal-secret-shared-by-both-services > /tmp/ci.env
           docker compose --env-file /tmp/ci.env -f infra/telemetry/compose.yaml --profile migrate config --quiet
+          touch /tmp/id_ed25519 /tmp/known_hosts
+          printf '%s\n' JENKINS_ADMIN_PASSWORD=x VPS_SSH_USER=x JENKINS_SECRETS_DIR=/tmp > /tmp/jenkins.env
+          docker compose --env-file /tmp/jenkins.env -f infra/jenkins/compose.yaml config --quiet
 
       - name: Caddy site
         run: |
@@ -68,3 +71,44 @@ jobs:
 
       - name: Scripts
         run: shellcheck infra/telemetry/deploy.sh infra/telemetry/postgres/init-roles.sh
+
+  # Jenkins recreated from scratch comes up configured (roadmap 8.7): the job, the credential, no anonymous access.
+  jenkins:
+    name: Jenkins
+    runs-on: ubuntu-latest
+    env:
+      AUTH: admin:ci-admin-password
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start Jenkins from scratch
+        run: |
+          mkdir /tmp/jenkins
+          ssh-keygen -q -t ed25519 -N '' -f /tmp/jenkins/id_ed25519
+          # Readable by the container's jenkins user (uid 1000, like the VPS user that owns them there).
+          chmod 644 /tmp/jenkins/id_ed25519
+          printf 'careerly-vps %s\n' "$(cut -d' ' -f1,2 /tmp/jenkins/id_ed25519.pub)" > /tmp/jenkins/known_hosts
+          printf '%s\n' JENKINS_ADMIN_PASSWORD=ci-admin-password VPS_SSH_USER=deploy JENKINS_SECRETS_DIR=/tmp/jenkins \
+            > /tmp/jenkins.env
+          docker compose --env-file /tmp/jenkins.env -f infra/jenkins/compose.yaml up -d --build
+          for i in $(seq 90); do curl -fsS -o /dev/null http://127.0.0.1:8080/login && break; sleep 2; done
+
+      - name: Configured from code
+        run: |
+          curl -fsS -u "$AUTH" http://127.0.0.1:8080/job/careerly-telemetry-deploy/api/json \
+            | grep -q '"name":"careerly-telemetry-deploy"'
+          curl -fsSg -u "$AUTH" 'http://127.0.0.1:8080/credentials/store/system/domain/_/api/json?tree=credentials[id]' \
+            | grep -q '"id":"vps-ssh"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/job/careerly-telemetry-deploy/)" = 403
+
+      - name: Jenkinsfile
+        run: |
+          crumb=$(curl -fsS -c /tmp/cookies -u "$AUTH" http://127.0.0.1:8080/crumbIssuer/api/json \
+            | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["crumbRequestField"] + ":" + d["crumb"])')
+          curl -fsS -b /tmp/cookies -u "$AUTH" -H "$crumb" -F 'jenkinsfile=<infra/jenkins/Jenkinsfile' \
+            http://127.0.0.1:8080/pipeline-model-converter/validate | tee /tmp/validate
+          grep -q 'successfully validated' /tmp/validate
+
+      - name: Logs
+        if: failure()
+        run: docker compose -p careerly-jenkins logs --no-color
