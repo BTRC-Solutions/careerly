@@ -1,0 +1,80 @@
+// Deploys Careerly's telemetry on the VPS (ARCHITECTURE §19.6). Jenkins polls the deployment branch and runs this
+// for each new commit: it waits for the commit's images in GHCR (Actions publishes them, telemetry-images.yml) and
+// runs infra/telemetry/deploy.sh on the host over SSH. If the deploy fails, it deploys the previous version again.
+
+pipeline {
+  agent any
+  options {
+    disableConcurrentBuilds()
+    timeout(time: 45, unit: 'MINUTES')
+    timestamps()
+  }
+  stages {
+    stage('Version') {
+      steps {
+        script {
+          env.TAG = "sha-${env.GIT_COMMIT.take(7)}"
+          // The host's last successful deploy, "<commit> <image tag>", written by deploy.sh.
+          env.PREVIOUS = onHost('cat ~/careerly/deployed 2>/dev/null || true', true).trim()
+          echo "Deploying ${env.GIT_COMMIT} (${env.TAG}); on the host now: ${env.PREVIOUS ?: 'nothing'}"
+        }
+      }
+    }
+    stage('Images') {
+      steps {
+        // Actions publishes them a few minutes after the push.
+        script {
+          onHost("""
+          for attempt in \$(seq 60); do
+            docker manifest inspect ghcr.io/btrc-solutions/careerly-telemetry-api:${env.TAG} > /dev/null 2>&1 &&
+              docker manifest inspect ghcr.io/btrc-solutions/careerly-stats-web:${env.TAG} > /dev/null 2>&1 && exit 0
+            sleep 30
+          done
+          echo 'The images of ${env.TAG} are not in GHCR' >&2
+          exit 1
+          """)
+        }
+      }
+    }
+    stage('Deploy') {
+      steps {
+        script {
+          env.DEPLOYING = 'true'
+          onHost(deployCommand(env.GIT_COMMIT, env.TAG))
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only once the deploy started: if the images never showed up, nothing changed on the host.
+        if (env.DEPLOYING == 'true' && env.PREVIOUS && !env.PREVIOUS.startsWith(env.GIT_COMMIT)) {
+          def (commit, tag) = env.PREVIOUS.tokenize(' ')
+          echo "Rolling back to ${commit} (${tag})"
+          onHost(deployCommand(commit, tag))
+        }
+      }
+    }
+  }
+}
+
+/** The repository checkout on the host at that commit, then deploy.sh with that image tag. */
+String deployCommand(String commit, String tag) {
+  return """
+    set -e
+    cd ~/careerly/repo
+    git fetch --quiet origin
+    git checkout --quiet --force --detach ${commit}
+    IMAGE_TAG=${tag} bash infra/telemetry/deploy.sh
+  """
+}
+
+/** Runs a script on the VPS as the deploy user. The key never leaves the credentials binding. */
+String onHost(String script, boolean returnStdout = false) {
+  withCredentials([sshUserPrivateKey(credentialsId: 'vps-ssh', keyFileVariable: 'KEY', usernameVariable: 'USER')]) {
+    String ssh = 'ssh -i "$KEY" -p "$VPS_SSH_PORT" -o BatchMode=yes -o HostKeyAlias=careerly-vps ' +
+      '-o UserKnownHostsFile=/run/secrets/vps_known_hosts -o StrictHostKeyChecking=yes "$USER@host.docker.internal"'
+    return sh(script: "${ssh} bash -s <<'REMOTE'\n${script}\nREMOTE", returnStdout: returnStdout)
+  }
+}

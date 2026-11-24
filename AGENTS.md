@@ -59,7 +59,8 @@ packages/
 
 Telemetría (ARCHITECTURE.md §19), fuera de la app y con imagen propia cada uno: `apps/telemetry-api` (receptor
 en el VPS, NestJS + Postgres) y `apps/stats-web` (página pública). Se compilan con `npm run build:telemetry`.
-Planificado: `infra/telemetry/` (docker-compose).
+Infraestructura del VPS en `infra/telemetry/` (docker-compose, sitio de Caddy, `deploy.sh`) e `infra/jenkins/`
+(Jenkins como código y `Jenkinsfile`).
 
 - Node **24+** (`.nvmrc`), npm workspaces, todo ESM, TypeScript 5.9, Vitest (API con SWC).
 - API: `apps/api/src/platform/*` (config, database, http, logging, health). Los módulos de negocio irán en

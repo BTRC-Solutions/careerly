@@ -1351,25 +1351,26 @@ push a deployment ──► Actions: build, prueba y publica ──► GHCR :sha
 - Corre en el mismo VPS como contenedor (`jenkins/jenkins:lts`) con heap limitado y el puerto publicado solo en
   `127.0.0.1`. El VPS tiene 8 GB, compartidos con kleinkauf. Si el VPS se cae, se cae también Jenkins: para
   recuperarlo hay un procedimiento manual documentado (`docker compose up` con la última versión desplegada).
-- Configuración como código: `infra/jenkins/` con `plugins.txt`, JCasC (`jenkins.yaml`) y el `Jenkinsfile`
-  del pipeline de deploy. Recrear Jenkins desde cero no requiere tocar la interfaz.
-- Jenkins **no monta el socket de Docker**. Despliega por SSH con el usuario del host que está en el grupo
-  `docker`, con la clave guardada en las credenciales de Jenkins.
-- Credenciales en Jenkins: clave SSH, contraseñas de Postgres y secreto compartido `stats-web` ↔ `telemetry-api`.
-  Se escriben en el host como un `.env` con permisos `600` en cada deploy. Las imágenes son públicas: no hace falta
-  token de GHCR.
+- Configuración como código: `infra/jenkins/` con `plugins.txt`, JCasC (`jenkins.yaml`, que crea el usuario, la
+  credencial y el job con Job DSL) y el `Jenkinsfile` del pipeline de deploy, todo dentro de la imagen. Recrear
+  Jenkins desde cero (`docker compose down -v && docker compose up -d --build`) no requiere tocar la interfaz; la
+  CI lo hace en cada PR y valida el `Jenkinsfile`.
+- Jenkins **no monta el socket de Docker**. Despliega por SSH a su propio host (`host.docker.internal`) con el
+  usuario que está en el grupo `docker` y una clave propia de Jenkins, con la clave del host fijada en un
+  `known_hosts`.
+- La única credencial en Jenkins es esa clave SSH. Las contraseñas de Postgres y el secreto compartido viven solo
+  en el `.env` del host (`~/careerly/.env`, permisos `600`), que se crea una vez a mano. Las imágenes son públicas:
+  no hace falta token de GHCR.
 
 **Pipeline de deploy** (`infra/jenkins/Jenkinsfile`):
 
 ```
 1. Esperar a que las imágenes :sha-<commit> estén en GHCR
-2. Pull de las imágenes
-3. Migraciones: contenedor efímero (`node dist/migrate.js`) con el usuario dueño
-4. docker compose up -d --wait
-5. Sitio de Caddy: generar careerly.caddy en ~/caddy-sites y recargar Caddy (solo si cambió)
-6. Smoke test: /health de los dos servicios y la página por el dominio público
-7. Registrar la versión desplegada en el host
-   Si falla 4–6 → rollback: volver a las imágenes anteriores registradas
+2. Por SSH: el checkout del repo en el host pasa a ese commit y corre infra/telemetry/deploy.sh, que hace
+   pull de las imágenes, migraciones (contenedor efímero con el usuario dueño), docker compose up --wait,
+   el sitio de Caddy (solo si cambió; si Caddy lo rechaza, lo deja como estaba) y el smoke test por el dominio
+3. deploy.sh registra lo desplegado en el host (~/careerly/deployed: commit y tag)
+   Si falla 2 → rollback: el mismo deploy con el commit y el tag registrados antes
 ```
 
 ### 19.7 Observabilidad del servidor (ADR-22)

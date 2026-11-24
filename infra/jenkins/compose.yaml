@@ -1,0 +1,39 @@
+# Jenkins on the VPS (ARCHITECTURE §19.6, ADR-21). Only on 127.0.0.1: it is reached through an SSH tunnel
+# (`ssh -p 5141 -L 8080:127.0.0.1:8080 <user>@<vps>`, then http://localhost:8080). It deploys on the host over SSH.
+#   docker compose --env-file ~/careerly/jenkins/.env -f infra/jenkins/compose.yaml up -d --build
+name: careerly-jenkins
+
+services:
+  jenkins:
+    build: .
+    image: careerly-jenkins
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    ports:
+      - '127.0.0.1:8080:8080'
+    environment:
+      JAVA_OPTS: -Xmx512m -Djenkins.install.runSetupWizard=false
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?JENKINS_ADMIN_PASSWORD is missing from the .env}
+      VPS_SSH_USER: ${VPS_SSH_USER:?VPS_SSH_USER is missing from the .env}
+      VPS_SSH_PORT: ${VPS_SSH_PORT:-22}
+    secrets: [vps_ssh_key, vps_known_hosts]
+    # The host itself, for SSH.
+    extra_hosts: ['host.docker.internal:host-gateway']
+    volumes:
+      - jenkins-home:/var/jenkins_home
+    mem_limit: 1g
+
+secrets:
+  vps_ssh_key:
+    file: ${JENKINS_SECRETS_DIR:-${HOME}/careerly/jenkins}/id_ed25519
+  vps_known_hosts:
+    file: ${JENKINS_SECRETS_DIR:-${HOME}/careerly/jenkins}/known_hosts
+
+volumes:
+  # Builds and their logs only: the configuration comes from the image, so losing it loses nothing else.
+  jenkins-home:
