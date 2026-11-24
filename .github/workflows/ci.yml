@@ -97,7 +97,7 @@ jobs:
         run: |
           curl -fsS -u "$AUTH" http://127.0.0.1:8080/job/careerly-telemetry-deploy/api/json \
             | grep -q '"name":"careerly-telemetry-deploy"'
-          curl -fsS -u "$AUTH" 'http://127.0.0.1:8080/credentials/store/system/domain/_/api/json?tree=credentials[id]' \
+          curl -fsSg -u "$AUTH" 'http://127.0.0.1:8080/credentials/store/system/domain/_/api/json?tree=credentials[id]' \
             | grep -q '"id":"vps-ssh"'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/job/careerly-telemetry-deploy/)" = 403
 

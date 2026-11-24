@@ -12,8 +12,6 @@ jenkins:
   authorizationStrategy:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
-  remotingSecurity:
-    enabled: true
 
 unclassified:
   location:
