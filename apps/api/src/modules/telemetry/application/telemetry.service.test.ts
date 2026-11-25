@@ -35,6 +35,12 @@ class MemoryReports extends TelemetryReportRepository {
   async deleteUnsent() {
     this.rows = this.rows.filter((row) => row.status === 'SENT');
   }
+  async pending() {
+    return this.rows.filter((row) => row.status === 'PENDING');
+  }
+  async countAttempt() {}
+  async markSent() {}
+  async markFailed() {}
 }
 
 class MemoryActivity extends TelemetryActivityRepository {
@@ -52,6 +58,7 @@ class MemoryActivity extends TelemetryActivityRepository {
 
 class FakeEnvironment extends TelemetryEnvironment {
   readonly appVersion = '0.1.0';
+  readonly receiverUrl = null;
   current = new Date(2026, 10, 16, 10, 0);
   private ids = 0;
   now() {

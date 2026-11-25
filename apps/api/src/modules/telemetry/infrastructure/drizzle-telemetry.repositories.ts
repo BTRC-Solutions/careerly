@@ -1,6 +1,6 @@
 import { TelemetryReportV1Schema } from '@careerly/contracts';
 import { Injectable } from '@nestjs/common';
-import { asc, between, desc, eq, inArray, ne } from 'drizzle-orm';
+import { asc, between, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { DatabaseService } from '../../../platform/database/database.service.js';
 import { telemetryActivityDays, telemetryReports } from '../../../platform/database/schema.js';
 import {
@@ -40,19 +40,56 @@ export class DrizzleTelemetryReportRepository extends TelemetryReportRepository 
       .select()
       .from(telemetryReports)
       .orderBy(desc(telemetryReports.day));
-    return rows.map((row) => ({
-      day: row.day,
-      status: row.status,
-      attempts: row.attempts,
-      createdAt: row.createdAt,
-      sentAt: row.sentAt,
-      payload: TelemetryReportV1Schema.parse(JSON.parse(row.payload)),
-    }));
+    return rows.map(toStored);
   }
 
   async deleteUnsent(): Promise<void> {
     await this.database.db.delete(telemetryReports).where(ne(telemetryReports.status, 'SENT'));
   }
+
+  async pending(): Promise<StoredTelemetryReport[]> {
+    const rows = await this.database.db
+      .select()
+      .from(telemetryReports)
+      .where(eq(telemetryReports.status, 'PENDING'))
+      .orderBy(asc(telemetryReports.day));
+    return rows.map(toStored);
+  }
+
+  async countAttempt(days: string[]): Promise<void> {
+    if (days.length === 0) return;
+    await this.database.db
+      .update(telemetryReports)
+      .set({ attempts: sql`${telemetryReports.attempts} + 1` })
+      .where(inArray(telemetryReports.day, days));
+  }
+
+  async markSent(days: string[], sentAt: string): Promise<void> {
+    if (days.length === 0) return;
+    await this.database.db
+      .update(telemetryReports)
+      .set({ status: 'SENT', sentAt })
+      .where(inArray(telemetryReports.day, days));
+  }
+
+  async markFailed(days: string[]): Promise<void> {
+    if (days.length === 0) return;
+    await this.database.db
+      .update(telemetryReports)
+      .set({ status: 'FAILED' })
+      .where(inArray(telemetryReports.day, days));
+  }
+}
+
+function toStored(row: typeof telemetryReports.$inferSelect): StoredTelemetryReport {
+  return {
+    day: row.day,
+    status: row.status,
+    attempts: row.attempts,
+    createdAt: row.createdAt,
+    sentAt: row.sentAt,
+    payload: TelemetryReportV1Schema.parse(JSON.parse(row.payload)),
+  };
 }
 
 @Injectable()

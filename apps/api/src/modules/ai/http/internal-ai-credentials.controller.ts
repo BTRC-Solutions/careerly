@@ -2,7 +2,7 @@ import { type AiCredentials, AiCredentialsSchema } from '@careerly/contracts';
 import { Body, Controller, HttpCode, HttpStatus, Put, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
 import { AiCredentialsStore } from '../application/ai-credentials.store.js';
-import { ControlTokenGuard } from './control-token.guard.js';
+import { ControlTokenGuard } from '../../../platform/http/control-token.guard.js';
 
 /**
  * Receives the active AI API key from the Electron main process (ADR-23).

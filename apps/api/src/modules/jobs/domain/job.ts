@@ -26,18 +26,20 @@ export function retryDelayMs(failedAttempt: number, baseMs: number): number {
   return Math.min(baseMs * 2 ** Math.max(0, failedAttempt - 1), MAX_RETRY_DELAY_MS);
 }
 
-/** What to do after an attempt failed: try again later, or give up. */
+/**
+ * What to do after an attempt failed: try again later, or give up. `delayMs`, when the handler asked for a
+ * specific wait (e.g. the server's `Retry-After`), replaces the exponential backoff.
+ */
 export function afterFailure(
   job: Pick<JobRecord, 'attempts' | 'maxAttempts'>,
   permanent: boolean,
   now: Date,
   baseMs: number,
+  delayMs?: number,
 ): { retry: false } | { retry: true; runAt: string } {
   if (permanent || job.attempts >= job.maxAttempts) return { retry: false };
-  return {
-    retry: true,
-    runAt: new Date(now.getTime() + retryDelayMs(job.attempts, baseMs)).toISOString(),
-  };
+  const wait = delayMs ?? retryDelayMs(job.attempts, baseMs);
+  return { retry: true, runAt: new Date(now.getTime() + wait).toISOString() };
 }
 
 /**

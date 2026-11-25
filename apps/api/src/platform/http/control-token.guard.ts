@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
-import { APP_CONFIG, type AppConfig } from '../../../platform/config/app-config.js';
+import { APP_CONFIG, type AppConfig } from '../config/app-config.js';
 
 /**
  * Second check (after the local-access middleware) that `/internal/*` routes are called with the

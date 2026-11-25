@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { z } from 'zod';
 import { ZodValidationPipe } from '../../../platform/http/zod-validation.pipe.js';
 import { AiSmokeTestService, type SmokeTestResult } from '../application/smoke-test.service.js';
-import { ControlTokenGuard } from './control-token.guard.js';
+import { ControlTokenGuard } from '../../../platform/http/control-token.guard.js';
 
 const SmokeRequestSchema = z
   .object({

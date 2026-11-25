@@ -23,6 +23,17 @@ describe('jobs domain', () => {
     });
   });
 
+  it('waits what the handler asked for instead of the backoff, and still gives up at the last attempt', () => {
+    const now = new Date('2026-11-17T10:00:00.000Z');
+    expect(afterFailure({ attempts: 1, maxAttempts: 5 }, false, now, 1000, 30 * 60_000)).toEqual({
+      retry: true,
+      runAt: '2026-11-17T10:30:00.000Z',
+    });
+    expect(afterFailure({ attempts: 5, maxAttempts: 5 }, false, now, 1000, 60_000)).toEqual({
+      retry: false,
+    });
+  });
+
   it('records the error code or class, never the message', () => {
     expect(errorCodeOf(Object.assign(new Error('secret JD text'), { code: 'RATE_LIMITED' }))).toBe(
       'RATE_LIMITED',

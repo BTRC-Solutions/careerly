@@ -10,6 +10,10 @@ export interface TelemetryPreferences {
   metrics: Partial<Record<TelemetryMetricId, boolean>>;
   /** Anonymous installation id; only exists once a metric was accepted. */
   installId: string | null;
+  /** Public key the receiver already has for `installId`; `null` until its first accepted request. */
+  registeredKey: string | null;
+  /** UTC day of the last request the receiver took (`2xx` or `409`): one per day (ARCHITECTURE §19.2). */
+  lastSentDay: string | null;
 }
 
 /** The metric catalog: the consent version in which each metric was added. */
@@ -19,6 +23,8 @@ export const NO_PREFERENCES: TelemetryPreferences = {
   consentVersion: 0,
   metrics: {},
   installId: null,
+  registeredKey: null,
+  lastSentDay: null,
 };
 
 export function enabledMetrics(prefs: TelemetryPreferences): TelemetryMetricId[] {

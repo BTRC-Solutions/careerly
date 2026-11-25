@@ -11,9 +11,16 @@ import { startBackend, type RunningBackend } from './backend.js';
 import { DataActions } from './data-actions.js';
 import { safeStorageEncryptor } from './safe-storage.js';
 import { applySecurityPolicies } from './security.js';
+import { pushTelemetrySecret, TelemetrySecretFile } from './telemetry-secret.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.argv.includes('--dev');
+
+/**
+ * The telemetry receiver, fixed in the build (ARCHITECTURE §19.6). `npm run dev` does not set it, so development
+ * never sends; CAREERLY_TELEMETRY_URL points it elsewhere, for tests.
+ */
+const TELEMETRY_URL = process.env.CAREERLY_TELEMETRY_URL ?? 'https://careerly.btrc.website';
 
 interface Connection {
   /** Where the UI is loaded from. */
@@ -95,6 +102,7 @@ async function start() {
 
   const aiKeys = registerAiKeyHandlers(connection, assertFromUi);
   registerDataHandlers(connection, assertFromUi, aiKeys.clearAll);
+  sendTelemetrySecret(connection);
   createWindow(connection.uiUrl);
 }
 
@@ -165,6 +173,23 @@ function registerAiKeyHandlers(
       await applyToBackend();
     },
   };
+}
+
+/** The secret the telemetry signing keys come from (ADR-26): kept here, only lent to the backend's memory. */
+function sendTelemetrySecret(connection: Connection) {
+  const secret = new TelemetrySecretFile(
+    path.join(app.getPath('userData'), 'telemetry-secret.bin'),
+    safeStorageEncryptor,
+    (message) => console.warn(`[telemetry] ${message}`),
+  ).load();
+  void pushTelemetrySecret({
+    apiBaseUrl: connection.apiBaseUrl,
+    controlToken: connection.controlToken,
+    secret,
+  }).catch((error: unknown) => {
+    // Telemetry never gets in the way (RN-21): without the secret nothing is sent.
+    console.warn(`[telemetry] ${error instanceof Error ? error.message : String(error)}`);
+  });
 }
 
 /**
@@ -248,6 +273,7 @@ async function packagedConnection(): Promise<Connection> {
     controlToken,
     appVersion: app.getVersion(),
     allowedOrigins: [APP_ORIGIN],
+    telemetryUrl: TELEMETRY_URL,
     forwardOutput: !app.isPackaged,
   });
   serveUi(paths.uiRoot, backend.url);
