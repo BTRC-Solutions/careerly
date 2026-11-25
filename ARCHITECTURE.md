@@ -825,7 +825,7 @@ careerly/
 | Integración | Repositorios Drizzle sobre SQLite temporal, migraciones, render Typst real, cola de tareas | Vitest + archivo SQLite temporal |
 | UI (componentes) | Pantallas con la API simulada: qué se muestra, qué se pide a la API, errores, diálogos | Vitest + jsdom + Testing Library + MSW (`apps/web/src/test-support/`) |
 | Evaluación de IA | Conjunto fijo de perfiles + JDs: requisitos extraídos, cero bullets inventados, CVs dentro del límite de páginas | Script de evals propio, corrido manualmente al cambiar prompts o modelos (§15.1) |
-| E2E | Flujo completo en la app de escritorio: perfil → JD → gaps → CV → postulación | Playwright para Electron, con el LLM *fake* |
+| E2E | Flujo completo en la app de escritorio: perfil → JD → gaps → CV → postulación | Playwright para Electron, con el LLM *fake* (§15.2) |
 
 ### 15.1 Evals de IA
 
@@ -863,6 +863,21 @@ termina con 1). `--model` elige el modelo grande. Deja el reporte en `.data/eval
 muestra qué hizo la guardia (textos reescritos y descartados, con motivo): los CVs no conservan nada inventado,
 así que esos números miden cuánto inventa el prompt. Desde el 6.5 verifica que cada PDF respete el límite de
 páginas (`--pages 1|2`, por defecto 1) y coincida con lo que midió el ajuste; si no, termina con 1.
+
+### 15.2 E2E
+
+`npm run test:e2e` compila todo y corre `e2e/` con Playwright contra la app de escritorio compilada, la misma que
+abre `npm start`, sobre una carpeta de datos temporal (`CAREERLY_USER_DATA_DIR`).
+
+- **LLM *fake*:** `e2e/fake-gemini.ts` es un servidor local que imita la API de Gemini, y la app llega a él por
+  `CAREERLY_GEMINI_BASE_URL`. Lista dos modelos y contesta cada tarea según el esquema JSON que pide, así que no
+  depende del orden de las llamadas. El CV cita el perfil con las referencias cortas del prompt (`[W1]`, `[A2]`).
+- **El flujo:** asistente de primer inicio (idioma, API key, telemetría rechazada), perfil con un puesto y un
+  logro, oferta analizada por la IA, match con un requisito faltante, respuesta al gap que agrega un logro, CV
+  generado y finalizado (PDF real con Typst) y postulación enviada en el tablero.
+- **CI:** job `E2E (Electron)`, solo en Windows: es la plataforma prioritaria y la API key necesita el
+  almacenamiento seguro del sistema, que un runner de Linux no tiene (sin keyring, `safeStorage` cae en
+  `basic_text` y la app no guarda la key). Si falla, sube el reporte con una captura y el árbol de accesibilidad.
 
 ## 16. Distribución y actualizaciones
 

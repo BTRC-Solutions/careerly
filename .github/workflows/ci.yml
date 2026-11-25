@@ -43,6 +43,39 @@ jobs:
       - run: npm run build
       - run: npm run build:telemetry
 
+  # The whole flow in the built desktop app, with a fake Gemini (e2e/, roadmap 8.3). Only on Windows: the
+  # priority platform, and the API key needs a real secure storage (on a Linux runner there is no keyring).
+  e2e:
+    name: E2E (Electron)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/cache@v4
+        with:
+          path: vendor/typst
+          key: typst-${{ runner.os }}-${{ hashFiles('scripts/fetch-typst.mjs') }}
+      - run: npm run typst:fetch
+
+      - run: npm run test:e2e
+
+      - name: Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+
   # The VPS's configuration (infra/telemetry, ARCHITECTURE §19.6), checked without deploying anything.
   infra:
     name: Telemetry infra

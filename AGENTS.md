@@ -76,6 +76,7 @@ npm run dev:web      # API + UI en el navegador (http://localhost:5173)
 npm start            # build completo + abre la app de escritorio
 npm run package:win  # build + instalador NSIS en apps/desktop/release/installer/
 npm run lint && npm run typecheck && npm test && npm run build   # lo mismo que corre CI
+npm run test:e2e     # build + Playwright sobre la app de escritorio con un Gemini fake (e2e/)
 npm run format       # Prettier (CI corre format:check)
 npm run db:generate -w @careerly/api   # migración tras cambiar apps/api/src/platform/database/schema.ts
 ```
