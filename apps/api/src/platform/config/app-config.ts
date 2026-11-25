@@ -46,6 +46,11 @@ const EnvSchema = z.object({
   CAREERLY_GEMINI_BASE_URL: z.url().default('https://generativelanguage.googleapis.com'),
   CAREERLY_ANTHROPIC_BASE_URL: z.url().default('https://api.anthropic.com'),
   /**
+   * The telemetry receiver (ARCHITECTURE §19.6). Electron's main sets it to the production domain fixed in its
+   * build; without it (development, tests) nothing is ever sent.
+   */
+  CAREERLY_TELEMETRY_URL: z.url().optional(),
+  /**
    * Gemini models per tier, comma-separated, in order of preference: later ones are fallbacks when
    * a model is retired (404) or overloaded (503). Checked against the API in November 2026: the 2.5
    * family is gone for new keys and Pro models have no free-tier quota, so the defaults are Flash
@@ -123,6 +128,8 @@ export interface AppConfig {
   anthropicModels: { small: string[]; large: string[] };
   /** Command that runs Claude Code; `null` to look for `claude` (ADR-25). */
   claudeCodeCommand: string[] | null;
+  /** Where telemetry reports go; `null` = sending is off (ARCHITECTURE §19.2). */
+  telemetryUrl: string | null;
 }
 
 export class ConfigError extends Error {
@@ -195,5 +202,6 @@ export function loadConfig(
       large: parsed.CAREERLY_ANTHROPIC_MODELS_LARGE,
     },
     claudeCodeCommand: parsed.CAREERLY_CLAUDE_CODE_COMMAND ?? null,
+    telemetryUrl: parsed.CAREERLY_TELEMETRY_URL?.replace(/\/+$/, '') ?? null,
   };
 }

@@ -972,7 +972,7 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | ADR-23 | Varios proveedores de IA con un adaptador de `LlmClient` cada uno y uno activo a la vez: Gemini primero, Claude después, OpenAI abierto. Keys por proveedor en `secrets.bin`, enviadas de main al backend por HTTP loopback con un token de control | Aceptada (Fase 1) |
 | ADR-24 | Plantillas propias: el usuario sube un `.typ` con el mismo contrato que las incluidas (un JSON `TemplateData` con los textos fijos traducidos por la app). Se ejecuta con el mismo aislamiento de Typst (sin red, lectura solo dentro de `--root`, fuentes del sistema ignoradas, timeout) y se valida renderizando los ejemplos | Aceptada (Fase 3) |
 | ADR-25 | Proveedor opcional "Claude Code local": el `claude` instalado y logueado, invocado como proceso aislado (carpeta temporal, solo lectura de los archivos de entrada, sin MCP ni configuración del usuario), con el plan del usuario en lugar de una API key; experimental y solo para uso personal | Aceptada (Fase 4) |
-| ADR-26 | Envío de telemetría firmado por instalación (Ed25519, clave privada en `safeStorage`, pública registrada en el primer envío), una solicitud exitosa por instalación por día con el día de datos donde gana el primero, prueba de trabajo e instalaciones nuevas limitadas por IP, cuerpo de hasta 16 KB y rangos de plausibilidad por campo que rechazan el lote entero | Aceptada (diseño; se implementa en la Fase 8) |
+| ADR-26 | Envío de telemetría firmado por instalación (Ed25519, clave privada en `safeStorage`, pública registrada en el primer envío), una solicitud exitosa por instalación por día con el día de datos donde gana el primero, prueba de trabajo e instalaciones nuevas limitadas por IP, cuerpo de hasta 16 KB y rangos de plausibilidad por campo que rechazan el lote entero | Aceptada (receptor en el 8.5, envío en el 8.9: la clave de cada instalación se deriva de un secreto por computadora que guarda main) |
 
 ## 18. Extensiones post-MVP
 
@@ -1138,14 +1138,21 @@ servidor propio (§19.7).
   (una función que consulta un servicio público y devuelve números o enums). El resultado se valida con el
   esquema `TelemetryReportV1` de `packages/contracts`, que es **estricto** (`.strict()`, sin campos libres
   salvo el título recortado); si no valida, el envío falla y se registra en el log (RN-18).
-- **Clave por instalación (ADR-26).** Al aceptar la telemetría, junto con el `installId`, la app genera un par
-  de claves **Ed25519**. La privada la guarda el proceso main de Electron cifrada con `safeStorage` (como las
-  API keys, ADR-23) y se la pasa al backend en memoria. Nunca va a la base, a los logs ni a los backups. La
-  pública viaja en el primer envío y el receptor la asocia a ese `installId`.
+- **Clave por instalación (ADR-26).** Cada instalación firma con un par de claves **Ed25519** propio. El
+  proceso main de Electron guarda un único secreto por computadora (32 bytes al azar, `telemetry-secret.bin`,
+  cifrado con `safeStorage` como las API keys, ADR-23) y se lo pasa al backend en memoria
+  (`PUT /internal/telemetry-secret`, con el token de control). El backend deriva la clave de cada `installId`
+  (HMAC-SHA256 del secreto y el id → semilla Ed25519). Así un id nuevo trae una clave nueva que no se puede
+  vincular con la anterior, y no hay que guardar ninguna clave. Ni el secreto ni las claves van a la base, a
+  los logs ni a los backups. La pública viaja en el primer envío y el receptor la asocia a ese `installId`; la
+  app guarda cuál le registró (`telemetry.registeredKey`). Sin almacenamiento seguro no hay secreto y no se
+  envía nada. La URL del receptor la fija el build de main (`https://careerly.btrc.website`); `npm run dev` no
+  la pasa, así que desarrollo nunca envía.
   - Cada envío se **firma sobre los bytes exactos del cuerpo**. Así el receptor detecta cualquier cambio y
     nadie puede mandar datos a nombre de otra instalación, aunque conozca su `installId`.
   - Si la clave se pierde (otra PC, restaurar un backup o reinstalar), o si el usuario regenera el id, la app
-    genera **un `installId` y una clave nuevos**. Nunca se reutiliza un id con otra clave.
+    genera **un `installId` y una clave nuevos**. Nunca se reutiliza un id con otra clave: antes de enviar, si
+    la clave derivada no es la registrada, se pasa a un id nuevo y los reportes pendientes se rearman con él.
   - **No hay secretos compartidos en el instalador**: se podrían extraer. Cada clave identifica a una sola
     instalación.
 - **Envío: una solicitud exitosa por día.**
@@ -1156,7 +1163,9 @@ servidor propio (§19.7).
   - Antes de firmar, el reporte se valida contra el mismo esquema que usa el receptor, con sus rangos de
     plausibilidad. Un reporte que no pasa no se envía y se registra el motivo en el log, sin el contenido
     (RN-18).
-- **Reintentos del cliente**, a cargo de la cola de `jobs`:
+- **Reintentos del cliente**, a cargo de la cola de `jobs`: al iniciar y cada hora, el *scheduler* arma los
+  reportes y encola el envío del día UTC (un job por día, `telemetry-send:<día>`, hasta 5 intentos). El handler
+  le indica a la cola cuándo reintentar (`RetryLaterError`) en vez del *backoff* genérico:
   - Sin red, `429`, `5xx` o timeout: *backoff* exponencial con *jitter* (≈1 min, 5 min, 30 min, 2 h), hasta
     5 intentos por día, y respetando `Retry-After`.
   - `409` (ese día ya se recibió): cuenta como enviado.

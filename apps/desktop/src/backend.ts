@@ -16,6 +16,8 @@ export interface BackendOptions {
   controlToken: string;
   appVersion: string;
   allowedOrigins: string[];
+  /** Where telemetry reports go (ARCHITECTURE §19.6). */
+  telemetryUrl: string;
   /** Forward the API's stdout/stderr to this process (useful when running from source). */
   forwardOutput: boolean;
 }
@@ -45,6 +47,7 @@ export function startBackend(options: BackendOptions): Promise<RunningBackend> {
       ...(options.typstBinary ? { CAREERLY_TYPST_BIN: options.typstBinary } : {}),
       CAREERLY_ALLOWED_ORIGINS: options.allowedOrigins.join(','),
       CAREERLY_APP_VERSION: options.appVersion,
+      CAREERLY_TELEMETRY_URL: options.telemetryUrl,
       CAREERLY_LOG_TO_STDOUT: options.forwardOutput ? 'true' : 'false',
     },
   });

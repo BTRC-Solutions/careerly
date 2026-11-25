@@ -6,10 +6,12 @@ import { TelemetryEnvironment } from '../application/telemetry.ports.js';
 @Injectable()
 export class SystemTelemetryEnvironment extends TelemetryEnvironment {
   readonly appVersion: string;
+  readonly receiverUrl: string | null;
 
   constructor(@Inject(APP_CONFIG) config: AppConfig) {
     super();
     this.appVersion = config.appVersion;
+    this.receiverUrl = config.telemetryUrl;
   }
 
   now(): Date {

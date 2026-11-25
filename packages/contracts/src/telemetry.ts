@@ -165,6 +165,19 @@ export const TELEMETRY_POW_HEADER = 'x-careerly-pow';
 /** The public page shows a value only when at least this many installations reported it (RN-20). */
 export const TELEMETRY_ANONYMITY_THRESHOLD = 5;
 
+/**
+ * `PUT /internal/telemetry-secret`: the secret Electron's main keeps with `safeStorage` (32 random bytes in
+ * base64url), from which the API derives each installation's signing key (ADR-26). `null` when the system has no
+ * secure storage: then nothing is sent.
+ */
+export const TelemetrySecretSchema = z.object({
+  secret: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{43}$/)
+    .nullable(),
+});
+export type TelemetrySecret = z.infer<typeof TelemetrySecretSchema>;
+
 /** An Ed25519 public key: its 32 raw bytes in base64url, without padding. */
 export const TelemetryPublicKeySchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 

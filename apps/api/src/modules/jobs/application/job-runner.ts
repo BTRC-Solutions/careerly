@@ -9,7 +9,7 @@ import {
 import { afterFailure, errorCodeOf, type JobRecord } from '../domain/job.js';
 import { JobEvents } from './job-events.js';
 import { JobQueue } from './job-queue.js';
-import { JobRepository, PermanentJobError } from './jobs.ports.js';
+import { JobRepository, PermanentJobError, RetryLaterError } from './jobs.ports.js';
 
 /** Jobs run at the same time (most of the time they wait on the network or on Typst). */
 const CONCURRENCY = 2;
@@ -140,6 +140,7 @@ export class JobRunner implements OnApplicationBootstrap, OnApplicationShutdown 
       error instanceof PermanentJobError,
       now,
       this.options.retryBaseMs,
+      error instanceof RetryLaterError ? error.delayMs : undefined,
     );
     try {
       if (next.retry) {

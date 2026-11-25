@@ -56,7 +56,13 @@ test.beforeEach(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'careerly-e2e-'));
   app = await electron.launch({
     args: [path.join(ROOT, 'apps', 'desktop')],
-    env: { ...process.env, CAREERLY_USER_DATA_DIR: dataDir, CAREERLY_GEMINI_BASE_URL: gemini.url },
+    env: {
+      ...process.env,
+      CAREERLY_USER_DATA_DIR: dataDir,
+      CAREERLY_GEMINI_BASE_URL: gemini.url,
+      // Never the production receiver, even if a test ever accepts the telemetry.
+      CAREERLY_TELEMETRY_URL: gemini.url,
+    },
   });
   page = await app.firstWindow();
 });

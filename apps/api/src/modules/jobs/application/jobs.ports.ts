@@ -40,6 +40,21 @@ export class JobNotFoundError extends Error {
   }
 }
 
+/**
+ * Thrown by a handler that knows when it is worth trying again (e.g. a server's `Retry-After`): the next
+ * attempt runs after `delayMs` instead of the usual backoff. It still counts as an attempt.
+ */
+export class RetryLaterError extends Error {
+  constructor(
+    /** Recorded as the job's `lastError`, like any error code. */
+    readonly code: string,
+    readonly delayMs: number,
+  ) {
+    super(`Job will be retried in ${delayMs} ms: ${code}`);
+    this.name = 'RetryLaterError';
+  }
+}
+
 /** Thrown by a handler when retrying cannot help (e.g. the session it works on was deleted). */
 export class PermanentJobError extends Error {
   constructor(

@@ -20,6 +20,7 @@ import {
   withInstallId,
 } from '../domain/telemetry-consent.js';
 import { addDays, buildReport, localDay } from '../domain/telemetry-report.js';
+import { utcDay } from '../domain/telemetry-sending.js';
 import {
   TELEMETRY_COLLECTORS,
   TelemetryActivityRepository,
@@ -40,8 +41,8 @@ export class NoInstallIdError extends Error {
 }
 
 /**
- * Consent, anonymous id, daily reports and local history (RF-TEL-01 to RF-TEL-07).
- * Nothing is sent yet (step 8.8): built reports stay `PENDING`.
+ * Consent, anonymous id, daily reports and local history (RF-TEL-01 to RF-TEL-07). Built reports stay
+ * `PENDING` until `TelemetrySender` sends them (step 8.9).
  */
 @Injectable()
 export class TelemetryService {
@@ -86,8 +87,25 @@ export class TelemetryService {
   async regenerateInstallId(): Promise<string> {
     const prefs = await this.preferences.load();
     if (prefs.installId === null) throw new NoInstallIdError();
+    return this.startNewInstallation();
+  }
+
+  /**
+   * A new id, and with it a new signing key (derived from the id, ADR-26). Unsent reports are rebuilt with the
+   * new id, which the receiver gets to know in its first request. `waitUntilTomorrow` skips today's send, for
+   * when the receiver turned the old key down (§19.2).
+   */
+  async startNewInstallation({ waitUntilTomorrow = false } = {}): Promise<string> {
+    const prefs = await this.preferences.load();
     const installId = this.environment.newInstallId();
-    await this.preferences.save({ ...prefs, installId });
+    await this.preferences.save({
+      ...prefs,
+      installId,
+      registeredKey: null,
+      lastSentDay: waitUntilTomorrow ? utcDay(this.environment.now()) : prefs.lastSentDay,
+    });
+    await this.reports.deleteUnsent();
+    await this.buildPendingReports();
     return installId;
   }
 

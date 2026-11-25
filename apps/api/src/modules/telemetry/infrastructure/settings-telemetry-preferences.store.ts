@@ -11,9 +11,14 @@ const StoredSchema = z.object({
   consentVersion: z.number().int().min(0),
   metrics: z.partialRecord(TelemetryMetricIdSchema, z.boolean()),
   installId: z.uuid().nullable(),
+  registeredKey: z.string().nullable(),
+  lastSentDay: z.iso.date().nullable(),
 });
 
-/** Keeps the telemetry choices in `settings` (keys `telemetry.consentVersion`, `.metrics`, `.installId`). */
+/**
+ * Keeps the telemetry choices in `settings` (keys `telemetry.consentVersion`, `.metrics`, `.installId`) and the
+ * sending state (`.registeredKey`, `.lastSentDay`).
+ */
 @Injectable()
 export class SettingsTelemetryPreferencesStore extends TelemetryPreferencesStore {
   private readonly logger = new Logger(SettingsTelemetryPreferencesStore.name);
@@ -28,6 +33,8 @@ export class SettingsTelemetryPreferencesStore extends TelemetryPreferencesStore
       consentVersion: values.get('consentVersion') ?? 0,
       metrics: values.get('metrics') ?? {},
       installId: values.get('installId') ?? null,
+      registeredKey: values.get('registeredKey') ?? null,
+      lastSentDay: values.get('lastSentDay') ?? null,
     });
     if (!parsed.success) {
       // Never guess consent from corrupted data: ask again (RN-19).
@@ -42,6 +49,8 @@ export class SettingsTelemetryPreferencesStore extends TelemetryPreferencesStore
       consentVersion: prefs.consentVersion,
       metrics: prefs.metrics,
       installId: prefs.installId ?? undefined,
+      registeredKey: prefs.registeredKey ?? undefined,
+      lastSentDay: prefs.lastSentDay ?? undefined,
     });
   }
 }
