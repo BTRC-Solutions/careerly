@@ -30,7 +30,7 @@ Las versiones **no se editan a mano**. Salen de los mensajes de commit.
 4. Cuando decidís largar la versión, mergeás ese PR
 5. release-please crea el tag y la GitHub Release
 6. El tag dispara el build:
-     vX.Y.Z               → instalador de Windows adjunto a la GitHub Release (macOS/Linux en el 8.10)
+     vX.Y.Z               → instalador de Windows adjunto a la GitHub Release (macOS y Linux, post-MVP)
      telemetry-api-vX.Y.Z → solo el tag y la GitHub Release con su CHANGELOG
      stats-web-vX.Y.Z     → ídem
 
