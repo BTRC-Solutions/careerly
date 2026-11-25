@@ -12,8 +12,8 @@ decisión está en ARCHITECTURE.md; acá está el cómo.
 | Componente | Qué incluye | Formato | Tag | Dónde se publica |
 |---|---|---|---|---|
 | **App de escritorio** | `apps/desktop`, `apps/api`, `apps/web`, `packages/contracts` | SemVer | `vX.Y.Z` | GitHub Releases (instaladores) |
-| **Receptor de telemetría** | `apps/telemetry-api` | SemVer | `telemetry-api-vX.Y.Z` | Imagen en GHCR → VPS (Jenkins) |
-| **Página pública** | `apps/stats-web` | SemVer | `stats-web-vX.Y.Z` | Imagen en GHCR → VPS (Jenkins) |
+| **Receptor de telemetría** | `apps/telemetry-api` | SemVer | `telemetry-api-vX.Y.Z` | GitHub Release (CHANGELOG); la imagen sale de la rama `deployment` |
+| **Página pública** | `apps/stats-web` | SemVer | `stats-web-vX.Y.Z` | GitHub Release (CHANGELOG); la imagen sale de la rama `deployment` |
 | **Formato del reporte** | `TelemetryReportV<N>` en `packages/contracts` | Entero (`schemaVersion`) | — | Va dentro de la app |
 
 Cada componente tiene su propio `CHANGELOG.md` y su propio ritmo: un cambio en la página pública no obliga a
@@ -31,8 +31,11 @@ Las versiones **no se editan a mano**. Salen de los mensajes de commit.
 5. release-please crea el tag y la GitHub Release
 6. El tag dispara el build:
      vX.Y.Z               → instalador de Windows adjunto a la GitHub Release (macOS/Linux en el 8.10)
-     telemetry-api-vX.Y.Z → imagen en GHCR → Jenkins → prod (con aprobación)
+     telemetry-api-vX.Y.Z → solo el tag y la GitHub Release con su CHANGELOG
      stats-web-vX.Y.Z     → ídem
+
+Los servicios de telemetría no se despliegan por tag: las imágenes se publican y Jenkins las despliega con
+cada push a la rama `deployment` (§5). El tag registra qué versión es; el deploy decide cuándo llega a prod.
 ```
 
 El PR de release se puede dejar abierto todo el tiempo que haga falta: va acumulando los cambios. **Mergearlo
@@ -218,8 +221,12 @@ No hay ramas de release: todo sale de `main`.
 
 **Telemetría:**
 
-- Jenkins hace rollback solo si falla el smoke test. Para volver atrás a mano, se relanza el job de deploy con
-  el tag de imagen anterior (está registrado en `deployed-versions.json` en el VPS).
+- Jenkins hace rollback solo si falla el deploy (migraciones, servicios que no quedan sanos, Caddy o el smoke
+  test): vuelve al commit y al tag de imagen que figuran en `~/careerly/deployed` del VPS, el último deploy que
+  salió bien.
+- Para volver atrás a mano, se revierte el cambio en `main` y se pushea a `deployment`, como cualquier deploy.
+  En una urgencia, en el VPS: `cd ~/careerly/repo && git checkout --detach <commit>` y
+  `IMAGE_TAG=sha-<commit> bash infra/telemetry/deploy.sh`.
 
 ## 9. Resumen rápido
 

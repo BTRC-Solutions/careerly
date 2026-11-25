@@ -2,6 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "bootstrap-sha": "c9e1ce359dcd01706bf136fe12cd3f155c995b4e",
   "pull-request-title-pattern": "chore: release ${version}",
+  "separate-pull-requests": true,
   "packages": {
     ".": {
       "release-type": "node",
@@ -52,6 +53,34 @@
           "type": "json",
           "path": "package-lock.json",
           "jsonpath": "$.packages['packages/contracts'].version"
+        }
+      ]
+    },
+    "apps/telemetry-api": {
+      "release-type": "node",
+      "package-name": "@careerly/telemetry-api",
+      "component": "telemetry-api",
+      "pull-request-title-pattern": "chore: release ${component} ${version}",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['apps/telemetry-api'].version"
+        }
+      ]
+    },
+    "apps/stats-web": {
+      "release-type": "node",
+      "package-name": "@careerly/stats-web",
+      "component": "stats-web",
+      "pull-request-title-pattern": "chore: release ${component} ${version}",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['apps/stats-web'].version"
         }
       ]
     }
