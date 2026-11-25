@@ -1294,10 +1294,9 @@ y su propio Postgres con su volumen. La app estable y las betas envían a prod; 
 envío desactivado. La URL se fija en tiempo de build.
 
 **Un solo dominio público.** El VPS ya tiene un Caddy (el del proyecto kleinkauf, en 80/443) que saca los
-certificados TLS solo, y Careerly se publica a través de él en un único host. Mientras no haya un dominio pago
-(D-10) se usa sslip.io, que resuelve cualquier nombre con la IP adentro sin registrarse:
-**`careerly-201-32-129-72.sslip.io`**. Va con guion y no como subdominio de `201-32-129-72.sslip.io`, porque ese
-espacio es el de las tiendas de kleinkauf. El dominio es una variable: cambiarlo es configuración, salvo en la app,
+certificados TLS solo (Let's Encrypt), y Careerly se publica a través de él en un único host:
+**`careerly.btrc.website`** (D-10), un registro `A` del dominio `btrc.website` hacia el VPS. Al principio se usó un
+nombre de sslip.io, que no requiere registrar nada. El dominio es una variable: cambiarlo es configuración, salvo en la app,
 que lo fija al compilar.
 
 | Ruta | Destino |

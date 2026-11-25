@@ -28,7 +28,8 @@ chmod 600 ~/careerly/.env
 bash ~/careerly/repo/infra/telemetry/deploy.sh
 ```
 
-Después, `https://careerly-201-32-129-72.sslip.io` muestra la página. Caddy saca el certificado la primera vez.
+Después, `https://careerly.btrc.website` muestra la página. Caddy saca el certificado (Let's Encrypt) la primera vez, así
+que el registro `A` de `careerly.btrc.website` tiene que apuntar al VPS antes del deploy.
 
 ## Desplegar otra versión
 
