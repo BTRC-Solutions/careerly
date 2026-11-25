@@ -27,6 +27,8 @@ ssh-keyscan -p 5141 127.0.0.1 2>/dev/null | sed 's/^[^ ]*/careerly-vps/' > known
 cp ~/careerly/repo/infra/jenkins/.env.example .env && chmod 600 .env
 # Completar JENKINS_ADMIN_PASSWORD (openssl rand -hex 24).
 docker compose --env-file .env -f ~/careerly/repo/infra/jenkins/compose.yaml up -d --build
+# La imagen anterior de Jenkins queda sin uso después de cada build: se borra para no llenar el disco.
+docker image prune --force --filter label=com.docker.compose.project=careerly-jenkins
 ```
 
 El contenedor corre con el uid 1000: la clave y el `known_hosts` tienen que ser legibles por ese uid, que en este
@@ -47,6 +49,7 @@ y después `http://localhost:8080`, con el usuario y la contraseña del `.env`.
 ```bash
 docker compose --env-file ~/careerly/jenkins/.env -f ~/careerly/repo/infra/jenkins/compose.yaml down -v
 docker compose --env-file ~/careerly/jenkins/.env -f ~/careerly/repo/infra/jenkins/compose.yaml up -d --build
+docker image prune --force --filter label=com.docker.compose.project=careerly-jenkins
 ```
 
 Vuelve con el usuario, la credencial y el job. Se pierde solo el historial de builds.
