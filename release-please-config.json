@@ -60,7 +60,7 @@
       "release-type": "node",
       "package-name": "@careerly/telemetry-api",
       "component": "telemetry-api",
-      "pull-request-title-pattern": "chore: release ${component} ${version}",
+      "pull-request-title-pattern": "chore: release${component} ${version}",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
@@ -74,7 +74,7 @@
       "release-type": "node",
       "package-name": "@careerly/stats-web",
       "component": "stats-web",
-      "pull-request-title-pattern": "chore: release ${component} ${version}",
+      "pull-request-title-pattern": "chore: release${component} ${version}",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
