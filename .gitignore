@@ -27,6 +27,8 @@ Thumbs.db
 
 # Test output
 coverage/
+e2e/test-results/
+e2e/playwright-report/
 
 # Downloaded tools (scripts/fetch-typst.mjs)
 vendor/

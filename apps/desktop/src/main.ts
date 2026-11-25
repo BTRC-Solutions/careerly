@@ -25,6 +25,7 @@ interface Connection {
 }
 
 let backend: RunningBackend | undefined;
+let mainWindow: BrowserWindow | undefined;
 let quitting = false;
 
 // Keep all data under <appData>/Careerly, both when installed and when run from source.
@@ -65,12 +66,17 @@ async function start() {
   const uiOrigin = new URL(connection.uiUrl).origin;
   applySecurityPolicies((url) => new URL(url).origin === uiOrigin);
 
+  // The preload asks before its document commits, when the frame may have no URL yet (it happens with a
+  // debugger attached, e.g. the E2E tests). Then the window decides: the only one is the UI's, and it cannot
+  // navigate anywhere else. A sync message must always get an answer, or the renderer hangs.
   ipcMain.on('careerly:get-api-connection', (event) => {
-    const senderOrigin = event.senderFrame ? new URL(event.senderFrame.url).origin : undefined;
-    event.returnValue =
-      senderOrigin === uiOrigin
-        ? { apiBaseUrl: connection.apiBaseUrl, apiToken: connection.apiToken }
-        : { apiBaseUrl: '', apiToken: '' };
+    const frameUrl = event.senderFrame?.url;
+    const fromUi = frameUrl
+      ? URL.canParse(frameUrl) && new URL(frameUrl).origin === uiOrigin
+      : event.sender === mainWindow?.webContents;
+    event.returnValue = fromUi
+      ? { apiBaseUrl: connection.apiBaseUrl, apiToken: connection.apiToken }
+      : { apiBaseUrl: '', apiToken: '' };
   });
 
   const assertFromUi = (event: IpcMainInvokeEvent) => {
@@ -291,7 +297,7 @@ async function developmentConnection(): Promise<Connection> {
 }
 
 function createWindow(url: string) {
-  const window = new BrowserWindow({
+  const window = (mainWindow = new BrowserWindow({
     title: 'Careerly',
     width: 1280,
     height: 800,
@@ -308,7 +314,7 @@ function createWindow(url: string) {
       nodeIntegration: false,
       webSecurity: true,
     },
-  });
+  }));
   window.once('ready-to-show', () => window.show());
   void window.loadURL(url);
 }
