@@ -901,11 +901,13 @@ Guía práctica y criterios para largar una versión: [VERSIONING.md](VERSIONING
 | Formato del reporte | `TelemetryReportV1…` en `contracts` | Entero `schemaVersion` | — |
 
 - **release-please** (GitHub Action) lee los Conventional Commits de `main` y mantiene un PR de release por
-  componente, con la versión nueva y el `CHANGELOG.md`. Al mergearlo crea el tag y la GitHub Release, y eso
-  dispara el build correspondiente. La configuración vive en `release-please-config.json` y
+  componente, con la versión nueva y el `CHANGELOG.md`. Al mergearlo crea el tag y la GitHub Release; en la app,
+  eso dispara el build del instalador. Los servicios de telemetría no se construyen por tag: sus imágenes salen
+  de la rama `deployment` (§19.6). La configuración vive en `release-please-config.json` y
   `.release-please-manifest.json`: la app es el componente raíz (`.`) con `exclude-paths` para los servicios
   y la infraestructura, y `extra-files` copia la versión a los `package.json` de `apps/desktop`, `apps/api` y
-  `apps/web`.
+  `apps/web`. `apps/telemetry-api` y `apps/stats-web` son componentes propios (`separate-pull-requests`: un PR
+  de release por componente).
 - **Versión por fase (antes de la 1.0): `0.N.X`.** `N` es la última fase del roadmap cerrada y `X` cuenta las
   versiones intermedias (fixes o entregas parciales) mientras se trabaja en la fase siguiente. Para eso la app
   usa `"versioning": "always-bump-patch"` en release-please: cualquier `feat` o `fix` sube solo el patch, y al
