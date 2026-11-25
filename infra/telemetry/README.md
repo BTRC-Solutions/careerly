@@ -8,7 +8,7 @@ Un solo entorno (prod) con `telemetry-api`, `stats-web` y su Postgres, publicado
 | `compose.yaml` | Proyecto `careerly-telemetry`: Postgres en una red interna sin salida; los dos servicios, además, en la red `edge` de Caddy. No publica puertos. |
 | `careerly.caddy` | El sitio para Caddy: `POST /v1/reports` va al receptor y todo lo demás a la página. `/v1/*` y `/internal/*` dan `404`. |
 | `postgres/init-roles.sh` | Crea `telemetry_app` (solo `SELECT` e `INSERT`) la primera vez que arranca el volumen. |
-| `deploy.sh` | Baja las imágenes, migra, levanta los servicios, publica el sitio en Caddy y prueba `/health` por el dominio. |
+| `deploy.sh` | Baja las imágenes, migra, levanta los servicios, publica el sitio en Caddy, prueba `/health` por el dominio y borra las imágenes de Careerly que ya no usa ningún contenedor (un rollback las vuelve a bajar). |
 | `.env.example` | Variables del `.env` del VPS. |
 
 ## Requisitos en el VPS

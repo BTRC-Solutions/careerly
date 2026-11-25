@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploys Careerly's telemetry on the VPS (ARCHITECTURE §19.6): pulls the images, applies the migrations, starts
-# the services and publishes the site on the shared Caddy. Jenkins runs it over SSH from 8.8; by hand, from a
-# checkout of the repository on the VPS:
+# the services, publishes the site on the shared Caddy and deletes the images no container runs. Jenkins runs it
+# over SSH from 8.8; by hand, from a checkout of the repository on the VPS:
 #   IMAGE_TAG=sha-<commit> bash infra/telemetry/deploy.sh
 # Reads ~/careerly/.env (or CAREERLY_ENV), made from infra/telemetry/.env.example.
 set -euo pipefail
@@ -54,4 +54,7 @@ for attempt in $(seq 30); do
 done
 # What Jenkins rolls back to if the next deploy fails: "<commit> <image tag>".
 echo "$(git rev-parse HEAD) ${IMAGE_TAG:-latest}" > "${CAREERLY_DEPLOYED:-$HOME/careerly/deployed}"
+# Only the images the containers run stay on the disk: a rollback pulls the previous tag again.
+echo "== prune"
+docker image prune --all --force --filter "label=org.opencontainers.image.source=https://github.com/BTRC-Solutions/careerly"
 echo "Deployed on https://$CAREERLY_DOMAIN"
