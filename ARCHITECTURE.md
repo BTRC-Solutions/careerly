@@ -895,7 +895,7 @@ abre `npm start`, sobre una carpeta de datos temporal (`CAREERLY_USER_DATA_DIR`)
 - **Releases:** el workflow de release-please, cuando crea la release `vX.Y.Z`, construye el instalador y lo
   adjunta a la GitHub Release (job `windows-installer`; también se puede correr a mano para un tag existente).
   Va en el mismo workflow porque los tags creados con `GITHUB_TOKEN` no disparan otros workflows. Hoy solo
-  Windows; macOS y Linux, y la descarga del binario de `typst` por plataforma, se suman en el 8.10.
+  Windows; macOS y Linux, y la descarga del binario de `typst` por plataforma, se suman después del MVP (ROADMAP, Post-MVP).
 - **Actualizaciones:** electron-updater contra GitHub Releases (RF-CONF-10). Antes de migrar la base en una
   versión nueva se crea un backup automático (RNF-20).
 - **Firma de código:** opcional para un proyecto personal. Sin firma, Windows muestra un aviso de SmartScreen y
