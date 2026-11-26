@@ -1,6 +1,6 @@
 {
   "name": "@careerly/telemetry-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Telemetry receiver: signed daily reports in, anonymous aggregates out (ARCHITECTURE §19.4).",
   "type": "module",
