@@ -94,8 +94,10 @@ export class IngestService {
 
     // 4. A new installation pays a proof of work, and one IP registers one a day.
     if (!known) {
-      const proof = request.pow ?? '';
+      // Without the header there is no proof, even if an empty nonce happens to hash low enough.
+      const proof = request.pow;
       if (
+        proof === undefined ||
         !isValidProof(
           telemetryPowChallenge(installId, publicKey, today, proof),
           config.powDifficulty,
