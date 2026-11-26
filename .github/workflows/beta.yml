@@ -31,9 +31,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The open release PR is titled "chore: release X.Y.Z" (release-please-config.json).
-          title=$(gh pr list --state open --label "autorelease: pending" --json title --jq '.[0].title // ""')
-          next=$(sed -nE 's/^chore: release ([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' <<< "$title")
+          # The app's release PR is titled "chore: release X.Y.Z"; the telemetry ones name their component
+          # (release-please-config.json), so they never match.
+          titles=$(gh pr list --state open --label "autorelease: pending" --json title --jq '.[].title')
+          next=$(sed -nE 's/^chore: release ([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' <<< "$titles" | head -1)
           if [ -z "$next" ]; then
             echo "::error::No open release PR with a version. Merge a feat/fix into main first."
             exit 1
