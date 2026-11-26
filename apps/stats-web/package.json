@@ -1,6 +1,6 @@
 {
   "name": "@careerly/stats-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Public page with the anonymous usage statistics of Careerly, and its small Node server (ARCHITECTURE §19.5).",
   "type": "module",
