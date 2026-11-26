@@ -30,7 +30,7 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
 
 ## Estado actual
 
-- **Fases 0 a 7** cerradas (`v0.7.0`): configuración, API key por proveedor, backups, instalador de Windows,
+- **Fases 0 a 8** cerradas (`v0.8.0`, MVP): configuración, API key por proveedor, backups, instalador de Windows,
   telemetría base (sin envío) y versionado con release-please;
   perfil maestro completo con origen y registro de cambios por sesión, importación de CVs y sugerencias de
   redacción de logros; CV en PDF con Typst (plantilla `classic` y plantillas propias, ajuste determinístico
@@ -40,9 +40,11 @@ Proyecto personal, sin cuentas ni nube. La IA usa la API key del propio usuario,
   adaptado (opciones de la sesión, relevancia, redacción por idioma con guardia de veracidad, ajuste de
   páginas, pantalla de revisión, regeneración con indicaciones, sesiones retomables); snapshots inmutables
   del CV enviado y postulaciones (kanban y tabla, línea de tiempo inalterable, contactos, canal, prioridad y
-  salarios, métricas de postulaciones en la telemetría). Sigue la **Fase 8** (dashboard, pulido y primer release).
-- Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). Cerrar la
-  Fase 8 larga `v0.8.0` (MVP).
+  salarios, métricas de postulaciones en la telemetría); dashboard, accesibilidad, pantalla de Privacidad,
+  E2E con Playwright, y la telemetría completa (receptor y página pública en el VPS, deploy con Jenkins y
+  envío diario firmado desde la app). Sigue el **Post-MVP** (orden en [ROADMAP.md](ROADMAP.md)).
+- Versión de la app: `0.N.X`, con N = última fase cerrada ([VERSIONING.md §2.1](VERSIONING.md)). La `1.0.0`
+  sale cuando el modelo de datos y el formato de backup se consideren estables (VERSIONING.md §2.3).
 - La fuente de verdad del avance es la columna "Estado" de [ROADMAP.md](ROADMAP.md): se actualiza **en cada PR
   mergeado**, junto con la tarjeta de Trello ("En proceso" al abrir el PR, "Hecho" al mergear).
 
